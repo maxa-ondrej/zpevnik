@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.python-version
+.uv/
+
+# Node / Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.log
+.metro-health-check*
+
+# iOS / Android build artifacts
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+android/build/
+android/app/build/
+android/.gradle/
+*.keystore
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Pipeline working files
+pipeline/.cache/
+pipeline/.work/
+*.tmp
+
+# Local source PDFs — too large + may be unredistributable derivatives
+input/
+*.pdf
+!docs/**/*.pdf
+
+# OS
+Thumbs.db
