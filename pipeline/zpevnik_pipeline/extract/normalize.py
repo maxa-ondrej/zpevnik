@@ -93,10 +93,13 @@ def deskew(image: ImageU8, angle_deg: float | None = None) -> tuple[ImageU8, flo
     """Rotate `image` so detected text lines run horizontally.
 
     Returns the rotated image and the angle actually applied (degrees).
-    A noop within `±0.05°` of zero — rotating sub-pixel amounts only adds blur.
+    A noop below ``±0.5°`` — that's the resolution of our Hough estimator
+    (``theta = π/720``), so anything smaller is noise from anti-aliased line
+    edges. Rotating by that much only blurs the page and breaks downstream
+    line-detection without correcting any real skew.
     """
     angle = estimate_skew(image) if angle_deg is None else angle_deg
-    if abs(angle) < 0.05:
+    if abs(angle) < 0.5:
         return image, 0.0
     h, w = image.shape[:2]
     matrix = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)

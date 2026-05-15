@@ -71,6 +71,16 @@
           "items": { "type": "string" }
         },
         "staffLineThicknessPx": { "type": "integer", "minimum": 1 },
+        "chordRowHeightPx": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Pixel height of the chord row immediately above each staff."
+        },
+        "lyricRowHeightPx": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Pixel height of the lyric row immediately below each staff."
+        },
         "syllableHyphen": {
           "type": "string",
           "default": "-",

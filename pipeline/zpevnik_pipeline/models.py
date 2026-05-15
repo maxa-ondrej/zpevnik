@@ -60,6 +60,8 @@ class ProfileLayout(BaseModel):
     chordRowFontHints: list[str] = Field(default_factory=list)
     lyricRowFontHints: list[str] = Field(default_factory=list)
     staffLineThicknessPx: int | None = None
+    chordRowHeightPx: int | None = Field(default=None, ge=1)
+    lyricRowHeightPx: int | None = Field(default=None, ge=1)
     syllableHyphen: str = "-"
 
 

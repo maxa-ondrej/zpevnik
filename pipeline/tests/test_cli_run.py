@@ -83,6 +83,18 @@ def test_cli_run_writes_manifest(tmp_path: Path) -> None:
     assert [s["number"] for s in segments["segments"]] == [1, 2, 3]
     assert all(s["pages"] == [n] for n, s in enumerate(segments["segments"], start=1))
 
+    layout_path = songs / "_layout.json"
+    assert layout_path.exists()
+    layout = json.loads(layout_path.read_text())
+    assert layout["profile"] == "test-profile"
+    # Layout output mirrors the song list, with `lines` arrays per page.
+    assert [s["number"] for s in layout["songs"]] == [1, 2, 3]
+    for song in layout["songs"]:
+        for page in song["pages"]:
+            # Synthetic PDF has no staves → empty `lines`; just assert the
+            # field shape is right.
+            assert isinstance(page["lines"], list)
+
 
 def test_cli_run_respects_custom_manifest_path(tmp_path: Path) -> None:
     pdf = tmp_path / "x.pdf"

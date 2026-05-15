@@ -20,7 +20,8 @@ from .extract.hashing import hash_page
 from .extract.normalize import normalize
 from .extract.rasterize import rasterize_pdf
 from .manifest import PageRecord, RunManifest, now_utc, write_manifest
-from .parse.segment import segment as segment_pages
+from .parse.layout import SongLine, detect_song_lines
+from .parse.segment import SongSegment, segment as segment_pages
 
 app = typer.Typer(
     name="zpevnik",
@@ -57,6 +58,7 @@ def run(
 
     records: list[PageRecord] = []
     page_texts: list[tuple[int, str]] = []
+    page_song_lines: dict[int, list[SongLine]] = {}
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -64,9 +66,9 @@ def run(
         TimeElapsedColumn(),
         console=console,
     ) as progress:
-        task = progress.add_task("Rasterize + normalize + classify", total=None)
+        task = progress.add_task("Rasterize → normalize → classify → layout", total=None)
         for r in rasterize_pdf(pdf, dpi=cfg.dpi, page_range=page_range):
-            _, stats = normalize(r.image)
+            clean, stats = normalize(r.image)
             cls = classify_page(r.page, r.image, text_extractable=r.text_extractable)
             records.append(
                 PageRecord(
@@ -81,6 +83,13 @@ def run(
                 )
             )
             page_texts.append((r.page, r.text))
+            # Only run layout on pages that actually carry music — skip pure
+            # text frontmatter to save work and avoid spurious "staves" from
+            # underlines on prose pages.
+            if cls.kind != "text":
+                page_song_lines[r.page] = detect_song_lines(clean, layout=cfg.layout)
+            else:
+                page_song_lines[r.page] = []
             progress.update(task, advance=1)
 
     manifest = RunManifest(
@@ -106,7 +115,21 @@ def run(
     console.print(
         f"[green]Wrote segments:[/green] {segments_path}  ({len(segments)} songs)"
     )
-    console.print("[yellow]Stages 4–12 not yet implemented.[/yellow]")
+
+    layout_path = out.parent / "_layout.json"
+    _write_layout(
+        layout_path,
+        segments=segments,
+        page_song_lines=page_song_lines,
+        profile_name=cfg.name,
+    )
+    total_lines = sum(
+        len(page_song_lines.get(p, [])) for s in segments for p in s.pages
+    )
+    console.print(
+        f"[green]Wrote layout:[/green] {layout_path}  ({total_lines} song-lines)"
+    )
+    console.print("[yellow]Stages 5–12 not yet implemented.[/yellow]")
 
 
 def _write_segments(path: Path, segments, *, profile_name: str) -> None:
@@ -120,6 +143,46 @@ def _write_segments(path: Path, segments, *, profile_name: str) -> None:
             {"number": s.number, "title": s.title, "pages": s.pages} for s in segments
         ],
     }
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    tmp.replace(path)
+
+
+def _write_layout(
+    path: Path,
+    *,
+    segments: list[SongSegment],
+    page_song_lines: dict[int, list[SongLine]],
+    profile_name: str,
+) -> None:
+    import json
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    songs_payload = []
+    for s in segments:
+        pages_payload = []
+        for page_no in s.pages:
+            lines = page_song_lines.get(page_no, [])
+            pages_payload.append(
+                {
+                    "page": page_no,
+                    "lines": [
+                        {
+                            "staff_lines_y": line.staff_lines_y,
+                            "staff_y": list(line.staff_y),
+                            "chord_y": list(line.chord_y),
+                            "lyric_y": list(line.lyric_y),
+                        }
+                        for line in lines
+                    ],
+                }
+            )
+        songs_payload.append(
+            {"number": s.number, "title": s.title, "pages": pages_payload}
+        )
+    payload = {"version": 1, "profile": profile_name, "songs": songs_payload}
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
