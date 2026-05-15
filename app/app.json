@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Zpěvník",
+    "slug": "zpevnik",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "zpevnik",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ondrejmaxa.zpevnik",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Used in Live mode to follow the song you are singing and auto-scroll the lyrics. Audio never leaves the device."
+      }
+    },
+    "android": {
+      "package": "com.ondrejmaxa.zpevnik",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

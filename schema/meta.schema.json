@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zpevnik.local/schema/meta.schema.json",
+  "title": "SongMeta",
+  "description": "Per-song metadata sidecar. Lives at songs/<id>-<slug>/meta.json.",
+  "type": "object",
+  "required": [
+    "id",
+    "slug",
+    "title",
+    "language",
+    "sourcePdf",
+    "sourcePages",
+    "hasStaffImages",
+    "reviewStatus"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9]{3,}$",
+      "description": "Zero-padded numeric id used as the folder prefix."
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Kebab-case slug derived from the title; folder suffix."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "number": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Song number in the original songbook (if any)."
+    },
+    "key": {
+      "type": ["string", "null"],
+      "description": "Canonical (English) tonic letter, e.g. 'A', 'Bb', 'F#m'."
+    },
+    "tempo": {
+      "type": ["integer", "null"],
+      "minimum": 20,
+      "maximum": 300,
+      "description": "BPM if known."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["cs", "en", "la", "sk"],
+      "description": "Primary language of the lyrics."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "default": []
+    },
+    "sourcePdf": {
+      "type": "string",
+      "description": "Filename of the source PDF (no path)."
+    },
+    "sourcePages": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "description": "1-indexed page numbers spanned by this song."
+    },
+    "hasStaffImages": { "type": "boolean" },
+    "reviewStatus": {
+      "type": "string",
+      "enum": ["auto", "flagged", "approved"]
+    }
+  }
+}

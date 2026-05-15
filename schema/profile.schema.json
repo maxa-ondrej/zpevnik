@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zpevnik.local/schema/profile.schema.json",
+  "title": "SongbookProfile",
+  "description": "Per-PDF layout hints. Lives at pipeline/profiles/<name>.yaml.",
+  "type": "object",
+  "required": ["name", "pdf", "language", "segmentation"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Profile identifier, also used as source tag on output songs."
+    },
+    "pdf": {
+      "type": "string",
+      "description": "Path or filename of the source PDF this profile applies to."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["cs", "en", "la", "sk"]
+    },
+    "dpi": {
+      "type": "integer",
+      "minimum": 72,
+      "maximum": 600,
+      "default": 300
+    },
+    "pageInverted": {
+      "description": "Whether page is white-on-black. 'auto' detects per page.",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["auto"] }
+      ],
+      "default": "auto"
+    },
+    "segmentation": {
+      "type": "object",
+      "required": ["strategy"],
+      "additionalProperties": false,
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["one-per-page", "numbered-heading", "separator"],
+          "description": "How songs are delimited in this PDF."
+        },
+        "numberingRegex": {
+          "type": "string",
+          "description": "Regex matching a song-heading number, e.g. '^(\\d{1,3})\\.'"
+        },
+        "pageRange": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Inclusive [first, last] page range to process."
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "description": "Optional hints about the per-song line structure.",
+      "additionalProperties": false,
+      "properties": {
+        "chordRowFontHints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lyricRowFontHints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "staffLineThicknessPx": { "type": "integer", "minimum": 1 },
+        "syllableHyphen": {
+          "type": "string",
+          "default": "-",
+          "description": "Character used to split syllables in the lyric row."
+        }
+      }
+    },
+    "ocr": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tesseractLang": { "type": "string", "default": "ces" },
+        "psm": { "type": "integer", "minimum": 0, "maximum": 13 }
+      }
+    }
+  }
+}

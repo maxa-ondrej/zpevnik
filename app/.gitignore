@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.log
+.metro-health-check*
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+android/build/
+android/app/build/
+android/.gradle/
+.DS_Store
+expo-env.d.ts.bak

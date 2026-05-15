@@ -1,0 +1,31 @@
+# Songbook profile — example for the primary Czech songbook.
+# Pair this with the matching PDF passed to `zpevnik run`.
+# Validated against schema/profile.schema.json.
+
+name: zpevnik-2019
+pdf: zpevnik-2019.pdf
+language: cs
+dpi: 300
+
+# Some pages may be scanned and inverted; auto-detect per page.
+pageInverted: auto
+
+segmentation:
+  strategy: numbered-heading
+  # "1.", "23.", "157.", etc. at the start of a line.
+  numberingRegex: '^(\d{1,3})\.\s'
+  # pageRange: [1, 240]   # uncomment to restrict during prototyping
+
+layout:
+  # Each "song line" is: chord row → treble staff → syllabified lyric row.
+  syllableHyphen: "-"
+  # Hints for differentiating the chord row from the lyric row when both
+  # are OCR'd. Update these once we measure the actual font on a sample.
+  chordRowFontHints: ["Times-Bold", "TimesNewRoman-Bold"]
+  lyricRowFontHints: ["Times-Roman", "TimesNewRoman"]
+
+ocr:
+  tesseractLang: ces
+  # PSM 6 = "Assume a single uniform block of text" — works well for the
+  # per-line OCR we do on the chord row and lyric row separately.
+  psm: 6

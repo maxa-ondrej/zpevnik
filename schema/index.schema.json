@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zpevnik.local/schema/index.schema.json",
+  "title": "SongIndex",
+  "description": "Repo-root index.json — flat list of every song's metadata for fast app load.",
+  "type": "object",
+  "required": ["version", "generatedAt", "songs"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema version. Bump on breaking changes."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "songs": {
+      "type": "array",
+      "items": { "$ref": "meta.schema.json" }
+    }
+  }
+}
