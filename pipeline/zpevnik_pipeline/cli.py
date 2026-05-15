@@ -6,8 +6,21 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+)
 
 from .config import load_profile
+from .extract.classify import classify_page
+from .extract.hashing import hash_page
+from .extract.normalize import normalize
+from .extract.rasterize import rasterize_pdf
+from .manifest import PageRecord, RunManifest, now_utc, write_manifest
+from .parse.segment import segment as segment_pages
 
 app = typer.Typer(
     name="zpevnik",
@@ -27,6 +40,11 @@ def run(
         Path("../songs"), "--songs", help="Output songs/ directory."
     ),
     force: bool = typer.Option(False, "--force", help="Re-process approved songs."),
+    manifest_path: Path | None = typer.Option(
+        None,
+        "--manifest",
+        help="Write the run manifest here. Default: <songs>/_manifest.json.",
+    ),
 ) -> None:
     """Run the full PDF → ChordPro pipeline."""
     cfg = load_profile(profile)
@@ -34,8 +52,79 @@ def run(
     console.print(f"[bold cyan]PDF:[/bold cyan] {pdf}")
     console.print(f"[bold cyan]Output:[/bold cyan] {songs_dir}")
     console.print(f"[bold cyan]Force overwrite approved:[/bold cyan] {force}")
-    console.print("[yellow]Pipeline stages not yet implemented.[/yellow]")
-    # TODO: wire stages 1–12 here as they land.
+
+    page_range = cfg.segmentation.pageRange
+
+    records: list[PageRecord] = []
+    page_texts: list[tuple[int, str]] = []
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Rasterize + normalize + classify", total=None)
+        for r in rasterize_pdf(pdf, dpi=cfg.dpi, page_range=page_range):
+            _, stats = normalize(r.image)
+            cls = classify_page(r.page, r.image, text_extractable=r.text_extractable)
+            records.append(
+                PageRecord(
+                    page=r.page,
+                    hash=hash_page(r.raw_bytes),
+                    kind=cls.kind,
+                    textExtractable=cls.textExtractable,
+                    notationDensity=cls.notationDensity,
+                    detectedStaffLines=cls.detectedStaffLines,
+                    inverted=stats.inverted,
+                    skewDeg=stats.skew_deg,
+                )
+            )
+            page_texts.append((r.page, r.text))
+            progress.update(task, advance=1)
+
+    manifest = RunManifest(
+        generatedAt=now_utc(),
+        profile=cfg.name,
+        pdf=str(pdf),
+        dpi=cfg.dpi,
+        pages=records,
+    )
+    out = manifest_path or (songs_dir / "_manifest.json")
+    write_manifest(out, manifest)
+
+    by_kind: dict[str, int] = {}
+    for rec in records:
+        by_kind[rec.kind] = by_kind.get(rec.kind, 0) + 1
+    console.print(f"[green]Wrote manifest:[/green] {out}  ({len(records)} pages)")
+    for k, v in sorted(by_kind.items()):
+        console.print(f"  [cyan]{k}:[/cyan] {v}")
+
+    segments = segment_pages(page_texts, profile=cfg.segmentation)
+    segments_path = out.parent / "_segments.json"
+    _write_segments(segments_path, segments, profile_name=cfg.name)
+    console.print(
+        f"[green]Wrote segments:[/green] {segments_path}  ({len(segments)} songs)"
+    )
+    console.print("[yellow]Stages 4–12 not yet implemented.[/yellow]")
+
+
+def _write_segments(path: Path, segments, *, profile_name: str) -> None:
+    import json
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": 1,
+        "profile": profile_name,
+        "segments": [
+            {"number": s.number, "title": s.title, "pages": s.pages} for s in segments
+        ],
+    }
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    tmp.replace(path)
 
 
 @profile_app.command("validate")
