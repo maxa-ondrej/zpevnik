@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zpěvník Review</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div id="layout">
+      <aside id="sidebar">
+        <header>
+          <h1>Zpěvník</h1>
+          <input id="search" type="search" placeholder="Search…" autocomplete="off" />
+        </header>
+        <ul id="song-list" aria-live="polite"></ul>
+      </aside>
+      <main id="detail">
+        <div class="empty">Select a song from the list.</div>
+      </main>
+    </div>
+    <template id="detail-template">
+      <header class="detail-head">
+        <div class="meta-line">
+          <span class="status" data-bind="reviewStatus"></span>
+          <span class="id" data-bind="id"></span>
+        </div>
+        <h2 data-bind="title-display"></h2>
+      </header>
+      <section class="staves" hidden></section>
+      <form id="edit-form">
+        <div class="row">
+          <label>Title<input name="title" type="text" required /></label>
+          <label>Number<input name="number" type="number" min="1" /></label>
+        </div>
+        <div class="row">
+          <label>Key<input name="key" type="text" placeholder="e.g. C, A, Bbm" /></label>
+          <label>Tempo<input name="tempo" type="number" min="20" max="300" /></label>
+        </div>
+        <label>
+          ChordPro
+          <textarea name="chordpro" spellcheck="false" rows="18"></textarea>
+        </label>
+        <div class="row">
+          <label>Review status
+            <select name="reviewStatus">
+              <option value="auto">auto</option>
+              <option value="flagged">flagged</option>
+              <option value="approved">approved</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="button" id="reload">Reload</button>
+            <button type="submit" id="save">Save</button>
+          </div>
+        </div>
+        <p id="save-status" aria-live="polite"></p>
+      </form>
+    </template>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
