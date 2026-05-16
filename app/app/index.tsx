@@ -1,7 +1,16 @@
 import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
+import { matches } from '../src/shared/search/fold';
 import type { SongIndex, SongMeta } from '../src/shared/types/song';
 
 type State =
@@ -11,6 +20,7 @@ type State =
 
 export default function SongListScreen() {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -28,6 +38,12 @@ export default function SongListScreen() {
       cancelled = true;
     };
   }, []);
+
+  const filtered = useMemo(() => {
+    if (state.kind !== 'ready') return [];
+    if (query.trim().length === 0) return state.songs;
+    return state.songs.filter((s) => matches(s.title, query) || matches(String(s.number ?? ''), query));
+  }, [state, query]);
 
   if (state.kind === 'loading') {
     return (
@@ -59,18 +75,38 @@ export default function SongListScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={state.songs}
-        keyExtractor={(s) => s.id}
-        renderItem={({ item }) => (
-          <Link href={{ pathname: '/song/[id]', params: { id: item.id } }} asChild>
-            <Pressable style={styles.row}>
-              <Text style={styles.rowNumber}>{item.number ?? ''}</Text>
-              <Text style={styles.rowTitle}>{item.title}</Text>
-            </Pressable>
-          </Link>
-        )}
-      />
+      <View style={styles.searchBar}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search by title or number…"
+          placeholderTextColor="#999"
+          style={styles.search}
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
+        <Text style={styles.count}>
+          {filtered.length}/{state.songs.length}
+        </Text>
+      </View>
+      {filtered.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyHint}>No matches.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(s) => s.id}
+          renderItem={({ item }) => (
+            <Link href={{ pathname: '/song/[id]', params: { id: item.id } }} asChild>
+              <Pressable style={styles.row}>
+                <Text style={styles.rowNumber}>{item.number ?? ''}</Text>
+                <Text style={styles.rowTitle}>{item.title}</Text>
+              </Pressable>
+            </Link>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -78,6 +114,26 @@ export default function SongListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  search: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    backgroundColor: '#fff',
+  },
+  count: { color: '#888', fontSize: 12, fontVariant: ['tabular-nums'] },
   row: { flexDirection: 'row', padding: 16, gap: 12, borderBottomWidth: 1, borderColor: '#eee' },
   rowNumber: { width: 40, color: '#666', fontVariant: ['tabular-nums'] },
   rowTitle: { flex: 1, fontSize: 16 },

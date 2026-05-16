@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -68,8 +68,13 @@ export default function SongScreen() {
     );
   }
 
+  const headerTitle = state.meta.number !== null
+    ? `${state.meta.number}. ${state.meta.title}`
+    : state.meta.title;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Stack.Screen options={{ title: headerTitle }} />
       <Text style={styles.title}>{state.meta.title}</Text>
       <SongControls />
       {showStaves && state.staveUris.length > 0 && (
