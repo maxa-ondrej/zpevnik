@@ -2,13 +2,16 @@
 
 Endpoints (all responses are JSON unless noted):
 
-* ``GET  /api/songs``           — repo-root index.json (lazily refreshed).
-* ``GET  /api/songs/{id}``      — meta + chordpro source + stave URLs.
-* ``PUT  /api/songs/{id}``      — partial update of meta + chordpro; bumps
+* ``GET  /api/songs``                — repo-root index.json (lazily refreshed).
+* ``GET  /api/songs/{id}``           — meta + chordpro source + stave URLs.
+* ``PUT  /api/songs/{id}``           — partial update of meta + chordpro; bumps
   reviewStatus and rewrites the index on success.
-* ``GET  /songs/...``           — static-serve the songs tree (PNGs + .cho).
-* ``GET  /``                    — tiny HTML/JS reviewer UI from ``./static/``.
-* ``GET  /health``              — liveness ping.
+* ``GET  /api/songs/{id}/melody``    — body of ``melody.json`` (404 if absent).
+* ``PUT  /api/songs/{id}/melody``    — write ``melody.json``; same
+  auto→flagged promotion as the chordpro PUT.
+* ``GET  /songs/...``                — static-serve the songs tree (PNGs + .cho).
+* ``GET  /``                         — tiny HTML/JS reviewer UI from ``./static/``.
+* ``GET  /health``                   — liveness ping.
 
 All write paths reuse :func:`output.writer.write_song` (atomic +
 approved-aware) with ``force=True``: in the review context the human is
@@ -18,11 +21,12 @@ the human is making the edit.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Any, Literal
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import Body, FastAPI, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -161,6 +165,41 @@ def create_app(songs_dir: Path) -> FastAPI:
             staveUrls=_stave_urls(new_dir, merged.staveCount),
         )
 
+    @api.get("/api/songs/{song_id}/melody")
+    def get_melody(song_id: str) -> JSONResponse:
+        song_dir, _ = _read_song(songs_dir, song_id)
+        melody_path = song_dir / "melody.json"
+        if not melody_path.exists():
+            raise HTTPException(
+                status_code=404, detail=f"melody.json missing for {song_id!r}"
+            )
+        try:
+            data = json.loads(melody_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"melody.json for {song_id!r} is not valid JSON: {exc}",
+            ) from exc
+        return JSONResponse(content=data)
+
+    @api.put("/api/songs/{song_id}/melody")
+    def put_melody(song_id: str, body: Annotated[Any, Body()]) -> JSONResponse:
+        song_dir, meta = _read_song(songs_dir, song_id)
+        _validate_melody(body)
+
+        melody_path = song_dir / "melody.json"
+        _atomic_write_json(melody_path, body)
+
+        # Mirror the song.cho PUT: a human touch flips auto → flagged so
+        # we never lose track of edits that left the meta otherwise unchanged.
+        if meta.reviewStatus == "auto":
+            promoted = meta.model_copy(update={"reviewStatus": "flagged"})
+            chordpro_text = (song_dir / "song.cho").read_text(encoding="utf-8")
+            write_song(songs_dir, meta=promoted, chordpro=chordpro_text, force=True)
+            _refresh_index(songs_dir)
+
+        return JSONResponse(content=body)
+
     @api.get("/", include_in_schema=False)
     def root() -> FileResponse:
         index_html = static_dir / "index.html"
@@ -169,3 +208,35 @@ def create_app(songs_dir: Path) -> FastAPI:
         return FileResponse(str(index_html))
 
     return api
+
+
+def _validate_melody(body: object) -> None:
+    """Validate a melody.json payload: header (str), verses (list[str]).
+
+    The optional ``chorus`` field, if present, must be a string. Any other
+    fields are accepted to leave room for future schema growth.
+    """
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="melody must be a JSON object")
+    header = body.get("header")
+    if not isinstance(header, str):
+        raise HTTPException(status_code=400, detail="melody.header must be a string")
+    verses = body.get("verses")
+    if not isinstance(verses, list) or not all(isinstance(v, str) for v in verses):
+        raise HTTPException(
+            status_code=400, detail="melody.verses must be a list of strings"
+        )
+    chorus = body.get("chorus")
+    if chorus is not None and not isinstance(chorus, str):
+        raise HTTPException(
+            status_code=400, detail="melody.chorus, if present, must be a string"
+        )
+
+
+def _atomic_write_json(path: Path, data: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    tmp.replace(path)
