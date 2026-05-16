@@ -41,6 +41,7 @@ export default function SongScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [state, setState] = useState<State>({ kind: 'loading' });
   const showStaves = useSettings((s) => s.showStaves);
+  const transpose = useSettings((s) => s.transpose);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +98,7 @@ export default function SongScreen() {
       <Stack.Screen options={{ title: headerTitle }} />
       <Text style={styles.title}>{state.meta.title}</Text>
       <SongControls />
-      {showStaves && state.abc !== null && <AbcView abc={state.abc} />}
+      {showStaves && state.abc !== null && <AbcView abc={state.abc} transpose={transpose} />}
       {showStaves && state.staveUris.length > 0 && (
         <View style={styles.staves}>
           {state.staveUris.map((uri) => (
