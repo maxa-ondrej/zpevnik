@@ -41,5 +41,9 @@ input/
 *.pdf
 !docs/**/*.pdf
 
+# Pipeline intermediates dropped into songs/ alongside per-song dirs.
+# (Per-song dirs and songs/index.json stay eligible for tracking.)
+/songs/_*.json
+
 # OS
 Thumbs.db
