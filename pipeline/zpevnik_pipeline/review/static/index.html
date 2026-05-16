@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zpěvník Review</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/abcjs@6.6.3/dist/abcjs-basic-min.js"></script>
   </head>
   <body>
     <div id="layout">
@@ -28,6 +29,13 @@
         <h2 data-bind="title-display"></h2>
       </header>
       <section class="staves" hidden></section>
+      <section class="notation-panel">
+        <header>
+          <h3>Notation preview</h3>
+          <span class="notation-status" id="notation-status"></span>
+        </header>
+        <div id="notation-target" class="notation-target"></div>
+      </section>
       <form id="edit-form">
         <div class="row">
           <label>Title<input name="title" type="text" required /></label>
@@ -37,10 +45,16 @@
           <label>Key<input name="key" type="text" placeholder="e.g. C, A, Bbm" /></label>
           <label>Tempo<input name="tempo" type="number" min="20" max="300" /></label>
         </div>
-        <label>
-          ChordPro
-          <textarea name="chordpro" spellcheck="false" rows="18"></textarea>
-        </label>
+        <div class="editors">
+          <label class="editor-chordpro">
+            ChordPro
+            <textarea name="chordpro" spellcheck="false" rows="18"></textarea>
+          </label>
+          <label class="editor-melody">
+            melody.json
+            <textarea name="melody" spellcheck="false" rows="18"></textarea>
+          </label>
+        </div>
         <div class="row">
           <label>Review status
             <select name="reviewStatus">
@@ -57,6 +71,6 @@
         <p id="save-status" aria-live="polite"></p>
       </form>
     </template>
-    <script src="/static/app.js"></script>
+    <script type="module" src="/static/app.js"></script>
   </body>
 </html>

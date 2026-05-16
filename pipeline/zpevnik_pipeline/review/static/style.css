@@ -75,7 +75,51 @@ main .empty { color: var(--muted); padding-top: 80px; text-align: center; }
 section.staves { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
 section.staves img { width: 100%; background: var(--bg-soft); }
 
-form#edit-form { display: flex; flex-direction: column; gap: 12px; max-width: 920px; }
+section.notation-panel {
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+section.notation-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+section.notation-panel header h3 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.notation-status {
+  font-size: 11px;
+  color: var(--muted);
+}
+.notation-status[data-tone="error"] { color: var(--danger); }
+.notation-status[data-tone="ok"]    { color: var(--accent); }
+.notation-status[data-tone="muted"] { color: var(--muted); }
+.notation-target {
+  padding: 12px;
+  overflow-x: auto;
+  min-height: 60px;
+  background: var(--bg);
+}
+
+form#edit-form { display: flex; flex-direction: column; gap: 12px; max-width: 1200px; }
+form#edit-form .editors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  form#edit-form .editors { grid-template-columns: 1fr; }
+}
 form#edit-form label {
   display: flex;
   flex-direction: column;
