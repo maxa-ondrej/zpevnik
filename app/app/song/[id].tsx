@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { AbcView } from '../../src/shared/components/AbcView';
 import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
@@ -10,7 +11,13 @@ import type { SongIndex, SongMeta } from '../../src/shared/types/song';
 
 type State =
   | { kind: 'loading' }
-  | { kind: 'ready'; meta: SongMeta; song: ParsedSong; staveUris: string[] }
+  | {
+      kind: 'ready';
+      meta: SongMeta;
+      song: ParsedSong;
+      staveUris: string[];
+      abc: string | null;
+    }
   | { kind: 'error'; message: string };
 
 function staveUrisFor(dir: string, count: number): string[] {
@@ -18,6 +25,16 @@ function staveUrisFor(dir: string, count: number): string[] {
     const n = String(i + 1).padStart(2, '0');
     return `${dir}/staves/${n}.png`;
   });
+}
+
+async function fetchOptionalAbc(dir: string): Promise<string | null> {
+  try {
+    const r = await fetch(`${dir}/melody.abc`);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch {
+    return null;
+  }
 }
 
 export default function SongScreen() {
@@ -36,13 +53,16 @@ export default function SongScreen() {
         if (!meta) throw new Error(`song ${id} not in index`);
 
         const dir = `/songs/${meta.id}-${meta.slug}`;
-        const choRes = await fetch(`${dir}/song.cho`);
+        const [choRes, abc] = await Promise.all([
+          fetch(`${dir}/song.cho`),
+          fetchOptionalAbc(dir),
+        ]);
         if (!choRes.ok) throw new Error(`song.cho HTTP ${choRes.status}`);
         const cho = await choRes.text();
         const song = parseChordPro(cho);
         const staveUris = staveUrisFor(dir, meta.staveCount);
 
-        if (!cancelled) setState({ kind: 'ready', meta, song, staveUris });
+        if (!cancelled) setState({ kind: 'ready', meta, song, staveUris, abc });
       } catch (err) {
         if (!cancelled) setState({ kind: 'error', message: String(err) });
       }
@@ -77,6 +97,7 @@ export default function SongScreen() {
       <Stack.Screen options={{ title: headerTitle }} />
       <Text style={styles.title}>{state.meta.title}</Text>
       <SongControls />
+      {showStaves && state.abc !== null && <AbcView abc={state.abc} />}
       {showStaves && state.staveUris.length > 0 && (
         <View style={styles.staves}>
           {state.staveUris.map((uri) => (
