@@ -1,347 +1,499 @@
-# Session Handover — 2026-05-16 (evening)
+# Session Handover — 2026-05-16 (night)
 
 ## Summary
 
-Closed the entire **Zpěvník** pipeline end-to-end. The previous session ended at stages 0–2 with 14 tests and the CLI's `run` command a stub. This session implemented every remaining pipeline stage (0 rasterize, 3 segment, 4 layout, 5 OCR, 6 align, 7 ChordPro emit + Czech notation, 8 section markers, 10 stave PNGs, 11–12 per-song writer + index), wired them all into the CLI, and verified end-to-end on a synthetic Czech songbook PDF. **Tests grew 14 → 109, all green.** Four clean commits on `main`. Tesseract was installed via Homebrew (`brew install tesseract tesseract-lang`) so the OCR-dependent tests actually run. The pipeline now produces real `songs/<id>-<slug>/{song.cho, meta.json, staves/NN.png}` directories plus a repo-root `songs/index.json` — the same shapes the reader app already expects per the JSON schemas.
+Brought the **Zpěvník** reader app from "empty placeholder shell" to a
+working end-to-end product, then stood up the manual-review server, then
+got the whole pipeline through `ruff` + `mypy --strict` cleanly and added
+the first batch of frontend unit tests. The previous session ended with
+the pipeline complete (109 tests, no UI). This session ended with: the
+Expo Router web app loading real songs / staves / settings, a vanilla
+HTML/JS reviewer at `/`, **119 pipeline tests + 28 app tests, all green**,
+and clean lint. Nine commits on `main`. Still no real source PDF (gates
+most remaining stages — see Next Steps).
 
 ## What Was Worked On & What Got Done
 
-All ten tasks tracked in TaskList are **completed**:
+Tracked as TaskList items #1–#18, all completed:
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Implement `extract/rasterize.py` (PyMuPDF) | ✅ done |
-| 2 | Wire stages 1+2 into CLI `run` (manifest output) | ✅ done |
-| 3 | Scaffold stage 3 (segmentation) | ✅ done |
-| 4 | Implement stage 4 (layout detection) | ✅ done |
-| 5 | Implement stage 5 (chord/lyric OCR) | ✅ done |
-| 6 | Implement stage 6 (alignment) | ✅ done |
-| 7 | Implement stage 7 (ChordPro emit + Czech→English) | ✅ done |
-| 8 | Implement stage 8 (section markers) | ✅ done |
-| 9 | Implement stage 10 (stave PNG export) | ✅ done |
-| 10 | Implement stages 11–12 (per-song writer + index) | ✅ done |
+| 1 | Generate sample songs via pipeline (3-song synthetic Czech PDF) | ✅ |
+| 2 | Serve songs from app as static assets (symlink approach) | ✅ |
+| 3 | Wire song list screen to `index.json` (loading/error/empty states) | ✅ |
+| 4 | Wire song detail screen to real `song.cho` (via slug lookup) | ✅ |
+| 5 | Verify end-to-end in browser (Playwright via webapp-testing skill) | ✅ |
+| 6 | Add `staveCount` field across schema / pydantic / TS types | ✅ |
+| 7 | Expose settings on the song detail (`SongControls` component) | ✅ |
+| 8 | Persist settings via localStorage on web (zustand `persist`) | ✅ |
+| 9 | Filter song list with a search input (NFKD diacritic fold) | ✅ |
+| 10 | Set dynamic header title on song detail (`Stack.Screen`) | ✅ |
+| 11 | Install FastAPI review extras into venv | ✅ |
+| 12 | Implement review API endpoints | ✅ |
+| 13 | Add a CLI command to launch the server | ✅ (already existed) |
+| 14 | Cover server with pytest tests (10 new) | ✅ |
+| 15 | Tiny HTML/JS frontend for review (`review/static/`) | ✅ |
+| 16 | Run ruff + mypy and fix what surfaces | ✅ |
+| 17 | Persist settings on native via AsyncStorage | ✅ |
+| 18 | Add app-side unit tests for core modules (28 new) | ✅ |
 
-Concretely delivered (in commit order):
+Nine commits this session (in order, on top of `c8174ee`):
 
-### Commit `142b8d7` — Pipeline stages 0+3: rasterize, manifest, segmentation
-- `pipeline/zpevnik_pipeline/extract/rasterize.py` — PyMuPDF-based generator; yields `RasterizedPage(page, image, raw_bytes, text_extractable, text)`. No system deps (no poppler).
-- `pipeline/zpevnik_pipeline/manifest.py` — pydantic `RunManifest` / `PageRecord` + atomic `write_manifest` / `read_manifest`.
-- `pipeline/zpevnik_pipeline/parse/segment.py` — `one-per-page` and `numbered-heading` strategies; `separator` raises `NotImplementedError`.
-- CLI now writes `<songs>/_manifest.json` and `<songs>/_segments.json`.
-- `+pymupdf>=1.24` in `pyproject.toml`.
-- **+16 tests** (`test_rasterize.py:7`, `test_segment.py:7`, `test_cli_run.py:2`).
+```
+1f13e2b App: unit tests for parser, transpose, notation, fold
+c05760a App: persist settings on native via AsyncStorage
+ff01ccd Pipeline: pass ruff + mypy --strict cleanly
+1c584f4 Review server: API + reviewer UI + tests
+5890533 Housekeeping: accept expo-cli gitignore drift, untrack expo-env.d.ts
+0dfcf4e Refresh HANDOVER for the stages-0..12 + app-wired sessions
+1862e56 App: search, settings persistence, dynamic header title
+0105080 App: expose notation/transpose/font/staves controls on song page
+f772da9 App: load real songs from /songs/, surface stave PNGs
+```
 
-### Commit `49072b2` — Pipeline stage 4: per-page layout detection
-- `pipeline/zpevnik_pipeline/parse/layout.py` — `detect_song_lines(image, layout)` clusters long horizontal lines into staves of ~5 and carves chord/lyric bands above/below. Returns `list[SongLine]`.
-- Critical fix in `extract/normalize.py`: bumped deskew noop threshold from 0.05° → 0.5° to match Hough's `theta = π/720` resolution. Without this, the rasterized synthetic PDF triggered a false-positive 0.25° rotation that broke layout detection.
-- Loosened `_horizontal_line_ys` tolerance from `|Δy| ≤ 2` to `|Δy| ≤ 25` to survive any residual sub-Hough-resolution skew.
-- Added `chordRowHeightPx` / `lyricRowHeightPx` to `ProfileLayout` model + JSON schema. Defaults fall back to staff height when absent.
-- CLI writes `<songs>/_layout.json`.
-- **+9 tests** (`test_layout.py:9`, including a real-PDF→rasterize→normalize→detect e2e guard).
+### Commit-by-commit notes
 
-### Commit `48cde48` — Pipeline stage 5: chord/lyric row OCR via Tesseract
-- `pipeline/zpevnik_pipeline/parse/ocr.py` — `ocr_chord_row` (PSM 7, eng, whitelist `ABCDEFGHabdgijmnopstu0123456789#♭♯b/+().`) and `ocr_lyric_row` (PSM 7, language from profile). Both wrap `pytesseract.image_to_data` and return `list[OcrToken]` with word-level bboxes.
-- CLI crops `chord_y` and `lyric_y` bands per detected song-line, OCRs them, writes `<songs>/_ocr.json` keyed by song / page / line index.
-- New `--skip-ocr` flag for fast iteration.
-- System install: `brew install tesseract tesseract-lang` (Tesseract 5.5.2, includes `ces`, ~685 MB).
-- pytesseract installed in venv.
-- **+6 tests** (`test_ocr.py:4`, `test_cli_run.py:2`). OCR-touching tests gated on `tesseract --list-langs` containing the required language.
+- **`f772da9` — App loads real songs**
+  - `app/app/index.tsx` fetches `/songs/index.json`; `app/app/song/[id].tsx`
+    looks up the song's slug via the index, then fetches `song.cho` and
+    parses with the existing `parseChordPro`.
+  - `app/public/songs` is a symlink to `../../songs` so Metro's static
+    handler serves the generated tree at `/songs/...`.
+  - `staveCount: int = Field(ge=0)` added to `SongMeta` (schema, pydantic,
+    TS). CLI populates from `len(stave_crops)`. Means the app can render
+    staves with one round-trip per asset instead of 404-probing.
 
-### Commit `c8174ee` — Pipeline stages 6-12: alignment, ChordPro emission, write-out
-- `pipeline/zpevnik_pipeline/parse/align.py` — `align_line(chord_tokens, lyric_tokens) → AlignedLine(chordpro)`. Anchors chord at its **left x edge** (not center), interpolates linearly into the target lyric token to pick a char position, handles prefix/suffix chords + instrumental + hyphenated cases.
-- `pipeline/zpevnik_pipeline/parse/chord_notation.py` — `czech_to_english("H")="B"`, `"B"="Bb"`, slash-bass `"G/H"="G/B"`. Idempotent on already-English input.
-- `pipeline/zpevnik_pipeline/output/chordpro.py` — `emit_song(number, title, aligned_lines, language) → EmittedSong(chordpro, title, number)`. Title directive + number directive + body. Applies Czech→English normalization to every `[chord]` marker.
-- `pipeline/zpevnik_pipeline/output/sections.py` — `apply_section_markers(lines)` regex-detects `N.` (verse) and `R:`/`Ref:`/`Ref.:` (chorus, case-insensitive), wraps each section with `{start_of_*}` / `{end_of_*}` directives. Tolerates chord brackets that landed before the marker during alignment.
-- `pipeline/zpevnik_pipeline/output/staves.py` — `write_stave_pngs(out_dir, crops)` writes PNGs `01.png`, `02.png` ... Refactored from the original "image-keyed-by-page" API to "pre-computed crops" so the CLI can avoid holding full normalized images.
-- `pipeline/zpevnik_pipeline/output/slug.py` — `slugify("Já mám") = "ja-mam"` via NFKD diacritic folding.
-- `pipeline/zpevnik_pipeline/output/writer.py` — `write_song(songs_root, meta, chordpro, force)` writes `<songs>/<id>-<slug>/{song.cho, meta.json}` atomically; **skips when on-disk `reviewStatus: approved`** unless `force=True`. `write_index(songs_root, metas)` rewrites `songs/index.json` sorted by `(number, id)`.
-- CLI now does the full assemble + write loop:
-  1. Pass 1 over pages: rasterize → normalize → classify → layout → (optional) OCR. Stores per-line **stave crops** (chord_top..lyric_bottom band) in memory keyed by `(page_no, idx)` — small enough not to bloat RAM.
-  2. Pass 2 over segments: per-song align → emit → write `song.cho` + `meta.json` + stave PNGs.
-  3. Finally: write `index.json`.
-- Updated `pipeline/profiles/zpevnik-2019.yaml` regex to capture the title group: `^(\d{1,3})\.\s+(.*)$`.
-- **+40 tests** (`test_align.py:10`, `test_chord_notation.py:22`, `test_chordpro_emit.py:7`, `test_sections.py:9`, `test_staves.py:5`, `test_writer.py:12`, plus 2 new CLI integration tests).
+- **`0105080` — settings controls**
+  - New `app/src/shared/components/SongControls.tsx`: notation Cs/En
+    toggle, transpose ±, font A−/A+, staves on/off. Hits the existing
+    zustand store; `SongView` re-renders automatically.
+  - Detail screen now gates the staves block on `showStaves`.
 
-**Final test count: 109/109 green.**
+- **`1862e56` — search + persistence + header**
+  - List: diacritic-folded substring search with `matches()` from
+    `app/src/shared/search/fold.ts` (`NFKD` + `\p{M}+/gu` strip). Live
+    `filtered/total` count chip.
+  - `useSettings` wrapped in `persist` middleware. Web localStorage;
+    native silently no-ops (this commit only).
+  - `<Stack.Screen options={{ title: '<n>. <title>' }} />` on the detail
+    screen sets the browser tab + on-page chrome.
+
+- **`0dfcf4e` / `5890533` — housekeeping**
+  - Brought HANDOVER.md up to date for the pipeline-complete state.
+  - Accepted expo-cli's auto-edit of `app/.gitignore` (the
+    `# @generated expo-cli sync-...` block that ignores `expo-env.d.ts`).
+  - `git rm --cached app/expo-env.d.ts` — file says so itself.
+  - Added `/songs/_*.json` to root `.gitignore` (intermediates).
+
+- **`1c584f4` — Review server**
+  - `pipeline/zpevnik_pipeline/review/server.py` is no longer a stub:
+    - `GET  /api/songs` → refreshed index (re-reads every `meta.json`)
+    - `GET  /api/songs/{id}` → `SongDetail` (meta + chordpro + staveUrls)
+    - `PUT  /api/songs/{id}` → partial update; auto-promotes
+      `auto → flagged` when `reviewStatus` is omitted; calls
+      `write_song(force=True)` so the human can keep editing approved songs.
+    - `/songs/` static mount and `/` HTML reviewer
+  - `pipeline/zpevnik_pipeline/review/static/{index.html, style.css, app.js}`:
+    vanilla HTML/JS reviewer. Sidebar list with status badges + search;
+    detail editor with title/number/key/tempo/chordpro/status, stave PNGs
+    above the form, save button. **Two bugs found and fixed during
+    Playwright verification** — see "What Worked / Didn't".
+  - 10 new tests in `pipeline/tests/test_review_server.py` (httpx
+    `TestClient`).
+
+- **`ff01ccd` — ruff + mypy --strict clean**
+  - 22 ruff errors → 0. Per-file ignore for `B008` on `cli.py` (typer's
+    `Option(...)`/`Argument(...)` in defaults is idiomatic). `datetime.UTC`
+    instead of `datetime.timezone.utc`. Specific exception classes in
+    `pytest.raises`. `zip(strict=True)`. SIM108 ternaries in
+    `extract/normalize.py`.
+  - 10 mypy errors → 0. Mypy override for `fitz` and `pytesseract`
+    (`ignore_missing_imports = true`). `cast(ImageU8, ...)` wrappers around
+    cv2 calls (cv2 stubs return generic `ndarray`). `npt.NDArray[Any]`.
+    Typed `_write_segments` and `_ocr_token_payload`. Switched
+    `typer.Exit(str)` to `console.print(...) + Exit(code=1)`.
+  - One genuine test bug uncovered: `pytest.raises(FileNotFoundError)` in
+    `test_rasterize_missing_pdf_raises` did **not** match — PyMuPDF defines
+    its own `fitz.FileNotFoundError` that doesn't subclass the built-in.
+    Fix: import `fitz` and raise on `fitz.FileNotFoundError`.
+
+- **`c05760a` — AsyncStorage on native**
+  - Added `@react-native-async-storage/async-storage` via `expo install`.
+  - `app/src/shared/store/settings.ts` now picks storage by
+    `Platform.OS === 'web'` → localStorage; everything else → AsyncStorage.
+    Same JSON shape on both.
+
+- **`1f13e2b` — app tests**
+  - Added vitest. New `npm test` / `npm run test:watch` scripts.
+  - 28 tests, ~220 ms total: `parser.test.ts`, `transpose.test.ts`,
+    `notation.test.ts`, `fold.test.ts`.
 
 ## What Worked and What Didn't
 
 ### Worked
-- **PyMuPDF for rasterization.** Bundles its own renderer, no poppler, no ImageMagick. Self-contained venv install, fast (sub-second for a 3-page synthetic PDF at 300 DPI).
-- **Synthetic PDFs in tests.** Using `fitz.open() + page.insert_text() + page.draw_line()` lets every stage be tested end-to-end without checking in binary PDF fixtures. Tests run in ~4s total.
-- **Stream-then-assemble CLI architecture.** Pass 1 processes one page at a time (no full-page images held), only retains small per-line crops (~200×2480 px each, ~480 KB) for stave export. Pass 2 walks segments and writes per-song. Memory stays bounded even on a 240-page book.
-- **`x_left` anchoring for chord-to-lyric alignment.** This was the breakthrough: chords are typeset with their **left edge** at the column they apply to, not their center. Two failing alignment tests immediately passed when I switched (see Lessons).
-- **Pydantic `model_validate_json` for round-tripping `index.json`** through the SongIndex schema as an integration smoke check.
-- **`pytest.mark.skipif`** on OCR tests gated by `tesseract --list-langs` — keeps the suite useful on machines without Tesseract.
-- **Atomic writes via `.tmp + rename`.** Used in `manifest.py`, `writer.py`, `cli.py` `_write_*` helpers; prevents half-written files if the process is killed mid-run.
-- **Approved-songs-are-sticky invariant.** `write_song` reads any existing `meta.json` and bails out if `reviewStatus == "approved"` and `force` is False. Falls back to overwrite if the existing file is malformed (so corrupted state doesn't permanently block a re-run).
+- **Symlink for static asset serving.** `app/public/songs → ../../songs`
+  is dead-simple and Metro follows it without complaints. Means there's
+  one source of truth — edit a song via the reviewer at port 8765 and the
+  reader at port 8081 sees the change on next request.
+- **`staveCount` instead of probing.** Before adding the field, the app
+  HEAD-probed `01..40.png` to find the actual count → ~36 noisy 404s per
+  song. Now one round-trip per real asset. Required schema + pydantic +
+  CLI + TS sync, no migration pain because the synthetic songs were
+  regenerated.
+- **zustand `persist` with a `Platform.OS` switch** is the cleanest
+  cross-platform persistence pattern I've seen — same store API, same
+  JSON shape, one swap point.
+- **`webapp-testing` skill + Playwright in the pipeline venv.** Used
+  Playwright 4 times: list → detail flow, controls toggles, search +
+  persistence, reviewer save flow. Pixel screenshots delivered to the
+  user via `SendUserFile` made the visual confirmation feel concrete.
+- **vitest auto-config.** No `vitest.config.ts` needed — it picked up
+  `tsconfig.json`'s `strict` + paths and ran TS source files directly.
+- **FastAPI's `TestClient` + the existing `write_song`/`write_index`
+  helpers.** Test setup was just `_seed(songs_dir, [(meta, chordpro)])`
+  — no fixtures, no mocks, no globals. The test file is 142 lines and
+  covers 10 cases.
 
-### Didn't apply, but worth noting
-- **Tesseract glues short tokens together** when inter-word gap < ~8 spaces at 24pt. Affected the first cut of OCR tests (`"C  G"` came back as `"CG"`). Documented in `parse/ocr.py` docstring and worked around by using realistic spacing in tests. Real-world songbook chord rows have wide spacing (one chord per syllable position), so this isn't a production problem — yet. If a particular PDF places chords tightly, the recommended fix (also in docstring) is to pre-segment the chord-row crop by vertical projection before OCR.
-- **Section markers don't fire on this session's synthetic PDF.** That's because I drew `"R: H ... F"` on the chord-row y-position by mistake during the smoke test, so it OCR'd as a chord-row token rather than a lyric-row token. Section detection runs on the **lyric stream** after alignment. The logic itself is tested by 9 dedicated unit tests in `test_sections.py`.
-- **OCR quality on synthetic Czech text was rough.** PyMuPDF renders Helvetica at 14 pt → 300 DPI, and Tesseract's Czech model dropped some diacritics (`Bože` became `Bo-e`). Real songbook scans of a properly typeset PDF with proper antialiasing should fare better, but expect manual review per song.
+### Didn't work the first time
 
-### Failed approaches / bugs fixed mid-session
+1. **Saved-message flash got eaten by re-render.** First version of the
+   reviewer `onSave` did `status.textContent = 'Saved.'` then called
+   `renderDetail()`, which replaced the form (including the status span).
+   Fix: re-grab `document.getElementById('save-status')` *after* the
+   re-render and write into the new node.
 
-1. **Layout detected 0 staves on rasterized PDFs (commit `49072b2`).**
-   - Initial unit tests on numpy-only synthetic pages passed (8/8). End-to-end on a real rasterized PDF returned 0.
-   - Debug: `_horizontal_line_ys` returned 0 lines after normalize, but ~50 lines on the raw rasterized image.
-   - Root cause: `estimate_skew` was fitting a 0.25° angle to anti-aliasing noise on a straight page; that 0.25° is exactly Hough's `theta = π/720` resolution → unmeasurable but non-zero. The subsequent `deskew(0.25°)` rotated staff lines just enough that `|y2 - y1| ≤ 2` rejected them.
-   - Fix: bumped deskew noop threshold to 0.5° in `extract/normalize.py:99`, loosened the line-y tolerance to 25 px in `parse/layout.py:_horizontal_line_ys`. **Added a real-PDF integration test** in `test_layout.py::test_layout_recovers_staves_on_a_rasterized_pdf` to catch this regression class.
+2. **`auto → flagged` promotion never fired in the UI.** Form always sent
+   `reviewStatus: form.reviewStatus.value`. When the user edited a song
+   without touching the dropdown, the value was `'auto'`, the server saw
+   `update.reviewStatus is not None`, and the promotion didn't run. Fix
+   in `app.js`: only send `reviewStatus` if it differs from
+   `currentDetail.meta.reviewStatus`. That way the server's promotion
+   logic fires when the user implicitly leaves status alone.
 
-2. **First OCR tests glued tokens together.**
-   - `_render("C  G")` → Tesseract returned `["CG"]`.
-   - Tried PSM 6, 7, 11 — all same.
-   - Spacing experiment showed 2-space, 4-space → glued; 8+-space → split per token.
-   - Fix: use realistic spacing in tests (8+ chars). Documented in `parse/ocr.py` docstring.
+3. **`pytest.raises(FileNotFoundError)` didn't catch PyMuPDF's error**
+   (see ff01ccd notes above). Lesson: when a library raises an
+   exception named the same as a builtin but in its own namespace, it
+   probably *doesn't* subclass the builtin. Always check `__bases__`
+   before assuming.
 
-3. **First alignment tests put chord on wrong character.**
-   - `[C]hello` expected but `h[C]ello` produced.
-   - Root cause: was using the chord's **center x** for alignment, but typesetters anchor at the **left edge** (chord's first character sits over the lyric character it applies to).
-   - Fix: changed `_center_x(chord)` → `chord.x_left` in `parse/align.py`. Two failing tests immediately passed, plus the model is more semantically correct.
+4. **Misdirected `npm install --save-dev vitest` ran outside `app/`.**
+   The shell was in `pipeline/` from a previous `cd ... && ...`. npm
+   walked up looking for a `package.json`, found none, and created a
+   fresh one at the repo root along with `node_modules/` and
+   `package-lock.json` there. **Caught before staging.** Removed
+   manually before commit. Next time: explicit `cd app && ...` even
+   if it looks like the shell already lives there.
 
-4. **First CLI integration test for stages 11–12 looked for `001-test-song/` but got `001-song-1/`.**
-   - Root cause: the test profile used `numberingRegex: '^(\d{1,3})\.\s'` — only captures the number, no title group. `_find_first_heading` returned title=None, so the segment's title fell back to "Song 1", which slugged to "song-1".
-   - Fix: updated both the test profile and the example `zpevnik-2019.yaml` profile to the title-capturing regex `^(\d{1,3})\.\s+(.*)$`. The default in `segment.py:DEFAULT_NUMBERING_REGEX` is the same.
+### Failed approach that I reverted
+- **Initially considered stripping `expo-env.d.ts` change instead of
+  untracking the file.** Wrong — expo *will* keep regenerating that file
+  with its "should be in your git ignore" comment. The right fix is to
+  honor expo-cli's request: accept the auto-edit to `app/.gitignore` and
+  `git rm --cached` the file.
 
 ## Key Decisions Made and Why
 
-1. **PyMuPDF over pdf2image/pdfplumber for rasterization.**
-   `pdfplumber` was already declared in `pyproject.toml`, but its rasterization path needs poppler installed system-wide. PyMuPDF bundles its own renderer and ships as a pre-built wheel. Trades a 23 MB wheel for zero system deps — easy choice. `pdfplumber` is still in the deps for future text/table extraction work.
+1. **Symlink the songs tree into `app/public/`, don't bundle.**
+   Bundling per-song assets at build time would mean `expo export` has
+   to know the song corpus, which means CI has to either commit the
+   corpus or run the pipeline. Symlinking keeps the reader app a thin
+   web view over whatever `songs/` currently contains, which matches
+   the workflow: pipeline writes → reviewer edits → reader reads.
 
-2. **Stream pages, cache only per-line crops.**
-   A 240-page A4 PDF at 300 DPI is ~5.7 GB of grayscale if every normalized page is held in memory. Pass 1 processes a page, extracts the chord/lyric/stave crops (each ~200×2480 px), and discards the full page. The crops sum to ~580 MB across a typical book — fits comfortably. The alternative (write staves to a temp dir during pass 1, then move them after segmentation) was rejected as more complex with no clear benefit.
+2. **`staveCount` is required, not optional.**
+   Could have been `int | None` to keep backward compat with the
+   pre-staveCount metas, but there's no real corpus yet, so a hard
+   migration was cheap. Making it required forces every future writer
+   (incl. the reviewer's `write_song`) to fill it in.
 
-3. **Chord anchor = `x_left`, not center.**
-   Typesetting convention: chord text starts at the x-coordinate it applies to. The chord's left edge is its anchor. Center-anchoring shifts the chord by half its width to the right, which puts it over the wrong character for any chord longer than one symbol. This was discovered by failing tests in `test_align.py`.
+3. **Reviewer `PUT` always uses `write_song(force=True)`.**
+   The approved-sticky rule exists to protect humans from the pipeline,
+   not from themselves. If a human explicitly clicks Save in the
+   reviewer, they own that edit. Without `force=True`, a human couldn't
+   re-edit a song they'd previously marked approved.
 
-4. **Atomic writes everywhere.**
-   `write_manifest`, `_write_segments`, `_write_layout`, `_write_ocr`, `write_song`, `write_index` all use `path.tmp` + `Path.replace`. The pipeline can take minutes on a real book; if it's interrupted, the only artifacts on disk are either the previous run's files or the new ones — never half-written corruption.
+4. **`auto → flagged` auto-promotion when `reviewStatus` is omitted.**
+   `auto` means "pipeline output, untouched by a human". The moment a
+   human edits anything but doesn't pick a status, the song is *not*
+   auto anymore — it's been touched. So omitting `reviewStatus` in the
+   PUT body means "leave it implicit, let the server decide" → `flagged`.
+   Sending an explicit value (incl. `'auto'`) means the human really
+   does want that value.
 
-5. **`reviewStatus: approved` reads from disk, not from in-memory state.**
-   `write_song` doesn't trust the caller's claim about review status. It opens the existing `meta.json` and checks its `reviewStatus` field. This means a manual edit via the review UI (when stage 9 lands) is automatically respected on the next pipeline run.
+5. **Vanilla HTML/JS for the reviewer, not React.**
+   The reviewer is a power-user-only desktop tool. No mobile support
+   needed, no auth, no styling system needed. A single static HTML page
+   served by FastAPI's `StaticFiles` keeps the entire reviewer < 350
+   lines (HTML + CSS + JS combined). No build step, no bundler, no
+   dependency on the Expo app's frontend stack.
 
-6. **`SongMeta` validated *before* the write, not after.**
-   `write_song` accepts `meta: SongMeta` (already pydantic-validated). The CLI constructs it inline in `cli.py::run`. If construction fails (bad id pattern, missing required field, etc.), the run errors out cleanly with a pydantic message instead of producing invalid on-disk artifacts.
+6. **`Platform.OS === 'web'` switch over a feature-detection guard.**
+   `typeof localStorage` would also work, but the explicit `Platform`
+   check matches how every Expo example handles cross-platform branches,
+   and it's clearer that the intent is "different code paths per
+   platform" vs. "library happens to support both".
 
-7. **Index sort: `(number is None, number, id)`.**
-   Numbered songs first, in numeric order; unnumbered songs after, in id order. This matches what a reader scrolling through a hymnal expects (1, 2, 3, ..., N, then any back-matter pieces).
+7. **Per-file ignore for ruff's `B008` on cli.py.**
+   Typer's idiomatic API is `arg: T = typer.Option(...)` — exactly the
+   pattern `B008` flags. The modern alternative,
+   `Annotated[T, typer.Option(...)]`, would be a 360-line refactor with
+   no behavior change. Ignoring `B008` on `cli.py` is the cheapest
+   correct answer.
 
-8. **Stave PNG numbering is per-song, page-major.**
-   File names are `01.png`, `02.png`, ... within each `songs/<id>-<slug>/staves/`. Alphabetical sort gives reading order. The numbering resets between songs because that's the only stable ordering for a future when songs are added/removed/renumbered.
-
-9. **Chord whitelist in OCR is permissive on letters, conservative elsewhere.**
-   Includes `ABCDEFGH` (Czech `H` retained!) but excludes common false-positive letters like `Q`, `R`, `S`, `T`, `V`, `W`, `X`, `Y`, `Z`. Conservative enough to keep Tesseract from hallucinating prose, permissive enough that `Cmaj7sus4` still works. The Czech notation translation is a separate pass in stage 7 — OCR never has to know about it.
-
-10. **Section markers process the *aligned* lines (after stage 6), not the raw OCR.**
-    By the time `apply_section_markers` runs, chord brackets have already been inserted into the lyric stream. The regex tolerates leading chord brackets via the `_LEADING_CHORDS` named group, so `[C]1. Lyric` is correctly recognized as a verse-1 marker and the `[C]` is preserved on the line that follows the `{start_of_verse: 1}` directive.
-
-11. **Stage 9 (key/tempo inference) intentionally skipped.**
-    Was never on the spec's checklist. `meta.key` and `meta.tempo` remain `null` in emitted metas. The reader app and review UI can let humans set them after the fact.
+8. **HANDOVER.md is updated in its own commit (`0dfcf4e`), not as part
+   of the work it documents.**
+   Otherwise docs and code lag each other and lying-about-yourself docs
+   become normal. Each session ends with a documentation pass that's
+   honest about what landed.
 
 ## Lessons Learned & Gotchas
 
-- **`estimate_skew` false-positives at 0.25°.** Hough resolution is `π/720 = 0.25°`. Any "skew" below 0.5° is anti-aliasing noise and must not trigger a rotation. The threshold in `deskew()` is now 0.5°; do not lower it without first widening `_horizontal_line_ys`'s `max_dy` tolerance to compensate.
-- **Tesseract glues short capital-letter tokens** when gap < 1× cap height. Test fixtures need wide spacing (≥ 8 chars at typical font sizes). Documented in `parse/ocr.py`.
-- **PyMuPDF's `swigvarlink` DeprecationWarning** prints during every test run. Harmless. Not worth filtering.
-- **`opencv-python-headless` vs `opencv-python`.** Pipeline `pyproject.toml` still declares `opencv-python>=4.10`; the venv has `opencv-python-headless` from the prior session. Both expose `cv2` with identical APIs we use. If you ever run `pip install -e .` to sync, you'll end up with both — that's fine, but ideally pick one.
-- **Chord anchor is `x_left`, not center.** If you find yourself debugging "chord lands one char too far right", check `parse/align.py` hasn't reverted to centers.
-- **The CLI's `force` flag must propagate to `write_song`.** It's currently wired correctly (`write_song(..., force=force)`), but it's easy to drop on a refactor — would silently break the "re-run my approved songs" use case.
-- **`SongMeta.id` regex requires 3+ digits.** Fallback for unnumbered segments uses `segment_index:03d` (e.g. `"001"`). If you ever have 1000+ songs in a book, the zero-pad needs to widen — but the regex `^[0-9]{3,}$` allows that.
-- **`SongMeta.slug` regex forbids leading/trailing dashes and double dashes.** `slugify("---") = "song"` falls back via the `fallback` parameter to avoid producing an invalid empty slug.
-- **`tesseract-lang` is 685 MB.** Worth knowing if you ever clean Homebrew caches or are working on a small disk.
-- **The `from .output.writer import _read_existing_meta` import in `cli.py` is intentionally local** to avoid promoting a private helper into the module-level surface. If we surface it as public later, drop the underscore and move the import to the top.
-- **Existing `.git/` author identity is still `Ondrej Maxa <ondrej.maxa@MacBook-Pro-3.local>`.** Every commit emits a warning. Set `git config user.email "ondrej.maxa@shipmonk.com"` before pushing anywhere public.
-- **Still no source PDF in `~/Downloads/`.** All four commits this session are validated against synthetic PDFs only.
+- **PyMuPDF custom exceptions.** `fitz.FileNotFoundError`,
+  `fitz.EmptyFileError`, etc. are siblings of the built-ins, not
+  subclasses. Always import and use the `fitz.*` version when testing.
+- **cv2 type stubs return generic `ndarray`, not the dtype-parameterized
+  one.** Every call site that wants `ImageU8` needs `cast(ImageU8, ...)`.
+  Pattern is consistent across `normalize.py`. Don't bother with `# type:
+  ignore` — the cast is more honest.
+- **zustand persist needs a `partialize` if the store has functions on
+  it.** Without it, the setters serialize to JSON as `null` and the
+  rehydrated store crashes on the first call. Listed each persisted
+  field explicitly in `partialize`.
+- **Metro serves `app/public/*` at root URL.** This is the Expo SDK 50+
+  static-assets behavior — wasn't obvious, but is documented under
+  "Static Files" in the Expo Router docs.
+- **Don't run `npm install` without first verifying cwd.** See the
+  misdirected install above. If you see a stray `package.json` at the
+  repo root, that's why.
+- **`Image.getSize` not needed when aspect ratio is roughly constant.**
+  Stave crops are always ~2480 × ~200 → `aspectRatio: 12` in the
+  StyleSheet is within a couple pixels of correct.
+- **Pipeline `songs_dir` defaults to `Path("../songs")`** in both `run`
+  and `review` commands, which works when invoked from `pipeline/`. From
+  the repo root use `--songs ./songs`. Annoying but consistent.
+- **Tesseract diacritic loss on synthetic Helvetica PDFs.** PyMuPDF
+  substitutes `·` for `ů`/`ř` because Helvetica doesn't have them; OCR
+  then reads `·`. Real songbook scans should fare much better. Song 2's
+  title in the current test set (`"Hospodin je m·j pastý·"`) is a useful
+  flagged-for-review reminder of how OCR can degrade.
+- **The dev server hot-reloads CSS/JS changes but Expo Router can be
+  flaky on type-only changes** — when in doubt, kill the metro process
+  and `npm run web` again.
+- **Memory file `feedback_autonomy.md` was added this session.** User
+  said "just always continue, dont ask me" — saved as feedback. Don't
+  end turns with "want me to continue?" choice prompts.
 
 ## Current State
 
-**Working right now:**
-- `cd pipeline && PYTHONPATH=. .venv/bin/python -m pytest tests/` → **109 passed in ~4s.**
-- Full CLI run on a synthetic Czech PDF produces:
-  ```
-  songs/
-    _manifest.json
-    _segments.json
-    _layout.json
-    _ocr.json
-    index.json
-    001-pana-chvalit-budu/
-      song.cho
-      meta.json
-      staves/
-        01.png
-        02.png
-        03.png
-  ```
-- Czech `H` chord correctly translated to canonical English `B` in `song.cho`.
-- Czech title `"Pána chválit budu"` slugged to `pana-chvalit-budu` via NFKD diacritic folding.
-- `--skip-ocr` flag works end-to-end (manifest + segments + layout written; OCR / per-song / index skipped).
-- `--force` flag flows through to `write_song` and overrides the approved-sticky rule.
+**Working right now (verified by tests + Playwright):**
 
-**Partially implemented / known limitations:**
-- **OCR quality on synthetic PDFs is rough.** Czech diacritics partially dropped (`Bože` → `Bo-e`). Expect better on real songbook scans, but plan for human review.
-- **Section markers only fire when the marker is on the *lyric* row.** A `R:` printed on the chord row will be OCR'd as a chord-row token, not a lyric-row token, and won't trigger `{start_of_chorus}`.
-- **Stage 9 (key/tempo inference) not implemented.** `meta.key` and `meta.tempo` are always `null`. Spec doesn't require them at pipeline time.
-- **`separator` segmentation strategy raises `NotImplementedError`.** Will need design + a sample PDF to implement.
-- **`pipeline/zpevnik_pipeline/review/server.py` is still a stub** (`/health` works; CRUD endpoints are a `TODO`).
-- **`app/node_modules/` doesn't exist.** No `npm install` has been run. The app still renders placeholders.
+- **Pipeline**
+  - `cd pipeline && PYTHONPATH=. .venv/bin/python -m pytest tests/` →
+    **119 passed in ~3s**.
+  - `.venv/bin/ruff check .` → clean.
+  - `.venv/bin/mypy zpevnik_pipeline tests` → clean (40 source files).
+- **Reader app**
+  - `cd app && npx expo start --web` → http://localhost:8081/
+  - Loads `/songs/index.json`, lists songs with search filter, opens
+    detail at `/song/<id>`, renders staves + ChordPro + chord-aware
+    transpose/notation.
+  - Settings persist across page reload (localStorage on web,
+    AsyncStorage on native).
+  - `npm test` → 28 tests passing.
+  - `npx tsc --noEmit` → clean.
+- **Reviewer**
+  - `PYTHONPATH=pipeline pipeline/.venv/bin/python -m zpevnik_pipeline.cli review --songs ./songs`
+    → http://127.0.0.1:8765/ (default port `8765`)
+  - Sidebar list with status badges + search; detail editor with
+    title/number/key/tempo/chordpro/status; stave PNG strip; save
+    persists + auto-promotes `auto → flagged`; reload button refetches.
 
-**No temporary hacks in code.** No `xfail`, no `skip` other than the Tesseract gates (which are intentional and document themselves via the `reason=` string).
+**Known limitations (documented, not bugs):**
+
+- **OCR quality on synthetic PDFs is rough.** Czech `ů`/`ř` lost on
+  Helvetica; chord-row whitelist matches stray letters in lyrics like
+  `isi(i`. Both will improve dramatically on real scans.
+- **Renaming a song in the reviewer doesn't move the folder.** The
+  `slug` field isn't editable via PUT; you'd need a slug-aware folder
+  rename + `git mv`. Spec deferred this.
+- **Reviewer is local-only and unauthenticated.** Fine for the intended
+  workflow; would need auth + CORS if ever served remotely.
+- **No SongView component tests yet** (UI rendering). Only the pure
+  helper modules have unit tests. Component testing would need
+  `@testing-library/react-native` + jsdom.
+- **`separator` segmentation strategy still raises
+  `NotImplementedError`.** Same as prior session.
+- **Stage 9 (key/tempo inference) intentionally skipped.** Now also
+  partially addressed by the reviewer's editable Key / Tempo fields.
+
+**No temporary hacks in committed code.**
+- `feedback_autonomy.md` is a real preference, not a workaround.
+- Pipeline intermediates (`songs/_*.json`) gitignored — that's by
+  design, not a hack.
 
 ## Clear Next Steps
 
 In rough priority order:
 
-1. **Get a real source PDF from the user.** Every assumption in stages 4–7 (band heights, OCR quality, regex calibration, section marker style) needs verification against an actual songbook. Ask explicitly or check `~/Downloads/` for any Czech `.pdf`.
+1. **Get a real source PDF from the user.** Still the highest-value
+   thing — unlocks OCR tuning, profile calibration, real corpus testing.
+   Check `~/Downloads/` for any Czech `.pdf` or ask explicitly.
 
-2. **App: `npm install` and load real `index.json`.** The pipeline-produced data shape is exactly what the app's TS types (`app/src/shared/types/song.ts`) already expect. Plumbing should be:
-   - `npm install` (will likely hit RN/Expo SDK 52 version drift — verify against current Expo docs)
-   - `app/app/index.tsx` — fetch `../index.json` (Metro bundling or `expo-asset`), render `SongList`
-   - `app/app/song/[id].tsx` — fetch `../songs/<id>-<slug>/song.cho` + `meta.json`, replace the `PLACEHOLDER` constant
-   - `app/src/shared/store/settings.ts` — wire `expo-secure-store` or AsyncStorage persistence in `_layout.tsx`
+2. **SongView component tests.** Add `@testing-library/react-native` +
+   jsdom to vitest and assert that:
+   - chords render above the right lyric character;
+   - chorus lines get the chorus styling;
+   - transpose=2 transforms `[C]` to `[D]` in the rendered tree;
+   - notation=cs renders `B` as `H`.
+   - Lowest-friction approach: render `<SongView song={parseChordPro(fixture)} />`
+     and assert on the resulting view tree.
 
-3. **Pipeline review UI (FastAPI in `review/server.py`).**
-   - `GET /songs` → return `index.json`
-   - `GET /songs/{id}` → return `meta.json` + base64 `staves/*.png` + ChordPro
-   - `PUT /songs/{id}` → write a corrected `song.cho` / `meta.json` (and bump `reviewStatus` → `flagged` or `approved`)
-   - Tiny static HTML/JS frontend in `review/static/` once the JSON endpoints work.
+3. **GitHub Actions CI.** No remote yet, but a `.github/workflows/ci.yml`
+   running `ruff check`, `mypy zpevnik_pipeline tests`, `pytest`,
+   `npm test`, `npx tsc --noEmit` would catch regressions the moment a
+   remote is set up. Bonus: pin Tesseract install on Ubuntu runner.
 
-4. **OCR quality tuning** against a real PDF. Likely candidates:
-   - Per-token x-projection pre-segmentation of the chord row to handle tight chord spacing.
-   - PSM 8 ("single word") on per-token sub-images instead of PSM 7 on the whole row.
-   - Confidence thresholding — drop tokens with `confidence < 30` and surface them in `reviewStatus: flagged`.
+4. **OCR quality tuning** against a real PDF. Candidates still as the
+   prior handover described: per-token x-projection on the chord row,
+   PSM 8 on per-token crops, confidence thresholding that surfaces
+   weak tokens via `reviewStatus: flagged` (the reviewer can show those
+   automatically now).
 
-5. **Section markers on chord-row prefixes.** If the songbook prints `R:` on the chord row rather than the lyric row, extend `apply_section_markers` to also look at the chord-row OCR stream. Needs a real PDF to design against.
+5. **Folder-rename support on slug change.** Add a `POST /api/songs/{id}/rename`
+   that atomically renames `<id>-<old>/` → `<id>-<new>/` and rewrites
+   the index. Probably needs a `tmp` move + replace dance.
 
-6. **Stage 9 (key/tempo inference)** when a clear approach emerges — probably easier to leave manual via the review UI.
+6. **Reviewer enhancements that aren't blocked:**
+   - Diff view between current `song.cho` and a freshly-OCRed version
+     (would need a "re-OCR this song" button calling back into the
+     pipeline).
+   - Stave image zoom on click.
+   - Keyboard shortcuts (j/k navigation, ⌘S to save).
 
-7. **Calibrate `chordRowHeightPx` / `lyricRowHeightPx`** in the example profile from a sample real page.
+7. **Calibrate `chordRowHeightPx` / `lyricRowHeightPx`** in the example
+   profile from a real page (gated on real PDF).
 
-8. **`separator` segmentation strategy** if any songbook uses it.
+8. **`separator` segmentation strategy** (gated on real PDF).
 
-9. **Bench the `--force` rerun path** on a real corpus — make sure approved-stickiness genuinely holds across edits.
+9. **Set git author identity.** `git config user.email
+   "ondrej.maxa@shipmonk.com"` then optionally
+   `git commit --amend --reset-author` on the most recent. Per safety
+   protocol, won't do this without an explicit ask. Untouched since
+   session start.
 
-10. **CI**: `pyproject.toml` declares `ruff` and `mypy --strict` but they've never been run in this codebase. Worth at least a one-shot pass to fix anything that surfaces.
-
-11. **Set git author identity** before pushing (`git config user.email "ondrej.maxa@shipmonk.com"`). No remote configured yet.
+10. **Decide on `songs/` tracking.** Currently untracked; intermediates
+    (`_*.json`) are gitignored, per-song dirs and `index.json` are
+    eligible to be tracked. When a real PDF lands and approved songs
+    start accumulating, the call gets easier.
 
 **Dependencies / blockers:**
-- Steps 1, 4, 5, 7, 9 all need a real PDF.
-- Step 2 needs `npm install` to succeed.
-- Step 3 needs `pip install -e '.[review]'` to bring in FastAPI + uvicorn.
+- Steps 1, 4, 7, 8 all need a real PDF.
+- Step 3 needs a GitHub remote.
 
 ## Important Files Map
 
 ```
 /Users/ondrej.maxa/Projects/zpevnik/
-├── README.md                       repo overview
-├── zpevnik-spec.md                 planning spec (mirror of ~/Downloads/zpevnik-spec.md)
-├── HANDOVER.md                     this file
-├── .gitignore
+├── HANDOVER.md                              this file
+├── README.md
+├── zpevnik-spec.md
+├── .gitignore                               ← added /songs/_*.json this session
 │
-├── schema/                         ★ canonical contract — JSON Schemas
-│   ├── meta.schema.json
-│   ├── index.schema.json
-│   └── profile.schema.json         ← added chordRowHeightPx / lyricRowHeightPx this session
+├── schema/
+│   └── meta.schema.json                     ← added staveCount this session
 │
 ├── pipeline/
-│   ├── pyproject.toml              ★ deps; added pymupdf>=1.24 this session
-│   ├── profiles/
-│   │   └── zpevnik-2019.yaml       ← regex updated this session to capture title group
-│   ├── tests/                      ★ 109 passing tests
-│   │   ├── test_profile.py         3
-│   │   ├── test_rasterize.py       7
-│   │   ├── test_normalize.py       5
-│   │   ├── test_classify.py        6
-│   │   ├── test_segment.py         7
-│   │   ├── test_layout.py          9   (incl. real-PDF e2e guard)
-│   │   ├── test_ocr.py             4   (Tesseract-gated)
-│   │   ├── test_align.py           10
-│   │   ├── test_chord_notation.py  22
-│   │   ├── test_chordpro_emit.py   7
-│   │   ├── test_sections.py        9
-│   │   ├── test_staves.py          5
-│   │   ├── test_writer.py          12
-│   │   └── test_cli_run.py         5   (2 Tesseract-gated)
-│   ├── .venv/                      ← pymupdf, pytesseract, Pillow added this session
+│   ├── pyproject.toml                       ← ruff per-file-ignore + mypy override
+│   ├── tests/
+│   │   ├── test_review_server.py            ★ NEW — 10 httpx tests
+│   │   ├── test_normalize.py                ← typed via ImageU8 + cast helpers
+│   │   ├── test_profile.py                  ← pytest.raises(ValidationError)
+│   │   ├── test_rasterize.py                ← uses fitz.FileNotFoundError
+│   │   ├── test_staves.py                   ← zip(strict=True)
+│   │   └── test_writer.py                   ← _meta() typed fixture + staveCount
 │   └── zpevnik_pipeline/
-│       ├── cli.py                  ★ full pipeline 0–12 wired; --skip-ocr / --force / --manifest flags
-│       ├── config.py
-│       ├── manifest.py             ★ NEW — RunManifest + atomic write/read
-│       ├── models.py               ← ProfileLayout gained chordRowHeightPx / lyricRowHeightPx
+│       ├── cli.py                           ← types tightened; typer.Exit(code=1)
+│       ├── models.py                        ← SongMeta.staveCount: int = Field(ge=0)
 │       ├── extract/
-│       │   ├── rasterize.py        ★ NEW — PyMuPDF → RasterizedPage records
-│       │   ├── normalize.py        ← deskew noop threshold bumped to 0.5°
-│       │   ├── classify.py
-│       │   └── hashing.py
-│       ├── parse/
-│       │   ├── segment.py          ★ NEW — one-per-page / numbered-heading
-│       │   ├── layout.py           ★ NEW — staff-band clustering + chord/lyric carving
-│       │   ├── ocr.py              ★ NEW — Tesseract chord/lyric row OCR
-│       │   ├── align.py            ★ NEW — chord → lyric x-anchor alignment
-│       │   └── chord_notation.py   ★ NEW — Czech → English (H→B, B→Bb)
+│       │   ├── normalize.py                 ← cast(ImageU8, ...) on cv2 returns
+│       │   └── hashing.py                   ← npt.NDArray[Any]
 │       ├── output/
-│       │   ├── chordpro.py         ★ NEW — emit_song()
-│       │   ├── sections.py         ★ NEW — verse/chorus directives
-│       │   ├── slug.py             ★ NEW — Czech-aware ASCII slugify
-│       │   ├── staves.py           ★ NEW — write_stave_pngs()
-│       │   └── writer.py           ★ NEW — write_song(), write_index(), approved-sticky
+│       │   └── writer.py                    ← used unchanged by reviewer
 │       └── review/
 │           ├── __init__.py
-│           └── server.py           ← STILL A STUB; only /health works
+│           ├── server.py                    ★ rewritten — full API
+│           └── static/                      ★ NEW
+│               ├── index.html
+│               ├── style.css
+│               └── app.js
 │
-├── app/                            ← UNCHANGED this session (still placeholder UI)
-├── songs/                          ← empty in the repo; populated by `zpevnik run`
-└── audio/                          ← empty (v2)
+├── app/
+│   ├── package.json                         ← adds AsyncStorage, vitest, scripts
+│   ├── public/
+│   │   └── songs                            ★ NEW symlink → ../../songs
+│   ├── app/
+│   │   ├── _layout.tsx                      ← unchanged
+│   │   ├── index.tsx                        ← search-enabled real-data list
+│   │   └── song/[id].tsx                    ← real-data detail + controls + staves + header
+│   └── src/shared/
+│       ├── components/
+│       │   ├── SongControls.tsx             ★ NEW — settings bar
+│       │   └── SongView.tsx                 ← unchanged
+│       ├── chordpro/
+│       │   ├── parser.ts                    + parser.test.ts ★ NEW
+│       │   ├── transpose.ts                 + transpose.test.ts ★ NEW
+│       │   └── notation.ts                  + notation.test.ts ★ NEW
+│       ├── search/
+│       │   ├── fold.ts                      ★ NEW
+│       │   └── fold.test.ts                 ★ NEW
+│       ├── store/
+│       │   └── settings.ts                  ← zustand persist + Platform-aware storage
+│       └── types/
+│           └── song.ts                      ← added staveCount: number
+│
+├── songs/                                   untracked; populated by zpevnik run
+└── audio/                                   empty
 ```
 
 ★ = high-leverage files for the next session.
 
-**Git status:** clean working tree on `main`, 6 commits total, no remote.
+**Git status (end of session):** clean working tree on `main` except
+`songs/` (untracked, intentional). 15 commits total, no remote.
 
-```
-c8174ee Pipeline stages 6-12: alignment, ChordPro emission, write-out
-48cde48 Pipeline stage 5: chord/lyric row OCR via Tesseract
-49072b2 Pipeline stage 4: per-page layout detection
-142b8d7 Pipeline stages 0+3: rasterize, manifest, segmentation
-3f68573 Phase 0/1: schemas, pipeline scaffold, app scaffold, normalize + classify
-0ee514e Phase 0: monorepo skeleton
-```
+**Memory updates:**
+- `~/.claude/projects/.../memory/feedback_autonomy.md` ★ NEW — user
+  asked me not to end turns with "want me to continue?" prompts.
+- `MEMORY.md` indexes the new file.
 
-**Reproduction commands** (the next Claude can run these as-is):
+**Reproduction commands** (next session can run these as-is):
 
 ```bash
-# Full test suite
+# Pipeline tests + lint + types
 cd /Users/ondrej.maxa/Projects/zpevnik/pipeline
 PYTHONPATH=. .venv/bin/python -m pytest tests/
-# expect: 109 passed in ~4s
+.venv/bin/ruff check .
+.venv/bin/mypy zpevnik_pipeline tests
+# expect: 119 passed; ruff clean; mypy clean
 
-# Validate the example profile
-PYTHONPATH=. .venv/bin/python -m zpevnik_pipeline.cli profile validate profiles/zpevnik-2019.yaml
-# expect: OK — profile zpevnik-2019 is valid.
+# App tests + types
+cd /Users/ondrej.maxa/Projects/zpevnik/app
+npm test
+npx tsc --noEmit
+# expect: 28 passed; tsc clean
 
-# End-to-end smoke test on a synthetic PDF
-mkdir -p /tmp/zpev-smoke && cd /tmp/zpev-smoke
-.venv/bin/python -c "
-import fitz
-doc = fitz.open()
-page = doc.new_page(width=595, height=842)
-page.insert_text((72, 60), '1. Pána chválit budu', fontsize=18)
-page.insert_text((72, 180), 'C        G        Am        F', fontsize=14)
-for i in range(5):
-    page.draw_line((60, 200+i*12), (535, 200+i*12), color=(0,0,0), width=1.2)
-page.insert_text((72, 290), 'Bože náš a Pane', fontsize=14)
-doc.save('demo.pdf')
-doc.close()
-"
-cp /Users/ondrej.maxa/Projects/zpevnik/pipeline/profiles/zpevnik-2019.yaml ./profile.yaml
-PYTHONPATH=/Users/ondrej.maxa/Projects/zpevnik/pipeline \
-  /Users/ondrej.maxa/Projects/zpevnik/pipeline/.venv/bin/python \
-  -m zpevnik_pipeline.cli run demo.pdf --profile profile.yaml --songs ./songs
-# expect: Wrote manifest / segments / layout / OCR / 1 song / index
-ls songs/001-pana-chvalit-budu/
-# expect: song.cho meta.json staves/
+# Reader app
+cd /Users/ondrej.maxa/Projects/zpevnik/app
+npx expo start --web --port 8081
+# → http://localhost:8081/
+
+# Reviewer
+cd /Users/ondrej.maxa/Projects/zpevnik
+PYTHONPATH=pipeline pipeline/.venv/bin/python -m zpevnik_pipeline.cli review --songs ./songs
+# → http://127.0.0.1:8765/
+
+# Regenerate synthetic songs (3-song Czech PDF at /tmp/zpev-multi.pdf)
+PYTHONPATH=pipeline pipeline/.venv/bin/python -m zpevnik_pipeline.cli \
+  run /tmp/zpev-multi.pdf \
+  --profile pipeline/profiles/zpevnik-2019.yaml \
+  --songs ./songs --force
 ```
-
-**Project memory** still lives at `~/.claude/projects/-Users-ondrej-maxa-Projects-zpevnik/memory/project_zpevnik.md`. The high-level overview there is still accurate; only the "Phase 1 partially done" framing is now obsolete (pipeline is complete pending a real PDF).
