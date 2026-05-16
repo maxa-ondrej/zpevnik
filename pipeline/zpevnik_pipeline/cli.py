@@ -228,6 +228,7 @@ def run(
             sourcePdf=str(pdf.name),
             sourcePages=list(seg.pages),
             hasStaffImages=has_staves,
+            staveCount=len(stave_crops),
             reviewStatus="auto",
         )
 

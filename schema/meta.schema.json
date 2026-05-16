@@ -12,6 +12,7 @@
     "sourcePdf",
     "sourcePages",
     "hasStaffImages",
+    "staveCount",
     "reviewStatus"
   ],
   "additionalProperties": false,
@@ -64,6 +65,11 @@
       "description": "1-indexed page numbers spanned by this song."
     },
     "hasStaffImages": { "type": "boolean" },
+    "staveCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of stave PNGs at songs/<id>-<slug>/staves/ (01.png .. NN.png)."
+    },
     "reviewStatus": {
       "type": "string",
       "enum": ["auto", "flagged", "approved"]

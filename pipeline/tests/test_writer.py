@@ -42,6 +42,7 @@ def _meta(**overrides) -> SongMeta:
         sourcePdf="x.pdf",
         sourcePages=[1],
         hasStaffImages=False,
+        staveCount=0,
         reviewStatus="auto",
     )
     base.update(overrides)

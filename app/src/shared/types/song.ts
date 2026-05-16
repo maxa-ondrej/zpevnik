@@ -18,6 +18,7 @@ export interface SongMeta {
   sourcePdf: string;
   sourcePages: number[];
   hasStaffImages: boolean;
+  staveCount: number;
   reviewStatus: ReviewStatus;
 }
 

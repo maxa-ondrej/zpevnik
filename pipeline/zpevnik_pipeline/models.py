@@ -33,6 +33,7 @@ class SongMeta(BaseModel):
     sourcePdf: str
     sourcePages: list[int] = Field(min_length=1)
     hasStaffImages: bool
+    staveCount: int = Field(ge=0)
     reviewStatus: ReviewStatus
 
 
