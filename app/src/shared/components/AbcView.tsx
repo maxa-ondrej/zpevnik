@@ -14,9 +14,14 @@ interface Props {
   abc: string;
   /** Semitones to shift the rendered notation. Matches the user's transpose setting. */
   transpose?: number;
+  /** Lyric font size in px. Drives abcjs's `scale` so the staff grows with the text. */
+  fontSize?: number;
 }
 
-export function AbcView({ abc, transpose = 0 }: Props) {
+const BASE_FONT_SIZE = 16;
+const BASE_SCALE = 1.25;
+
+export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props) {
   const ref = useRef<View>(null);
 
   useEffect(() => {
@@ -24,20 +29,20 @@ export function AbcView({ abc, transpose = 0 }: Props) {
     const el = ref.current as unknown as HTMLElement | null;
     if (!el) return;
 
+    const scale = BASE_SCALE * (fontSize / BASE_FONT_SIZE);
+
     abcjs.renderAbc(el, abc, {
       responsive: 'resize',
       staffwidth: 900,
       visualTranspose: transpose,
-      // Roomy vertical layout — the page will eventually autoscroll, so we
-      // prefer breathing room over a compact summary.
-      scale: 1.25,
+      scale,
       paddingleft: 0,
       paddingright: 0,
       paddingtop: 0,
       paddingbottom: 12,
       lineThickness: 0.2,
     });
-  }, [abc, transpose]);
+  }, [abc, transpose, fontSize]);
 
   return <View ref={ref} style={{ marginBottom: 24 }} />;
 }
