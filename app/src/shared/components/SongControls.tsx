@@ -7,18 +7,31 @@ const FONT_MAX = 32;
 const FONT_STEP = 2;
 const TRANSPOSE_MIN = -11;
 const TRANSPOSE_MAX = 11;
+const SCROLL_MIN = 0;
+const SCROLL_MAX = 200;
+const SCROLL_STEP = 10;
 
-export function SongControls() {
+interface SongControlsProps {
+  /** When provided, renders the autoscroll play/pause + speed stepper group. */
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
+}
+
+export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}) {
   const {
     notation,
     transpose,
     fontSize,
     showStaves,
+    autoScrollSpeed,
     setNotation,
     setTranspose,
     setFontSize,
     setShowStaves,
+    setAutoScrollSpeed,
   } = useSettings();
+
+  const showAutoScroll = onTogglePlay !== undefined;
 
   return (
     <View style={styles.bar}>
@@ -54,6 +67,26 @@ export function SongControls() {
       <Group label="Staves">
         <Toggle active={showStaves} onPress={() => setShowStaves(!showStaves)} label={showStaves ? 'On' : 'Off'} />
       </Group>
+      {showAutoScroll && (
+        <Group label="Autoscroll">
+          <Toggle
+            active={isPlaying ?? false}
+            onPress={onTogglePlay!}
+            label={isPlaying ? '⏸' : '▶'}
+          />
+          <Step
+            onPress={() => setAutoScrollSpeed(Math.max(SCROLL_MIN, autoScrollSpeed - SCROLL_STEP))}
+            disabled={autoScrollSpeed <= SCROLL_MIN}
+            label="−"
+          />
+          <Text style={styles.value}>{autoScrollSpeed}</Text>
+          <Step
+            onPress={() => setAutoScrollSpeed(Math.min(SCROLL_MAX, autoScrollSpeed + SCROLL_STEP))}
+            disabled={autoScrollSpeed >= SCROLL_MAX}
+            label="+"
+          />
+        </Group>
+      )}
     </View>
   );
 }

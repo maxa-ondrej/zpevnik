@@ -54,7 +54,7 @@ export const useSettings = create<SettingsState>()(
       lineSpacing: 1.4,
       darkMode: 'system',
       showStaves: true,
-      autoScrollSpeed: 1,
+      autoScrollSpeed: 30,
       setNotation: (notation) => set({ notation }),
       setTranspose: (transpose) => set({ transpose }),
       setCapo: (capo) => set({ capo }),

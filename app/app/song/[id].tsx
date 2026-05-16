@@ -1,6 +1,15 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { AbcView } from '../../src/shared/components/AbcView';
 import { SongControls } from '../../src/shared/components/SongControls';
@@ -44,9 +53,102 @@ export default function SongScreen() {
   const showStaves = useSettings((s) => s.showStaves);
   const transpose = useSettings((s) => s.transpose);
   const fontSize = useSettings((s) => s.fontSize);
+  const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
+
+  // --- Autoscroll machinery ----------------------------------------------
+  const [isPlaying, setIsPlaying] = useState(false);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const currentYRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const contentHeightRef = useRef(0);
+  const layoutHeightRef = useRef(0);
+  // Used to detect manual scroll while autoscroll is running: onScroll-reported y
+  // that differs from our driven position by more than a small slack means the
+  // user dragged — pause and adopt the new position.
+  const expectedYRef = useRef(0);
+
+  // Speed is read every frame; mirror it into a ref to avoid restarting the
+  // rAF loop on every slider tick.
+  const speedRef = useRef(autoScrollSpeed);
+  useEffect(() => {
+    speedRef.current = autoScrollSpeed;
+  }, [autoScrollSpeed]);
+
+  const stopLoop = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
+    if (!isPlaying) {
+      stopLoop();
+      return;
+    }
+    lastTimeRef.current = 0;
+    const tick = (now: number) => {
+      if (lastTimeRef.current === 0) {
+        lastTimeRef.current = now;
+      }
+      const dt = now - lastTimeRef.current;
+      lastTimeRef.current = now;
+      const speed = speedRef.current;
+      const next = currentYRef.current + (dt * speed) / 1000;
+
+      const maxY = Math.max(0, contentHeightRef.current - layoutHeightRef.current);
+      const clamped = Math.min(next, maxY);
+      currentYRef.current = clamped;
+      expectedYRef.current = clamped;
+      scrollRef.current?.scrollTo({ y: clamped, animated: false });
+
+      // End-of-content stop
+      if (
+        contentHeightRef.current > 0 &&
+        layoutHeightRef.current > 0 &&
+        clamped + layoutHeightRef.current >= contentHeightRef.current - 1
+      ) {
+        rafRef.current = null;
+        setIsPlaying(false);
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return stopLoop;
+  }, [isPlaying, stopLoop]);
+
+  // Unmount safety net
+  useEffect(() => stopLoop, [stopLoop]);
+
+  const togglePlay = useCallback(() => {
+    setIsPlaying((p) => !p);
+  }, []);
+
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    contentHeightRef.current = contentSize.height;
+    layoutHeightRef.current = layoutMeasurement.height;
+    const y = contentOffset.y;
+    if (rafRef.current !== null && Math.abs(y - expectedYRef.current) > 6) {
+      // Manual scroll override while playing.
+      setIsPlaying(false);
+      currentYRef.current = y;
+    } else if (rafRef.current === null) {
+      currentYRef.current = y;
+    }
+  }, []);
+
+  // --- Song loading -------------------------------------------------------
+  useEffect(() => {
     let cancelled = false;
+    setIsPlaying(false);
+    currentYRef.current = 0;
+    expectedYRef.current = 0;
+    contentHeightRef.current = 0;
+    layoutHeightRef.current = 0;
     (async () => {
       try {
         const indexRes = await fetch('/songs/index.json');
@@ -97,10 +199,15 @@ export default function SongScreen() {
     : state.meta.title;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={styles.container}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
       <Stack.Screen options={{ title: headerTitle }} />
       <Text style={styles.title}>{state.meta.title}</Text>
-      <SongControls />
+      <SongControls isPlaying={isPlaying} onTogglePlay={togglePlay} />
       {showStaves && state.abc !== null && (
         <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
       )}
