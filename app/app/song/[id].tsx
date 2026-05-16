@@ -2,8 +2,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
+import { useSettings } from '../../src/shared/store/settings';
 import type { SongIndex, SongMeta } from '../../src/shared/types/song';
 
 type State =
@@ -21,6 +23,7 @@ function staveUrisFor(dir: string, count: number): string[] {
 export default function SongScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const showStaves = useSettings((s) => s.showStaves);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +71,8 @@ export default function SongScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{state.meta.title}</Text>
-      {state.staveUris.length > 0 && (
+      <SongControls />
+      {showStaves && state.staveUris.length > 0 && (
         <View style={styles.staves}>
           {state.staveUris.map((uri) => (
             <Image
