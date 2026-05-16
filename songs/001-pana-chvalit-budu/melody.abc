@@ -4,11 +4,11 @@ M:4/4
 L:1/4
 Q:1/4=84
 K:C
-%%staves [V1]
-V:V1 clef=treble
-"^Verse" "C" C E G c | "G" B G D2 | "Am" A c B A | "F" F2 G2 |
+"^Verse 1" "C" C E G c | "G" B G D2 | "Am" A c B A | "F" F2 G2 |
 w: Pá-na chvá-lit bu-du | na-vě- ky, | za je-ho lás-ku k | nám ma-lým.
+"^Verse 2" "C" C E G c | "G" B G D2 | "Am" A c B A | "F" F2 G2 |
 w: Ská-ly se chvě-jí, | hvěz-dy zná, | on je můj Pán a | Krá-l.
+"^Verse 3" "C" C E G c | "G" B G D2 | "Am" A c B A | "F" F2 G2 |
 w: Když je mi úz-ko a | tma, ty mě | ne-o-pus-tíš, ve | Tvé ná-ru-či.
 "^Chorus" "Am" A c B A | "Em" E G F E | "F" F A G2 | "C" C2 z2 |]
 w: Bo-že náš a Pa-ne, | slyš nás vo-lá-me Tě, | ne-o-pouš-těj nás, | spá-sa.
