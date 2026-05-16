@@ -20,9 +20,20 @@ from .extract.hashing import hash_page
 from .extract.normalize import normalize
 from .extract.rasterize import rasterize_pdf
 from .manifest import PageRecord, RunManifest, now_utc, write_manifest
+from .models import SongMeta
+from .output.chordpro import emit_song
+from .output.slug import slugify
+from .output.staves import write_stave_pngs
+from .output.writer import write_index, write_song
+from .parse.align import AlignedLine, align_line
 from .parse.layout import SongLine, detect_song_lines
 from .parse.ocr import OcrToken, ocr_chord_row, ocr_lyric_row
 from .parse.segment import SongSegment, segment as segment_pages
+
+import numpy as np
+import numpy.typing as npt
+
+ImageU8 = npt.NDArray[np.uint8]
 
 app = typer.Typer(
     name="zpevnik",
@@ -67,6 +78,11 @@ def run(
     page_song_lines: dict[int, list[SongLine]] = {}
     # OCR results keyed by (page_no, line_index) → {"chord": [...], "lyric": [...]}
     page_line_ocr: dict[tuple[int, int], dict[str, list[OcrToken]]] = {}
+    # Pre-cropped stave bands keyed by (page_no, line_index). Smaller than
+    # full pages, so we can keep them across the segmentation pass without
+    # the memory cost of normalized full-page images.
+    page_line_stave: dict[tuple[int, int], ImageU8] = {}
+
     label = "Rasterize → normalize → classify → layout"
     if not skip_ocr:
         label += " → OCR"
@@ -100,10 +116,14 @@ def run(
             if cls.kind != "text":
                 lines = detect_song_lines(clean, layout=cfg.layout)
                 page_song_lines[r.page] = lines
-                if not skip_ocr:
-                    for idx, line in enumerate(lines):
-                        chord_crop = clean[line.chord_y[0]:line.chord_y[1], :]
-                        lyric_crop = clean[line.lyric_y[0]:line.lyric_y[1], :]
+                page_h = clean.shape[0]
+                for idx, line in enumerate(lines):
+                    chord_crop = clean[line.chord_y[0]:line.chord_y[1], :]
+                    lyric_crop = clean[line.lyric_y[0]:line.lyric_y[1], :]
+                    stave_top = max(0, line.chord_y[0])
+                    stave_bot = min(page_h, line.lyric_y[1])
+                    page_line_stave[(r.page, idx)] = clean[stave_top:stave_bot, :].copy()
+                    if not skip_ocr:
                         page_line_ocr[(r.page, idx)] = {
                             "chord": ocr_chord_row(chord_crop),
                             "lyric": ocr_lyric_row(lyric_crop, lang=cfg.ocr.tesseractLang),
@@ -152,22 +172,88 @@ def run(
 
     if skip_ocr:
         console.print("[yellow]Stage 5 (OCR) skipped via --skip-ocr.[/yellow]")
-    else:
-        ocr_path = out.parent / "_ocr.json"
-        _write_ocr(
-            ocr_path,
-            segments=segments,
-            page_song_lines=page_song_lines,
-            page_line_ocr=page_line_ocr,
-            profile_name=cfg.name,
+        console.print("[yellow]Stages 6–12 require OCR; nothing more to do.[/yellow]")
+        return
+
+    ocr_path = out.parent / "_ocr.json"
+    _write_ocr(
+        ocr_path,
+        segments=segments,
+        page_song_lines=page_song_lines,
+        page_line_ocr=page_line_ocr,
+        profile_name=cfg.name,
+    )
+    total_chord_tokens = sum(len(v["chord"]) for v in page_line_ocr.values())
+    total_lyric_tokens = sum(len(v["lyric"]) for v in page_line_ocr.values())
+    console.print(
+        f"[green]Wrote OCR:[/green] {ocr_path}  "
+        f"({total_chord_tokens} chord, {total_lyric_tokens} lyric tokens)"
+    )
+
+    # Stages 6–12: per-song assembly and write-out.
+    written_songs = 0
+    skipped_approved = 0
+    metas: list[SongMeta] = []
+    for fallback_idx, seg in enumerate(segments, start=1):
+        aligned: list[AlignedLine] = []
+        stave_crops: list[ImageU8] = []
+        for page_no in seg.pages:
+            for idx, _line in enumerate(page_song_lines.get(page_no, [])):
+                tokens = page_line_ocr.get((page_no, idx), {"chord": [], "lyric": []})
+                aligned.append(align_line(tokens["chord"], tokens["lyric"]))
+                crop = page_line_stave.get((page_no, idx))
+                if crop is not None:
+                    stave_crops.append(crop)
+
+        emitted = emit_song(
+            number=seg.number,
+            title=seg.title,
+            aligned_lines=aligned,
+            language=cfg.language,
         )
-        total_chord_tokens = sum(len(v["chord"]) for v in page_line_ocr.values())
-        total_lyric_tokens = sum(len(v["lyric"]) for v in page_line_ocr.values())
-        console.print(
-            f"[green]Wrote OCR:[/green] {ocr_path}  "
-            f"({total_chord_tokens} chord, {total_lyric_tokens} lyric tokens)"
+
+        # ID: zero-pad the song number when known, else the segment's
+        # position in the document. 3+ digits to match the SongMeta schema.
+        id_int = seg.number if seg.number is not None else fallback_idx
+        song_id = f"{id_int:03d}"
+        slug = slugify(emitted.title)
+
+        has_staves = len(stave_crops) > 0
+        meta = SongMeta(
+            id=song_id,
+            slug=slug,
+            title=emitted.title,
+            number=seg.number,
+            language=cfg.language,
+            sourcePdf=str(pdf.name),
+            sourcePages=list(seg.pages),
+            hasStaffImages=has_staves,
+            reviewStatus="auto",
         )
-    console.print("[yellow]Stages 6–12 not yet implemented.[/yellow]")
+
+        song_dir, written = write_song(
+            songs_dir, meta=meta, chordpro=emitted.chordpro, force=force
+        )
+        if written and has_staves:
+            write_stave_pngs(song_dir / "staves", stave_crops)
+        if written:
+            written_songs += 1
+            metas.append(meta)
+        else:
+            # Approved on disk; surface the existing meta into the index unchanged.
+            skipped_approved += 1
+            from .output.writer import _read_existing_meta  # local import; private helper
+
+            existing = _read_existing_meta(song_dir / "meta.json")
+            if existing is not None:
+                metas.append(existing)
+
+    index_path = write_index(songs_dir, metas)
+    console.print(
+        f"[green]Wrote {written_songs} songs[/green] under {songs_dir}"
+        + (f" (skipped {skipped_approved} approved)" if skipped_approved else "")
+    )
+    console.print(f"[green]Wrote index:[/green] {index_path}")
 
 
 def _write_segments(path: Path, segments, *, profile_name: str) -> None:

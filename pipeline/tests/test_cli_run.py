@@ -124,6 +124,75 @@ def test_cli_run_writes_manifest(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(
     not _have_tesseract_with("eng"),
+    reason="Tesseract not installed; can't exercise the full pipeline.",
+)
+def test_cli_run_writes_song_files_and_index(tmp_path: Path) -> None:
+    """End-to-end: PDF with one song that has staves + chord/lyric text →
+    songs/001-test-song/{song.cho,meta.json,staves/*.png} + songs/index.json."""
+    pdf = tmp_path / "music.pdf"
+    profile = tmp_path / "p.yaml"
+    songs = tmp_path / "songs"
+
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 40), "1. Test Song", fontsize=18)
+    page.insert_text((72, 180), "C        G        Am        F", fontsize=14)
+    for i in range(5):
+        page.draw_line((60, 200 + i * 12), (535, 200 + i * 12), color=(0, 0, 0), width=1.2)
+    page.insert_text((72, 290), "hello world today", fontsize=14)
+    doc.save(pdf)
+    doc.close()
+
+    profile.write_text(
+        """name: end-to-end
+pdf: music.pdf
+language: cs
+dpi: 300
+pageInverted: auto
+segmentation:
+  strategy: numbered-heading
+  numberingRegex: '^(\\d{1,3})\\.\\s+(.*)$'
+ocr:
+  tesseractLang: eng
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["run", str(pdf), "--profile", str(profile), "--songs", str(songs)],
+    )
+    assert result.exit_code == 0, result.output
+
+    # Per-song dir present with the expected three artifacts.
+    song_dir = songs / "001-test-song"
+    assert song_dir.is_dir(), [p.name for p in songs.iterdir()]
+    cho = (song_dir / "song.cho").read_text()
+    assert "{title:" in cho and "Test Song" in cho
+    assert "{number: 1}" in cho
+    # At least one chord made it through alignment + emission.
+    assert any(c in cho for c in ["[C]", "[G]", "[Am]", "[F]"])
+
+    meta = json.loads((song_dir / "meta.json").read_text())
+    assert meta["id"] == "001"
+    assert meta["slug"] == "test-song"
+    assert meta["language"] == "cs"
+    assert meta["sourcePages"] == [1]
+    assert meta["hasStaffImages"] is True
+    assert meta["reviewStatus"] == "auto"
+
+    # Stave PNGs written.
+    staves = sorted((song_dir / "staves").iterdir())
+    assert [p.name for p in staves] == ["01.png"]
+
+    # Repo-root index updated.
+    index = json.loads((songs / "index.json").read_text())
+    assert index["version"] == 1
+    assert [s["id"] for s in index["songs"]] == ["001"]
+
+
+@pytest.mark.skipif(
+    not _have_tesseract_with("eng"),
     reason="Tesseract not installed; can't exercise full OCR loop.",
 )
 def test_cli_run_writes_ocr_tokens_when_staves_present(tmp_path: Path) -> None:

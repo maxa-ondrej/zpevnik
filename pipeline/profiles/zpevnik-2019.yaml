@@ -12,8 +12,10 @@ pageInverted: auto
 
 segmentation:
   strategy: numbered-heading
-  # "1.", "23.", "157.", etc. at the start of a line.
-  numberingRegex: '^(\d{1,3})\.\s'
+  # "1.", "23.", "157.", etc. at the start of a line. The capture groups
+  # are (number, title) — leave the title group so segmentation can use
+  # the heading text as the song title.
+  numberingRegex: '^(\d{1,3})\.\s+(.*)$'
   # pageRange: [1, 240]   # uncomment to restrict during prototyping
 
 layout:
