@@ -1,9 +1,11 @@
 /**
  * App-wide UI settings — persisted locally.
- * Uses zustand with the persist middleware. On web this writes to
- * localStorage; on native (no localStorage) it degrades to in-memory.
+ * Uses zustand with the persist middleware. localStorage on web,
+ * AsyncStorage on native; both back the same JSON schema.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
@@ -34,10 +36,13 @@ const noopStorage: StateStorage = {
   removeItem: () => {},
 };
 
-const webStorage: StateStorage | null =
-  typeof globalThis !== 'undefined' && typeof (globalThis as { localStorage?: Storage }).localStorage !== 'undefined'
-    ? (globalThis as unknown as { localStorage: Storage }).localStorage
-    : null;
+function resolveStorage(): StateStorage {
+  if (Platform.OS === 'web') {
+    const ls = (globalThis as { localStorage?: Storage }).localStorage;
+    return ls ?? noopStorage;
+  }
+  return AsyncStorage;
+}
 
 export const useSettings = create<SettingsState>()(
   persist(
@@ -61,7 +66,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'zpevnik-settings',
-      storage: createJSONStorage(() => webStorage ?? noopStorage),
+      storage: createJSONStorage(() => resolveStorage()),
       partialize: (s) => ({
         notation: s.notation,
         transpose: s.transpose,
