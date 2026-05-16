@@ -13,7 +13,7 @@ skipped from stages 1+ entirely (modulo the ``--force`` flag).
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -61,4 +61,4 @@ def read_manifest(path: Path) -> RunManifest:
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)

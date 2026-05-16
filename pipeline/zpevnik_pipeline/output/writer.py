@@ -18,7 +18,7 @@ written this run or skipped because they were already approved).
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ..models import SongIndex, SongMeta
@@ -75,7 +75,7 @@ def write_song(
 def write_index(songs_root: Path, metas: list[SongMeta]) -> Path:
     """Rewrite ``songs/index.json`` with the given (validated) metas."""
     index = SongIndex(
-        generatedAt=datetime.now(timezone.utc),
+        generatedAt=datetime.now(UTC),
         songs=sorted(
             metas, key=lambda m: (m.number is None, m.number or 0, m.id)
         ),

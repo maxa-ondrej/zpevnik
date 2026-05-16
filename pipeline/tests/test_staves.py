@@ -57,7 +57,7 @@ def test_export_song_staves_writes_pngs_in_page_then_y_order(tmp_path: Path) -> 
     )
     assert [p.name for p in paths] == ["01.png", "02.png", "03.png"]
     # PNGs are readable and match the crop heights.
-    for path, want_h in zip(paths, [90, 90, 90]):
+    for path, want_h in zip(paths, [90, 90, 90], strict=True):
         loaded = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
         assert loaded is not None, f"{path} unreadable"
         assert loaded.shape[0] == want_h

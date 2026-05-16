@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -32,8 +32,8 @@ def test_slugify(title: str, expected: str) -> None:
     assert slugify(title) == expected
 
 
-def _meta(**overrides) -> SongMeta:
-    base = dict(
+def _meta(**overrides: object) -> SongMeta:
+    base: dict[str, object] = dict(
         id="001",
         slug="test",
         title="Test",
@@ -102,7 +102,7 @@ def test_write_index_sorts_by_number_then_id(tmp_path: Path) -> None:
     assert [s["id"] for s in doc["songs"]] == ["001", "002", "003", "999"]
     # generatedAt is a parseable ISO timestamp.
     datetime.fromisoformat(doc["generatedAt"].replace("Z", "+00:00"))
-    assert isinstance(datetime.now(timezone.utc), datetime)
+    assert isinstance(datetime.now(UTC), datetime)
 
 
 def test_write_index_round_trips_through_pydantic(tmp_path: Path) -> None:

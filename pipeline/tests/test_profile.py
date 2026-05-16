@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from zpevnik_pipeline.config import load_profile
 from zpevnik_pipeline.models import SongbookProfile
@@ -34,7 +35,7 @@ def test_profile_rejects_unknown_fields(tmp_path: Path) -> None:
     }
     p = tmp_path / "bad.yaml"
     p.write_text(yaml.safe_dump(bad), encoding="utf-8")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         load_profile(p)
 
 
@@ -47,5 +48,5 @@ def test_profile_rejects_unknown_strategy(tmp_path: Path) -> None:
     }
     p = tmp_path / "bad.yaml"
     p.write_text(yaml.safe_dump(bad), encoding="utf-8")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         load_profile(p)

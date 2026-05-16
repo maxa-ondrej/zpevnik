@@ -80,5 +80,9 @@ def test_rasterize_clamps_page_range_to_document(tmp_path: Path) -> None:
 
 
 def test_rasterize_missing_pdf_raises(tmp_path: Path) -> None:
-    with pytest.raises(Exception):
+    # PyMuPDF raises its own FileNotFoundError, which does NOT subclass the
+    # built-in. Import lazily so the test still runs when fitz isn't installed.
+    import fitz
+
+    with pytest.raises(fitz.FileNotFoundError):
         list(rasterize_pdf(tmp_path / "nope.pdf"))

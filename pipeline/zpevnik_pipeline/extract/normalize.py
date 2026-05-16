@@ -22,6 +22,7 @@ same output to within the configured `idempotence_atol`.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import cv2
 import numpy as np
@@ -49,15 +50,12 @@ def is_inverted(image: ImageU8, threshold: float = 0.5) -> bool:
     We sample the mean intensity in [0, 1]. Below `threshold` means most of
     the page is dark — i.e. it's an inverted scan.
     """
-    if image.ndim == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
     return float(gray.mean()) / 255.0 < threshold
 
 
 def invert(image: ImageU8) -> ImageU8:
-    return cv2.bitwise_not(image)
+    return cast(ImageU8, cv2.bitwise_not(image))
 
 
 # ---- deskew ---------------------------------------------------------------
@@ -69,10 +67,7 @@ def estimate_skew(image: ImageU8) -> float:
     Uses Hough lines on a Canny edge map. Returns 0.0 if no strong text-line
     structure is detected.
     """
-    if image.ndim == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = image
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
     lines = cv2.HoughLines(edges, 1, np.pi / 720, threshold=200)
     if lines is None:
@@ -106,7 +101,7 @@ def deskew(image: ImageU8, angle_deg: float | None = None) -> tuple[ImageU8, flo
     rotated = cv2.warpAffine(
         image, matrix, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
     )
-    return rotated, angle
+    return cast(ImageU8, rotated), angle
 
 
 # ---- denoise --------------------------------------------------------------
@@ -114,14 +109,16 @@ def deskew(image: ImageU8, angle_deg: float | None = None) -> tuple[ImageU8, flo
 
 def denoise(image: ImageU8) -> ImageU8:
     """Light bilateral filter — preserves edges (staff lines, glyphs)."""
-    return cv2.bilateralFilter(image, d=5, sigmaColor=35, sigmaSpace=35)
+    return cast(ImageU8, cv2.bilateralFilter(image, d=5, sigmaColor=35, sigmaSpace=35))
 
 
 # ---- orchestrate ----------------------------------------------------------
 
 
 def ensure_grayscale(image: ImageU8) -> ImageU8:
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    if image.ndim == 3:
+        return cast(ImageU8, cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    return image
 
 
 def normalize(

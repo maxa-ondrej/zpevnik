@@ -48,6 +48,16 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
 
+[tool.ruff.lint.per-file-ignores]
+# Typer's idiomatic API puts typer.Option/Argument calls in defaults.
+# The Annotated alternative is a heavier refactor that doesn't earn its keep here.
+"zpevnik_pipeline/cli.py" = ["B008"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[[tool.mypy.overrides]]
+# Third-party libs without py.typed markers.
+module = ["fitz", "pytesseract"]
+ignore_missing_imports = true

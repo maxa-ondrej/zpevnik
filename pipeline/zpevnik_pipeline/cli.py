@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
+import numpy.typing as npt
 import typer
 from rich.console import Console
 from rich.progress import (
@@ -28,10 +30,8 @@ from .output.writer import write_index, write_song
 from .parse.align import AlignedLine, align_line
 from .parse.layout import SongLine, detect_song_lines
 from .parse.ocr import OcrToken, ocr_chord_row, ocr_lyric_row
-from .parse.segment import SongSegment, segment as segment_pages
-
-import numpy as np
-import numpy.typing as npt
+from .parse.segment import SongSegment
+from .parse.segment import segment as segment_pages
 
 ImageU8 = npt.NDArray[np.uint8]
 
@@ -257,7 +257,7 @@ def run(
     console.print(f"[green]Wrote index:[/green] {index_path}")
 
 
-def _write_segments(path: Path, segments, *, profile_name: str) -> None:
+def _write_segments(path: Path, segments: list[SongSegment], *, profile_name: str) -> None:
     import json
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -275,7 +275,7 @@ def _write_segments(path: Path, segments, *, profile_name: str) -> None:
     tmp.replace(path)
 
 
-def _ocr_token_payload(token: OcrToken) -> dict:
+def _ocr_token_payload(token: OcrToken) -> dict[str, object]:
     return {
         "text": token.text,
         "x": [token.x_left, token.x_right],
@@ -380,9 +380,10 @@ def review(
 
         from .review.server import create_app
     except ImportError as e:  # pragma: no cover
-        raise typer.Exit(
-            f"Install with the [review] extra: pip install -e '.[review]'\n{e}"
-        ) from e
+        console.print(
+            f"[red]Install with the [review] extra: pip install -e '.[review]'[/red]\n{e}"
+        )
+        raise typer.Exit(code=1) from e
     fastapi_app = create_app(songs_dir=songs_dir)
     uvicorn.run(fastapi_app, host=host, port=port)
 
