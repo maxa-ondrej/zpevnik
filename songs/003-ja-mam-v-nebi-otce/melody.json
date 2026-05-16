@@ -1,8 +1,8 @@
 {
   "header": "X:1\nT:Já mám v nebi Otce\nM:3/4\nL:1/4\nQ:1/4=96\nK:G",
   "verses": [
-    "\"^Verse 1\"\n\"G\" G B d | \"D\" A F D | \"Em\" E G B | \"C\" c B G |\n\"G\" G B d | \"D\" A F D | \"C\" E G F | \"G\" G2 z |]\nw: Já mám v ne-bi Ot-ce mi-lu-jí-cí-ho, on mě ve-de ces-tou ži-vo-ta. Skr-ze Sy-na při-šlo spa-se-ní, Duch ži-je ve mně.",
-    "\"^Verse 2\"\n\"G\" G B d | \"D\" A F D | \"Em\" E G B | \"C\" c B G |\n\"G\" G B d | \"D\" A F D | \"C\" E G F | \"G\" G2 z |]\nw: Když mě svět o-pus-tí a zra-dí, O-tec můj ni-kdy ne-zkla-me. V je-ho ru-kou je můj ži-vot, bez-peč-ně mě ne-se do-mů."
+    "\"^Verse 1\"\n\"G\" G B d/2 d/2 A/2 A/2 | \"D\" A F D/2 D/2 |\nw: Já mám v ne-bi Ot-ce mi-lu-jí,\n\"Em\" E G B | \"C\" c B G |\nw: on mě ve-de ces-tou ži-vo-ta.\n\"G\" G B d | \"D\" A F D |\nw: Skr-ze Sy-na při-šlo spa-se,\n\"C\" E G F | \"G\" G2 z |]\nw: Duch ži-je ve mně. _ _",
+    "\"^Verse 2\"\n\"G\" G B d/2 d/2 A/2 A/2 | \"D\" A F D/2 D/2 |\nw: Když mě svět o-pus-tí a zra-dí, *\n\"Em\" E G B | \"C\" c B G |\nw: O-tec můj ni-kdy ne-zkla-me.\n\"G\" G B d | \"D\" A F D |\nw: V je-ho ru-kou je můj ži-vot,\n\"C\" E G F | \"G\" G2 z |]\nw: bez-peč-ně mě ne-se. _ _"
   ],
-  "chorus": "\"^Chorus\"\n\"Em\" E G B | \"Bm\" B A G | \"C\" c B G | \"D\" A G F | \"G\" G2 z |]\nw: Slá-va Ot-ci, Sy-nu, i Du-chu Sva-té-mu, a-men."
+  "chorus": "\"^Chorus\"\n\"Em\" E G B | \"Bm\" B A G |\nw: Slá-va Ot-ci, Sy-nu,\n\"C\" c B G | \"D\" A G F |\nw: i Du-chu Sva-té-mu,\n\"G\" G B d | \"D\" A G F |\nw: na-vě-ky vě-ků a-men,\n\"C\" E G F | \"G\" G2 z |]\nw: a-men. * _ _ _ _"
 }

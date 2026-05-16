@@ -1,8 +1,8 @@
 {
   "header": "X:1\nT:Pána chválit budu\nM:4/4\nL:1/4\nQ:1/4=84\nK:C",
   "verses": [
-    "\"^Verse 1\"\n\"C\" C E G c | \"G\" B A G/2 G/2 F | \"Am\" A c B G/2 G/2 | \"F\" F E \"C\" C C |\n\"C\" C E G \"G\" G/2 G/2 | \"Am\" A c B2 | \"F\" F E A \"G\" G | \"C\" E2 C2 |]\nw: Pá-na chvá-lit bu-du na-vě-ky, za je-ho lás-ku k nám ma-lým. Ská-ly se chvě-jí, hvěz-dy zná, on je můj Pán a Král.",
-    "\"^Verse 2\"\n\"C\" C E G c | \"G\" B A G/2 G/2 F | \"Am\" A c B G/2 G/2 | \"F\" F E \"C\" C C |\n\"C\" C E G \"G\" G/2 G/2 | \"Am\" A c B2 | \"F\" F E A \"G\" G | \"C\" E2 C2 |]\nw: Když je mi úz-ko a tma, ty mě ne-o-pus-tíš. Ve-deš mě ces-tou ži-vo-ta, ve tvé ná-ru-či jsem do-ma. * * *"
+    "\"^Verse 1\"\n\"C\" C E G G/2 G/2 | \"G\" A G G F |\nw: Pá-na chvá-lit bu-du na-vě-ky,\n\"Am\" A c B G/2 G/2 | \"F\" F E \"C\" C C |\nw: za je-ho lás-ku k nám ma-lým.\n\"C\" C E G c | \"G\" B A G F |\nw: Ská-ly se chvě-jí, hvěz-dy zná,\n\"F\" F A G F | \"C\" E F E C |]\nw: on je můj Pán a Král _ _",
+    "\"^Verse 2\"\n\"C\" C E G G/2 G/2 | \"G\" A G G F |\nw: Když je mi úz-ko a tma, * *\n\"Am\" A c B G/2 G/2 | \"F\" F E \"C\" C C |\nw: ty mě ne-o-pus-tíš. * * *\n\"C\" C E G c | \"G\" B A G F |\nw: Ve-deš mě ces-tou ži-vo-ta,\n\"F\" F A G F | \"C\" E F E C |]\nw: ve tvé ná-ru-či jsem do-ma."
   ],
-  "chorus": "\"^Chorus\"\n\"Am\" A G F2 | \"Em\" E F D2 | \"F\" F A G2 | \"G\" G/2 G/2 A B \"C\" c |\n\"Am\" A G F E | \"Em\" D4 | \"F\" F A G F | \"G\" G2 \"C\" C2 |]\nw: Bo-že náš a Pa-ne, slyš nás, vo-lá-me tě Pa-ne. Ne-o-pouš-těj nás, ty jsi na-še spá-sa."
+  "chorus": "\"^Chorus\"\n\"Am\" A G F2 | \"Em\" E F D2 |\nw: Bo-že náš a Pa-ne,\n\"F\" F A G G | \"G\" A G \"C\" F E |\nw: slyš nás, vo-lá-me tě Pa-ne.\n\"Am\" A G F E | \"Em\" D4 |\nw: Ne-o-pouš-těj nás,\n\"F\" F A G F | \"G\" G2 \"C\" C2 |]\nw: ty jsi na-še spá-sa."
 }

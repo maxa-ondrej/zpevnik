@@ -31,9 +31,13 @@ export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props
 
     const scale = BASE_SCALE * (fontSize / BASE_FONT_SIZE);
 
+    // NOTE: do NOT pass `responsive: 'resize'` here — it makes the SVG fit
+    // the container width and effectively ignores `scale`, so A-/A+ stops
+    // affecting the staff. Letting abcjs compute its own width × scale
+    // gives us a properly resizable staff at the cost of horizontal
+    // overflow on narrow screens (which we'll address with CSS later).
     abcjs.renderAbc(el, abc, {
-      responsive: 'resize',
-      staffwidth: 900,
+      staffwidth: 740,
       visualTranspose: transpose,
       scale,
       paddingleft: 0,
