@@ -3,12 +3,14 @@
 ## Summary
 
 A long session that cleared every non-blocked item from the morning
-handover and three follow-ups (drag-to-reorder, native render tests,
-reviewer keyboard reorder + hint). Eleven feature commits + two
-handover refreshes, all pushed to `origin/main` at `9f64c96`. Tests:
-pipeline 137 (was 134), app 65 (was 46). Only items left are external
-blockers (real PDF + Whisper audio) and a small handful of low-value
-polish.
+handover, then walked the spec's §7.1 v1 feature list and closed three
+remaining gaps: full-text lyric search, capo indicator, line-spacing UI.
+Thirteen feature commits + three handover refreshes, all pushed to
+`origin/main` at `0f9d0f1`. Tests: pipeline 137 (was 134), app 70
+(was 46). The only v1 spec items still open are **favorites / recents /
+setlists** (significant UX scope) and **native offline-first asset
+bundling**; everything else is either done or blocked on the real PDF /
+Whisper audio.
 
 ## What Was Worked On & What Got Done
 
@@ -27,10 +29,12 @@ Items from the morning's `Clear Next Steps`:
 | 9  | Reviewer transpose + Cs/En toggle for chord preview   | ✅ `ffbf916`                 |
 | 10 | Reviewer polish (hint label + Alt+arrow reorder)      | ✅ `9f64c96`                 |
 
-Eleven feature commits this session, all on `main`, all pushed to
+Thirteen feature commits this session, all on `main`, all pushed to
 `origin/main`:
 
 ```
+0f9d0f1 App: capo indicator + line spacing UI
+4714b54 App: full-text lyric search
 9f64c96 Reviewer: hint + Alt+arrow reorder for blocks
 9142e6d App: render-level coverage for AbcView native branch
 e89b8a3 Reviewer: drag-to-reorder block cards
@@ -43,6 +47,25 @@ e41b7cd App: cover AbcView native-branch HTML builder
 2b81c81 App: surface dark mode and theme list/detail/controls
 dc54b65 Reviewer: structured per-block melody editor
 ```
+
+### v1 spec status (against zpevnik-spec.md §7.1)
+
+| §7.1 feature                                          | Status                         |
+|-------------------------------------------------------|--------------------------------|
+| Song list with search (title, number, **lyrics**)     | ✅ `4714b54` (lyric search)    |
+| Song detail with ChordPro rendering                   | ✅                             |
+| Transpose ± semitones                                 | ✅                             |
+| Capo indicator                                        | ✅ `0f9d0f1`                   |
+| Czech ↔ English notation toggle                       | ✅                             |
+| Notation (staves) on/off                              | ✅                             |
+| Font size                                             | ✅                             |
+| Line spacing                                          | ✅ `0f9d0f1`                   |
+| Dark mode                                             | ✅                             |
+| Manual auto-scroll                                    | ✅                             |
+| Favorites                                             | ❌ not started                 |
+| Recents                                               | ❌ not started                 |
+| Setlists                                              | ❌ not started                 |
+| Offline-first (web bundling done; native asset bundling) | ⚠️ partial — web works     |
 
 ### Commit-by-commit notes (this session, in chronological order)
 
@@ -289,39 +312,67 @@ dc54b65 Reviewer: structured per-block melody editor
 
 ## Clear Next Steps
 
-Most of the queue is done. Remaining:
+The v1 spec's bullet-listable feature surface is essentially closed.
+Remaining work splits cleanly:
 
-1. **Get a real source PDF from the user.** Still the gate for OCR
-   tuning, profile calibration, real corpus, real stave PNGs, real
-   melodies. Blocks items 2 and 4 below.
+**Bigger v1 UX features** (genuinely worth doing, but each is a small
+project on its own):
 
-2. **Pipeline → `melody.json` emission.** When the pipeline starts
-   producing real per-song output, teach it to write the new
-   `{header, blocks: [{type, body}, …]}` schema. Order blocks from
-   the same `start_of_*` directives that already drive `song.cho`.
+1. **Favorites.** A heart toggle on the detail page + a "Favorites"
+   filter / segmented control on the list. Persist a `Set<string>` of
+   song ids in the settings store.
 
-3. **Whisper autoscroll sync (v2 spec).** Needs `audio/` to grow
-   content. The rAF-driven scroller is ready for a speed feed.
+2. **Recents.** Track last-opened-at per song; surface a "Recently
+   viewed" section above the search results (or a tab). Probably wants
+   a separate `useRecents()` store so persistence/eviction is its own
+   concern.
 
-4. **Multi-chorus / bridge content in the corpus** — exercises a
-   melody schema path no demo song uses today.
+3. **Setlists.** Local-only named lists. Add/remove songs, reorder,
+   open setlist → first song. Most invasive of the three because it
+   introduces a new top-level navigation surface.
 
-5. **Native E2E test coverage (Detox or similar).** The pure helpers
-   AND the React render path are now tested in vitest with a mock
-   WebView. To go further would be to actually mount the WebView on
-   a real device — that's Detox / manual QA territory.
+4. **Native offline-first.** On web, songs are fetched from
+   `/songs/index.json` — `/public/songs` is a symlink to the repo's
+   `songs/`. Native (iOS/Android) currently has nothing equivalent;
+   the spec calls for "songs bundled with the app or synced once."
+   Two paths: bundle into the app via `expo-asset`, or sync to
+   `FileSystem.documentDirectory` on first launch.
 
-**Optional polish that didn't make this session:**
-- Held-button auto-repeat on the transpose stepper (and on the app's
-  steppers too).
-- A small "What's in this block?" preview tooltip on each block card
-  (first line of body).
-- Persist the reviewer's chord-preview state to localStorage (low
-  priority — resets feel right).
-- A keyboard shortcut for Add-block (e.g. Ctrl+Shift+V for verse).
+**Blocked on external input:**
 
-**Dependencies / blockers:** items 1, 2, 3, 4 all need the source
-PDF or audio. Items 5 + polish are unblocked but low value.
+5. **Real source PDF.** Still the gate for OCR tuning, profile
+   calibration, real corpus, real stave PNGs, real melodies.
+
+6. **Pipeline → `melody.json` emission.** When the pipeline starts
+   producing real per-song output, teach it to write the
+   `{header, blocks: [{type, body}, …]}` schema, ordered from the same
+   `start_of_*` directives that drive `song.cho`.
+
+7. **Multi-chorus / bridge content in the corpus** — exercises a
+   melody-schema path no demo song uses today.
+
+8. **Whisper autoscroll sync (v2).** Needs `audio/` to grow content.
+   The rAF-driven scroller is ready for a speed feed.
+
+**Long-tail polish:**
+
+9. **Native E2E coverage.** Pure helpers + React render are mocked.
+   Going further means Detox or a SWC Flow-strip plugin so the real
+   `react-native-webview` source can mount under vite-node.
+
+10. **Server-side `fulltext.json`.** Once the corpus grows past ~10
+    songs, the current "fetch every .cho on app boot" lyric index gets
+    expensive — pipeline should emit a single normalized fulltext
+    sidecar (spec §5.3 mentions this).
+
+11. **Held-button auto-repeat on the steppers.** All Transpose/Capo/
+    Size/Spacing/Speed steppers require one click per step.
+
+12. **Reviewer extras**: persist preview state to localStorage; touch
+    drag via PointerEvents; add-block keyboard shortcut.
+
+**Dependencies:** items 5–8 need external input. Items 1–4 and 9–12
+are unblocked but each represents real scope.
 
 ## Important Files Map
 
