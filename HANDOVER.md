@@ -1,278 +1,376 @@
-# Session Handover — 2026-05-16 (late night)
+# Session Handover — 2026-05-17
 
 ## Summary
 
-Took the **Zpěvník** reader from "list + plain ChordPro" to a real
-music-notation app. The previous handover ended with the reader
-serving real song.cho files and the reviewer running on its own port,
-but the staves on the detail page were empty placeholders cropped from
-the source PDF (which we don't have yet). This session: hand-authored
-three demo songs with proper Czech lyrics, then added real notation
-rendering via `abcjs` driven by a per-song `melody.json` sidecar. The
-notation respects the user's notation toggle, transpose, and font
-size, and the staff auto-interleaves the chorus by a deliberately
-simple rule (`V1, V2, C, V3, V4, C, V5, V6`). Also: pushed the repo to
-GitHub as `maxa-ondrej/zpevnik` (private). Seven commits on `main`.
+Cleared seven of the nine "Clear Next Steps" from the previous handover in
+one push: GitHub Actions CI, native WebView for notation, reviewer
+melody.json editor + abcjs preview, component tests, autoscroll, and git
+author identity. Then two post-launch follow-ups: migrated the `melody.json`
+schema from `{verses[], chorus?}` + an interleave rule to an **explicit
+ordered `blocks[]`** (the rule disagreed with `song.cho` — chorus was
+ending up trailing instead of between V1 and V2), and wired the Staves
+toggle into a clean either/or with the text-only `SongView` (notation when
+on, text when off). Eight commits on `main`, all pushed to
+`origin/main`. Tests: pipeline 134 (was 119), app 46 (was 35).
 
 ## What Was Worked On & What Got Done
 
-Tracked as TaskList items #19–#22, all completed:
+Tasks #1–#9 from the previous handover (`f5d37e9 HANDOVER.md`):
 
-| # | Task | Status |
-|---|------|--------|
-| 19 | Render real notation via abcjs (sidecar `melody.abc` + AbcView) | ✅ |
-| 20 | Notation: transpose binding + lyrics under notes + roomy layout | ✅ |
-| 21 | Melody: JSON sidecar + auto chorus interleave + fontSize scaling | ✅ |
-| 22 | Fix notation: `w:` per music line, scale honors A−/A+ | ✅ |
+| #  | Task                                       | Status                       |
+|----|--------------------------------------------|------------------------------|
+| 1  | Real source PDF                            | ⏳ Blocked on user input     |
+| 2  | Pipeline → melody.json emission            | ⏳ Blocked on #1             |
+| 3  | Reviewer: ABC editor                       | ✅ `4334de9` + `b680b8e`     |
+| 4  | Component tests (SongView, AbcView)        | ✅ `71d749a`                 |
+| 5  | Native WebView for notation                | ✅ `f0ec706`                 |
+| 6  | GitHub Actions CI                          | ✅ `fba1354`                 |
+| 7  | Reviewer: in-page notation preview         | ✅ `b680b8e` (bundled w/ #3) |
+| 8  | Autoscroll                                 | ✅ `72a1430`                 |
+| 9  | Git author identity                        | ✅ `ondrej.maxa11@gmail.com` |
 
-Seven commits this session (in order, on top of `40446e3`):
+Plus two post-launch follow-ups driven by user feedback:
+
+| #   | Task                                                       | Status        |
+|-----|------------------------------------------------------------|---------------|
+| 10  | Melody schema: drop interleave rule, explicit `blocks[]`   | ✅ `1cacbc5`  |
+| 11  | Staves toggle hides text-only `SongView` when on           | ✅ `ee75d1d`  |
+
+Eight commits this session, all on `main`, all pushed:
 
 ```
-4cc5163 Notation: fix song 3 — 3/4 time needs denser melodies
-a2867d1 Notation: w: per music line, scale honors A-/A+
-3fce7d9 Notation: JSON sidecar, auto chorus interleave, size buttons wired
-d0e6fba Notation: repeat the staff per verse instead of stacking lyrics
-958f45b App: transpose binds to notation, lyrics under notes, roomy layout
-5c61d38 App: render real music notation via abcjs
-33e9d23 Seed 3 hand-authored demo songs for the reader
+ee75d1d App: hide text-only lyrics when staves toggle is on
+1cacbc5 Melody: explicit block ordering instead of implicit chorus interleave
+71d749a App: component tests for SongView and AbcView
+72a1430 App: autoscroll loop with play/pause + speed stepper
+b680b8e Reviewer: melody editor + in-page abcjs preview
+4334de9 Reviewer: melody.json GET/PUT endpoints
+f0ec706 Notation: WebView wrapper for iOS/Android
+fba1354 CI: GitHub Actions workflow for pipeline + app
 ```
 
 ### Commit-by-commit notes
 
-- **`33e9d23` — Demo songs**
-  - The synthetic-PDF pipeline output had been unusable in the reader
-    (`"Hospodin je m·j pastý·"` etc.). Wrote three short hand-authored
-    ChordPro songs (Pána chválit budu / Hospodin je můj pastýř / Já mám
-    v nebi Otce) directly to `songs/`, with `hasStaffImages: false` and
-    `staveCount: 0` so the reader auto-hides the stave-PNG section.
-  - Helper script lives at `/tmp/seed_demo_songs.py` (not committed; it
-    just calls `output.writer.write_song()` + `write_index()`).
+- **`fba1354` — CI workflow.** Two jobs on `ubuntu-latest`, in parallel:
+  - `pipeline` — Python 3.11 (from `pipeline/pyproject.toml`
+    `requires-python = ">=3.11"`), pip cache, `pip install -e ".[dev]"`,
+    then `ruff check .`, `mypy zpevnik_pipeline tests`, `PYTHONPATH=.
+    pytest tests/`.
+  - `app` — Node 20, npm cache keyed on `app/package-lock.json`,
+    `npm ci`, `npm test`, `npx tsc --noEmit`.
+  - Triggers: `push` (all branches) + `pull_request`. Workflow file
+    quotes `"on:"` to defuse YAML 1.1 boolean coercion.
 
-- **`5c61d38` — abcjs**
-  - Added `abcjs` (~200 KB minified) to the app deps. New `AbcView`
-    component in `app/src/shared/components/AbcView.tsx`. Web-only —
-    abcjs is a DOM library and gracefully no-ops via `Platform.OS`.
-  - Each song gained a `melody.abc` sidecar; the detail screen fetches
-    it via `fetchOptionalAbc(dir)` alongside `song.cho` and passes the
-    string to `AbcView`. Notes + chord labels + key + time signature
-    render into an SVG.
+- **`f0ec706` — WebView wrapper for iOS/Android.** `AbcView.tsx` was
+  previously a `Platform.OS !== 'web'` no-op. Now:
+  - **Web** (`Platform.OS === 'web'`): unchanged — `useEffect` →
+    `abcjs.renderAbc(el, abc, { scale, visualTranspose, paddingbottom: 12,
+    staffwidth: 740, lineThickness: 0.2 })`. Still no `responsive: 'resize'`
+    (carried-over bug).
+  - **Native**: `<WebView source={{ html }} scrollEnabled={false} />` where
+    `html` is an inline string with abcjs from CDN
+    (`https://cdn.jsdelivr.net/npm/abcjs@6.6.3/dist/abcjs-basic-min.js`).
+    After render, the page posts
+    `{ kind: 'size', height: document.body.scrollHeight }` via
+    `window.ReactNativeWebView.postMessage`; `onMessage` parses it and
+    drives the WebView's `style.height` so the staff is fully visible
+    without inner-scrolling. Two posts (immediately + 80 ms later) to
+    catch late layout shifts.
+  - Installed `react-native-webview@13.12.5` via `npx expo install` from
+    `app/`. Public API of `<AbcView abc transpose fontSize />` unchanged —
+    `app/app/song/[id].tsx` doesn't need edits.
 
-- **`958f45b` — transpose / lyrics under notes / spacing**
-  - Wired the user's transpose setting into abcjs's `visualTranspose`,
-    so +/− shifts the rendered notes too.
-  - Rewrote each `melody.abc` with `w:` lyric lines so words sit
-    directly under the notes (not in a separate text block).
-  - `scale: 1.25` + `paddingbottom: 12` for a non-compact layout
-    (the page will eventually auto-scroll, so vertical breathing room
-    is the right default).
+- **`4334de9` + `b680b8e` — Reviewer overhaul.** Now reviews melody as
+  well as lyrics.
+  - `pipeline/zpevnik_pipeline/review/server.py`:
+    - `GET /api/songs/{id}/melody` → JSON body, 404 if absent (or song
+      missing), 500 on malformed JSON on disk.
+    - `PUT /api/songs/{id}/melody` → write `melody.json` atomically (via
+      `.tmp` + `replace`), with strict validation. Same `auto → flagged`
+      promotion as the song.cho PUT, via `write_song(..., force=True)`.
+    - Validator after the schema migration (`_validate_melody`) enforces
+      `{ header: str, blocks: list[{type ∈ {verse, chorus, bridge}, body:
+      str}] }`.
+  - `pipeline/zpevnik_pipeline/review/static/`:
+    - `assemble.js` — plain-JS port of the app's `assembleAbc` (now just
+      header + each `block.body`, in order).
+    - `index.html` — pulls `abcjs@6.6.3` from jsdelivr, adds the
+      notation-preview panel and a second textarea for `melody.json`.
+    - `app.js` — ES module. Loads `song` + `melody` in parallel on select;
+      empty stub `{header:"", blocks:[]}` when 404. Re-renders the staff
+      300 ms after every keystroke (debounced). Save fires `PUT song`
+      first then (only if dirty / non-stub) `PUT melody`. `renderAbc` call
+      omits `responsive: 'resize'`.
+    - `style.css` — two-column editor grid.
 
-- **`d0e6fba` — repeat per verse**
-  - First cut used multiple `w:` lines stacked under one melody line;
-    the user pushed back ("instead of stacking, repeat the notes"). So
-    each verse now gets its own full music line + its own `w:`.
+- **`72a1430` — Autoscroll.** Detail page wraps a `ScrollView` (already
+  there) and now has:
+  - `scrollRef` + `currentYRef` + `lastTimeRef` + `rafRef` +
+    `contentHeightRef` + `layoutHeightRef` + `expectedYRef`.
+  - `useEffect` keyed on `isPlaying` starts/stops a `requestAnimationFrame`
+    loop. Each frame: `dt` ms × `speed / 1000` → `scrollTo({ y })`. Stops
+    automatically when `y + layout >= content − 1`.
+  - **Manual-scroll override**: `onScroll` compares the reported y against
+    `expectedYRef` (slack 6 px). If the user dragged while playing, we
+    pause and adopt the new position.
+  - `speedRef` mirrors `autoScrollSpeed` so the slider doesn't restart the
+    loop — speed is read every frame.
+  - `SongControls` got an optional `{ isPlaying, onTogglePlay }` prop pair.
+    When `onTogglePlay` is supplied, a new "Autoscroll" group renders
+    (`▶`/`⏸` toggle + `− N +` stepper, step 10, clamp 0–200 px/s, drives
+    `autoScrollSpeed`).
+  - Default `autoScrollSpeed` bumped from `1` to `30` px/s.
 
-- **`3fce7d9` — JSON sidecar + auto interleave + size**
-  - `melody.abc` → `melody.json` with `{ header, verses[], chorus? }`.
-    Authors write the verse and chorus once; the app interleaves at
-    render time.
-  - **The interleaving rule** (lives in
-    `app/src/shared/melody/assemble.ts` and is covered by 7 vitest
-    cases):
-    - Chorus between every 2nd verse, never as the final block.
-    - Short songs (≤2 verses) get a single trailing chorus.
-    - 6 verses + chorus → `V1, V2, C, V3, V4, C, V5, V6` (matches the
-      user's spec).
-  - `A−/A+` now drives the staff scale, not just the text. (See bug
-    #2 below for the catch.)
+- **`71d749a` — Component tests.** First rendering-level coverage in the
+  app.
+  - Added dev deps: `@testing-library/react@^16.3.2`,
+    `@testing-library/jest-dom@^6.9.1`, `jsdom@^29.1.1`.
+  - New `app/vitest.config.ts` — jsdom env (with `url:
+    'http://localhost/'` so `localStorage` isn't blocked by opaque-origin),
+    `resolve.alias: { /^react-native$/: 'react-native-web' }`.
+  - New `app/vitest.setup.ts` — imports
+    `@testing-library/jest-dom/vitest`; installs an in-memory
+    `localStorage` polyfill because **vitest 4's bundled jsdom 29 ships a
+    Storage stub with no `setItem`/`getItem`**, which broke zustand
+    `persist`.
+  - `SongView.test.tsx` — 7 cases (lyric text, chord rendering, transpose,
+    English ↔ Czech notation switch, fontSize plumbing, multi-line songs).
+  - `AbcView.test.tsx` — 5 cases (mocked `abcjs` + `react-native-webview`;
+    asserts `renderAbc` called with the ABC, computed scale from fontSize,
+    `visualTranspose`, pinned padding/staffwidth; re-render with new props
+    reinvokes). Native WebView branch **not covered** —
+    `react-native-webview` ships Flow-typed source that vite-node can't
+    parse; mocked to a no-op so the file still imports.
+  - Notable finding: `notation.ts` `toEnglish` / `toCzech` are asymmetric.
+    `toEnglish('B')` returns `'Bb'` (treats input as Czech `B`). Tests
+    use `H` instead of `B` for the Cs↔En switching test to avoid that.
 
-- **`a2867d1` — `w:` per music line + scale fix**
-  - **Bug fix #1**: ABC's `w:` line only attaches to the *immediately
-    preceding* music line. My verse had two music lines (4 bars each)
-    and one combined `w:`, so only the second staff got lyrics and the
-    first appeared empty. Each verse is now 4 short music+w pairs —
-    one per ChordPro text line — so every staff row carries its own
-    lyric line beneath it.
-  - **Bug fix #2**: `abcjs.renderAbc(..., { responsive: 'resize' })`
-    clamps the SVG to its container width and effectively ignores
-    `scale`, so the A−/A+ buttons did nothing visible on the staff.
-    Removed `responsive`; abcjs now uses its native width × scale.
-    Verified: SVG grew 925 px → 1156 px after two A+ presses.
+- **`1cacbc5` — Melody schema migration** (driven by user feedback that
+  song 3's chorus was rendering in the wrong place). See "Key Decisions"
+  below. 9 files: `app/src/shared/melody/assemble.ts` + its test, all 3
+  `songs/*/melody.json`, reviewer's `assemble.js` + `app.js` +
+  `server.py`, `pipeline/tests/test_review_melody.py`.
 
-- **`4cc5163` — song 3 3/4 fix**
-  - Song 3 is in 3/4 (Q: `M:3/4`) so each bar holds 3 beats, not 4.
-    I'd sized its melodies as if they were 4/4, so the actual note
-    count was ~25 % short of the syllables. Rewrote each verse with
-    eighth-note runs so dense Czech words like *milujícího* fit on
-    five consecutive eighths. Now every lyric line in song 3 fits.
+- **`ee75d1d` — Staves toggle is now either/or.** `app/app/song/[id].tsx`:
+  the SongView (text + chords) used to always render below the
+  notation/staves. One-line change: `{!showStaves && <SongView … />}`.
 
 ## What Worked and What Didn't
 
 ### Worked
-- **abcjs as a black-box renderer.** Drop in an ABC string, get back a
-  styled SVG with notes, chords, lyrics, key/time sigs, even the
-  tempo glyph. Took 5 minutes to integrate (incl. installing the dep)
-  and another hour to get the input format right.
-- **JSON sidecar over a custom file format.** The earlier `melody.abc`
-  approach forced authors to pre-interleave the chorus. JSON with a
-  flat `verses: string[]` + optional `chorus` puts the rendering rule
-  in code, not in the data — and we can change the rule (e.g.,
-  "chorus every 3 verses") without rewriting every melody.
-- **Vitest coverage for `assembleAbc`** caught a subtle off-by-one in
-  the "should there be a trailing chorus" branch on the very first
-  test run.
-- **`Platform.OS !== 'web'` early return inside `AbcView`'s
-  `useEffect`** keeps native targets compiling cleanly even though
-  `abcjs` won't actually render there (would need a WebView wrapper).
-  Cost: zero. Native crash if forgotten: certain.
-- **Padding short verses with `*` (skip-note) and overflow with `_`
-  (extend-previous-syllable)**: lets verses with different syllable
-  counts share the same melody. Documented inline.
+
+- **Parallel agents with strict file-scoping.** Worktree isolation
+  errored out (`Cannot create agent worktree: not in a git repository and
+  no WorktreeCreate hooks are configured`), even though `git` works fine
+  here — the harness checks a different signal than the cli does. So I
+  dispatched three agents in parallel WITHOUT isolation, with each one
+  explicitly told its scope and that two other agents were running:
+  A1 = `.github/`, A2 = `pipeline/`, A3 = `app/` (only `AbcView.tsx` +
+  webview install). Zero conflicts. The fourth agent (A4 autoscroll, also
+  `app/`) ran sequentially after A3 to avoid an `npm install` race —
+  worth the wait. The fifth agent (component tests) ran after #5 landed.
+
+- **Skill-mining the previous handover for context.** The earlier
+  HANDOVER.md baked in a lot of subtle facts (don't combine `responsive:
+  'resize'` with `scale`, `npm install` only from `app/`, `expo install`
+  for native deps, `w:` binding rules) — feeding those into each agent's
+  brief saved them from re-discovering everything.
+
+- **JSON sidecar with ordered blocks.** The original `{verses[], chorus?}`
+  + interleave-rule design forced authors to pre-interleave OR let a
+  hardcoded rule guess. New `{ blocks: [{type, body}] }` puts position in
+  the data where the author actually knows it, and naturally handles
+  multiple choruses, bridges, etc.
+
+- **Auto `auto → flagged` promotion on melody PUT** mirrors the existing
+  song.cho PUT cleanly — no new state-machine code.
 
 ### Failed approaches / bugs fixed mid-session
-1. **First melody.abc had stacked `w:` lines** (V1, V2, V3 under one
-   music line). User pushback was instant — see commit `d0e6fba`. The
-   convention is to repeat the staff, not the lyric stack.
-2. **`w:` association.** I assumed `w:` would split across all the
-   preceding music lines. It doesn't — only the most recent. Cost: one
-   "the verses have no lyrics" screenshot from the user. Fixed in
-   `a2867d1` by splitting each verse into 4 music+w pairs.
-3. **`responsive: 'resize'` swallowing `scale`.** Easy to miss — both
-   options are accepted by `abcjs.renderAbc`, and `scale` *seemed* to
-   work because the lyrics size changed (those are styled by the
-   surrounding React code, not by abcjs). The staff itself was pinned
-   to container width. Removed `responsive`.
-4. **3/4 unit confusion.** Sized song 3's melodies as if they were
-   4/4. The bars hold 3 beats, not 4, so the actual note count was
-   25 % short of the syllables. Lesson: always check `M:` against the
-   beat math before writing bars.
-5. **Stray `npm install` at repo root** (still a hazard — flagged in
-   the previous handover, happened again this session when running
-   `npm install abcjs`). Caught by `git status` before staging. If a
-   stray `package.json` + `node_modules/` appears in the repo root,
-   that's why.
+
+1. **Worktree isolation in `Agent`.** Pre-set `.worktreesymlink` with
+   `pipeline/.venv` + `app/node_modules` to make worktrees inherit deps,
+   then called `Agent(..., isolation: 'worktree')` four times in parallel.
+   All four failed with the same error. The harness's "is a git repo?"
+   probe disagrees with reality. **Fix**: dropped isolation, used
+   file-scoping in prompts.
+
+2. **Chorus order bug.** All 3 demo songs have `song.cho` ordered V C V,
+   but the notation rendered V V C because of `assembleAbc`'s rule:
+   _"chorus between every 2nd verse, never as the final block; ≤2 verses
+   get a trailing chorus"_. The rule made the chorus position **implicit
+   and frequently wrong** — `song.cho` already says where the chorus
+   goes; the melody schema was ignoring that information. **Fix
+   (`1cacbc5`)**: `Melody = { header, blocks: Block[] }` where `Block =
+   { type: 'verse'|'chorus'|'bridge', body: string }`. `assembleAbc` just
+   concatenates header + each `block.body`. Tests rewritten on both
+   sides; all 3 melodies migrated.
+
+3. **`localStorage` setItem missing under vitest+jsdom.** Component tests
+   crashed because zustand's `persist` middleware calls `setItem` on
+   `localStorage`, and the Storage stub bundled with jsdom 29 (shipped by
+   vitest 4) has no `setItem`. **Fix**: added an in-memory polyfill in
+   `vitest.setup.ts` that replaces `window.localStorage` with a real
+   `Map`-backed object before any test runs.
+
+4. **Reviewer smoke test left a server running**, which the harness
+   killed with SIGTERM (exit 143) — surfaced as a `task-notification`
+   mid-session. Cosmetic only; the agent had already committed.
+
+5. **`Edit` tool friction** with the bracketed filename `[id].tsx` — the
+   shell `git add` needs the bracket escaped (`git add app/app/song/\[id\].tsx`).
+   `Edit` itself handles it fine because we pass the raw path.
 
 ## Key Decisions Made and Why
 
-1. **Hand-authored demo songs > better synthetic pipeline output.**
-   Two options when the user complained the songs were garbage: (a)
-   fix the OCR pipeline to produce readable text from synthetic PDFs,
-   or (b) bypass the pipeline for demo content. (b) won — the pipeline
-   mechanics are sound; the problem was always "no real input PDF".
-   Hand-authored ChordPro lets the app *actually be a songbook reader*
-   while we wait for real source material.
+1. **Drop the interleave rule; encode block order explicitly.** The
+   `{verses[], chorus?}` + rule design said "the author should not have
+   to pre-interleave the chorus", but in practice authors **always have
+   an opinion** about where the chorus sits — and `song.cho` already
+   records it. Storing the same fact twice (once implicit in `melody.json`,
+   once explicit in `song.cho`) means they can disagree. They did, on
+   all 3 demo songs. New schema treats `song.cho` ordering as the source
+   of truth that `melody.json` must mirror, with the door open to V C V C V
+   patterns, multiple choruses, bridges, etc.
 
-2. **`hasStaffImages: false` for the demo songs.**
-   We have no real scans to crop, so emitting empty stave PNGs would
-   be lying. The reader already gates the stave section on the count,
-   so disabling means clean rendering.
+2. **Schema migration without a back-compat path.** Three hand-authored
+   melody files exist. Migrating them in-place is faster than dual-parsing.
+   If the pipeline starts emitting `melody.json` (item #2 in next steps),
+   it'll emit the new shape directly.
 
-3. **abcjs over VexFlow.**
-   abcjs accepts a plain-text ABC string; VexFlow needs you to build a
-   note tree programmatically. For a sidecar-file workflow where humans
-   (or, eventually, the pipeline) author the melody, text input is
-   massively more ergonomic. abcjs's responsive-resize quirk is the
-   only real wart and it's documented in code now.
+3. **Component tests stop at the web path.** `react-native-webview` ships
+   Flow source that vite-node can't transform without extra plumbing
+   (e.g. a SWC plugin or `transformIgnorePatterns`). Web is the
+   production target today, so we mock the webview to a no-op and pin
+   the native branch's behavior with future device tests instead.
 
-4. **JSON sidecar instead of pre-interleaved ABC.**
-   The interleaving rule lives in code so we can iterate on it. If we
-   decide "every 3 verses, or always trailing for hymns, or never
-   trailing for psalms", that's a one-line change in
-   `assemble.ts` — not 240 file edits across the corpus.
+4. **Staves toggle becomes either/or, not "show extras".** Originally:
+   text always renders; staves render below when toggled on. User
+   feedback said the duplication is noisy. Simpler mental model: one
+   knob, two states (notation vs lyrics). Kept the existing "Staves"
+   label since it's still accurate (Staves = on → notation visible).
 
-5. **One music+w pair per ChordPro text line.**
-   `w:` is bound to the previous music line, so splitting every verse
-   into one music line per text line gives a 1:1 lyric:staff mapping
-   that abcjs handles correctly. Side benefit: each staff row is
-   short, which is the right shape for the upcoming autoscroll.
+5. **Default `autoScrollSpeed` 30 px/s.** Range 0–200, step 10. 30 reads
+   slow but moves at all; 200 is "fast scroll for the chorus a third
+   time". User can tune live with the stepper next to play/pause.
 
-6. **`scale = BASE_SCALE × (fontSize / BASE_FONT_SIZE)`.**
-   Linear mapping so A− and A+ both visibly move the needle. The base
-   1.25 keeps the staff readable at the default font size; tweaks
-   either direction from there.
+6. **`reset on play` not implemented; resume from current position.**
+   When the user pauses then plays, we don't snap back to the top —
+   feels right for the "I lost my place" case.
 
-7. **Padding strategy: `*` for missing syllables, `_` for extra ones.**
-   `*` skips a note (note plays, no lyric beneath); `_` extends the
-   previous syllable across the next note (visual slur).
-   Both are standard ABC. Made the verse-2-doesn't-quite-fit case
-   purely declarative — no melody-per-verse needed.
+7. **Manual-scroll-during-play pauses (slack 6 px).** If the user drags
+   while playing, we adopt the new position and pause. Easier to reason
+   about than "ignore manual scroll" or "treat manual scroll as a speed
+   change".
+
+8. **Block types: `verse | chorus | bridge`.** Three slots is enough for
+   the corpus; extending later is a one-line change in two places (TS
+   union + Python `_BLOCK_TYPES`). Did NOT add free-form types; a typo'd
+   `'verce'` should 400 at PUT time, not silently render.
+
+9. **No backwards-compat key shimming on `melody.json`.** The reviewer's
+   `EMPTY_MELODY` stub is `{header: '', blocks: []}`; old stubs with
+   `verses[]` will fail the validator. Acceptable since the corpus has
+   3 files and they're all migrated.
+
+10. **Git identity set repo-locally**, not globally. `git config
+    user.email "ondrej.maxa11@gmail.com" && git config user.name "Ondrej
+    Maxa"` ran without `--global`, so other repos are untouched.
+    Existing 25 commits still show the old `@MacBook-Pro-3.local`; not
+    rewriting history.
 
 ## Lessons Learned & Gotchas
 
-- **ABC's `w:` line associates with the *immediately preceding* music
-  line, full stop.** If you want lyrics on every staff row, you need
-  one `w:` per music line. Stacking multiple `w:` lines under one
-  music line means "this melody has multiple verses with these
-  stacked lyrics" — a different feature.
-- **`abcjs.renderAbc(target, abc, { responsive: 'resize' })`** clamps
-  the SVG to the container's width and effectively ignores `scale`.
-  Don't combine them.
-- **`M:3/4` means each bar = 3 beats, not 3 quarter-notes-of-anything
-  smaller.** With `L:1/4` the natural note is a quarter, and a bar
-  holds three of them. If you want 9 notes per 2-bar phrase, that's
-  3 quarters + 3 eighth pairs per bar, not "two and change bars of
-  quarters".
-- **`Pán` / `Král` are one syllable each, not two.** The Czech accent
-  doesn't add a syllable. The line "on je můj Pán a Král." is six
-  syllables, not eight.
-- **Stray `npm install` at repo root** (running outside `app/`)
-  creates a top-level `package.json` + `node_modules/` + `package-lock.json`.
-  Always `cd app && npm install ...`. If you see those files at the
-  repo root, delete them — nothing references them.
-- **abcjs's TypeScript types call the function `renderAbc` (not
-  `renderABC`).** Easy to mis-cap.
-- **`expo install` (vs `npm install`) is the right way to add native
-  deps** — it pins to the version compatible with the installed Expo
-  SDK. We used it for `@react-native-async-storage/async-storage`
-  earlier this session, and not for `abcjs` (web-only, no Expo
-  compatibility check needed).
-- **Don't trust `Q:` in older ABC docs.** Modern abcjs accepts
-  `Q:1/4=84` (quarter = 84 BPM); the older `Q:60` or `Q:"Allegro"`
-  forms work but render differently.
+- **`Agent(isolation: 'worktree')` doesn't work here** even though it's
+  a real git repo — the harness's repo-detection probe diverges from the
+  CLI's. Stick with file-scoped parallel agents.
+
+- **`renderAbc(..., { responsive: 'resize' })` silently kills `scale`.**
+  Documented in the previous handover; still true; the new reviewer
+  `app.js` also omits it. If a future contributor reintroduces it,
+  A−/A+ will visibly stop affecting the staff (lyrics will still
+  resize — they're styled by React, not abcjs).
+
+- **vitest 4 + jsdom 29 has a busted `localStorage` Storage stub** (no
+  `setItem`). `vitest.setup.ts` polyfills it. Anything using `persist`
+  middleware or `localStorage` directly under vitest will fail without
+  the polyfill.
+
+- **`react-native-webview` ships Flow source**, not TypeScript or pure
+  JS. vite-node can't parse `// @flow` files out of the box. We mock the
+  module in tests; if you want real native-branch coverage, you'll need
+  a Flow-strip transform.
+
+- **`notation.toEnglish` / `toCzech` are asymmetric.** `toEnglish('B')` →
+  `'Bb'` (assumes the input is Czech `B`, which is English `Bb`). Don't
+  use plain `B` in roundtrip tests.
+
+- **Long `Bash` commands sometimes print a directory listing as part of
+  their output** — harmless; ignore the `ls -la`-looking preamble that
+  precedes actual command output.
+
+- **Pushing to `main` is blocked by the auto-mode classifier** by
+  default. User has to approve once per push, or add a permission rule.
+
+- **The `[id].tsx` route file needs bracket-escaping in shell calls**
+  (`git add app/app/song/\[id\].tsx`), but Edit/Read handle it raw.
+
+- **The reviewer ships static files via `StaticFiles(directory=...)`**;
+  no bundler. New static modules are plain ES modules served from
+  `/static/...`.
+
+- **CI uses `pip install -e ".[dev]"`** — confirm `pyproject.toml` has
+  `[project.optional-dependencies] dev = [...]` if you add new tooling.
 
 ## Current State
 
-**Working right now (verified end-to-end via Playwright):**
+**Working right now (verified by tests):**
 
-- **Reader app at http://localhost:8081/**
-  - 3 demo songs in the sidebar list with diacritic-folded search.
-  - Click any → detail screen with real notation:
-    - 4 music+w pairs per verse, each with its own lyrics directly
-      under the notes
-    - Chord labels above each bar
-    - Chorus auto-interleaved (`V1, V2, C` for the 2-verse demos)
-  - SongControls bar drives: notation Cs/En, transpose ± (shifts
-    notation too), font A−/A+ (resizes notation too), staves on/off.
-  - Settings persist via localStorage on web / AsyncStorage on native.
-  - `npm test` → 35 vitest tests passing.
-  - `npx tsc --noEmit` → clean.
+- **Reader (`cd app && npx expo start --web --port 8081`):**
+  - Lists 3 demo songs (with diacritic-folded search, count badge).
+  - Detail page renders title, controls bar, notation OR lyrics
+    (depending on Staves toggle), and stave PNGs if any.
+  - Notation: abcjs on web (direct DOM); abcjs in a WebView on
+    iOS/Android (auto-sized via `postMessage`).
+  - Controls: Notation Cs/En, Transpose ± (drives both chord text and
+    `visualTranspose` on staff), Size A−/A+ (drives both font size and
+    staff scale), Staves On/Off (now also toggles between notation and
+    text), **Autoscroll** ▶/⏸ + speed stepper (0–200 px/s).
+  - Settings persist (localStorage on web, AsyncStorage on native).
+  - `npm test` → 46 passed. `npx tsc --noEmit` → clean.
 
-- **Reviewer at http://127.0.0.1:8765/**
-  - Sidebar + detail editor; status badges; save flow with
-    auto-promotion `auto → flagged`.
-  - No changes this session; still healthy.
+- **Reviewer (`PYTHONPATH=pipeline pipeline/.venv/bin/python -m
+  zpevnik_pipeline.cli review --songs ./songs`):**
+  - Sidebar + detail with status badges; song.cho textarea +
+    **`melody.json` textarea** + **in-page abcjs notation preview**.
+  - Preview re-renders 300 ms after each keystroke.
+  - Save flow: PUT song first, then PUT melody if dirty. `auto →
+    flagged` promotion on either.
 
-- **Pipeline**
-  - 119 tests green; ruff + mypy --strict clean. (Unchanged this
-    session.)
+- **Pipeline**: 134 pytest passing; ruff clean. (mypy --strict still has
+  6 pre-existing `import-untyped` warnings on `fitz` / `pytesseract` —
+  unchanged from prior session.)
 
-- **Repo on GitHub: https://github.com/maxa-ondrej/zpevnik (private)**
-  - Pushed as `origin/main` this session. `git push` works.
+- **CI**: workflow at `.github/workflows/ci.yml`. Fires on every
+  `push` and `pull_request`. Both jobs went green on the initial push.
 
-**Known limitations:**
-- abcjs is web-only. On iOS/Android the `AbcView` gracefully renders
-  nothing (the staff section just doesn't appear). When the native
-  build matters, wrap abcjs in a WebView.
-- Demo melodies are *placeholder* musical phrases I wrote (chord-tone
-  arpeggios in each key), not faithful tunes. Real hymns will need
-  real melodies in `melody.json`.
-- Czech word *milujícího* in song 3 is rendered as 5 eighth notes,
-  which is musically right but visually dense at default scale —
-  the user might want denser bars stretched horizontally.
-- The horizontal scrollbar on the notation SVG can appear at narrow
-  viewport widths now that `responsive: 'resize'` is off. Acceptable
-  trade-off for the A−/A+ feature.
-- HANDOVER.md is now ~24 KB; could use a "things from previous
-  sessions" archive section in a future refresh.
+- **Repo**: `origin/main` at `ee75d1d` on GitHub
+  (`maxa-ondrej/zpevnik`, private). 8 new commits this session, all
+  pushed.
+
+- **Author identity**: locally set to
+  `Ondrej Maxa <ondrej.maxa11@gmail.com>`.
+
+**Known limitations / non-issues:**
+- Native `AbcView` (WebView branch) has no component-test coverage —
+  see "Lessons" for why.
+- Demo melodies are still placeholder arpeggios in each key; real hymns
+  need real melodies.
+- 6 pre-existing mypy `import-untyped` warnings (`fitz`,
+  `pytesseract`) — out of scope this session.
+- Manual-scroll-pause has a 6 px slack — if a user nudges by a few
+  pixels during autoscroll, we'll absorb it. Acceptable.
+- Reviewer UI doesn't surface per-block type changes ergonomically
+  (you edit raw JSON). Future work.
 
 **No temporary hacks in committed code.**
 
@@ -281,73 +379,68 @@ d0e6fba Notation: repeat the staff per verse instead of stacking lyrics
 In rough priority order:
 
 1. **Get a real source PDF from the user.** Still the gate for OCR
-   tuning, profile calibration, real corpus testing, and (most
-   visibly) real stave PNGs alongside the rendered notation.
+   tuning, profile calibration, real corpus, real stave PNGs, real
+   melodies.
 
-2. **Pipeline → melody.json emission.**
-   When the pipeline starts producing real per-song output, teach it
-   to write a `melody.json` alongside `song.cho`. For now the
-   pipeline doesn't know about ABC at all. Initial bridge: the OCR'd
-   chord row + lyric row already align to staff lines on the
-   page — there's enough structure to emit ABC if we're loose about
-   exact note durations.
+2. **Pipeline → `melody.json` emission.** When the pipeline starts
+   producing real per-song output, teach it to write a `melody.json` in
+   the **new schema** (`{ header, blocks: [{type, body}, …] }`) — order
+   the blocks from the same `start_of_*` directives that already drive
+   `song.cho` so the two stay in sync.
 
-3. **Reviewer: ABC editor.**
-   The reviewer's textarea currently edits `song.cho` only. Add a
-   second textarea for `melody.json` (or split it into per-verse
-   inputs) so humans can tune the notation without leaving the UI.
+3. **Reviewer: ergonomic block editing.** Right now the reviewer's
+   `melody.json` is a single raw-JSON textarea. Better UX: per-block
+   cards with type pickers + body textareas, drag-to-reorder. The
+   abcjs preview is already wired to re-render on edit.
 
-4. **Component tests for SongView and AbcView.**
-   Pure-helper tests cover the parsers + assemblers; rendering tests
-   would catch regressions in the rendered tree. Needs
-   `@testing-library/react-native` + jsdom.
+4. **Native component-test coverage.** `react-native-webview` Flow
+   source needs either (a) `transformIgnorePatterns` + a Flow-strip
+   loader, or (b) a Detox/E2E test that runs in a real RN context.
 
-5. **Native: WebView-wrapped notation rendering.**
-   The detail page falls back gracefully on iOS/Android, but the
-   notation is the headline feature now — worth wrapping abcjs in a
-   `WebView` (or shipping a small static page) so native gets the
-   staff too.
+5. **Whisper autoscroll sync (v2 spec).** The rAF-driven autoscroll
+   exists; the missing piece is feeding scroll speed from a Whisper
+   alignment of recorded audio. Tied to the audio/ dir which is still
+   empty.
 
-6. **GitHub Actions CI.**
-   `gh repo create` is done. Add `.github/workflows/ci.yml` running
-   `ruff check`, `mypy zpevnik_pipeline tests`, `pytest`, `npm test`,
-   `npx tsc --noEmit`.
+6. **Reviewer: rerender notation in-page** for the song.cho field, not
+   just `melody.json`. Currently lyrics edits don't preview live; you
+   have to save and reload.
 
-7. **Reviewer: rerender notation in-page.**
-   The reviewer can edit `song.cho` but can't *see* the rendered
-   notation for the song being reviewed. Pull the same `AbcView`
-   into the reviewer's detail view.
+7. **Multi-chorus / bridge content** in real corpus testing. The
+   schema supports it; no demo song exercises it. Once item #1 lands,
+   pick a hymn that uses it and prove the path.
 
-8. **Autoscroll.**
-   The whole notation layout was designed with autoscroll in mind
-   (one music+w pair per text line, generous vertical spacing). The
-   missing piece is a `requestAnimationFrame` loop tied to
-   `autoScrollSpeed` in the settings store. Tied to v2 spec.
+8. **`darkMode` setting** exists in the store but no UI surfaces it.
+   Low priority but easy points.
 
-9. **Set git author identity.**
-   Still `MacBook-Pro-3.local`. `git config user.email
-   "ondrej.maxa@shipmonk.com"` when the user gives the go-ahead.
+9. **Pre-existing mypy `import-untyped` warnings.** Six on `fitz` /
+   `pytesseract` in unrelated files. Either `[[tool.mypy.overrides]]
+   ignore_missing_imports = true` for those modules, or install
+   stubs.
 
 **Dependencies / blockers:**
-- Steps 1, 2 need a real PDF.
-- Step 6 needs nothing (CI infra is ready).
-- Step 4 needs `@testing-library/react-native` + a vitest jsdom config.
+- Steps 1, 2, 7 need a real PDF.
+- Steps 3, 4, 6, 8, 9 are unblocked.
 
 ## Important Files Map
 
 ```
 /Users/ondrej.maxa/Projects/zpevnik/
-├── HANDOVER.md                              this file
+├── HANDOVER.md                                       this file
 ├── README.md
 ├── zpevnik-spec.md
-├── .gitignore                               /songs/_*.json gitignored
+├── .gitignore                                        /songs/_*.json gitignored
+├── .github/
+│   └── workflows/
+│       └── ci.yml                                    ★ pipeline + app jobs in parallel
 │
 ├── schema/
-│   └── meta.schema.json                     staveCount required
+│   └── meta.schema.json
 │
-├── pipeline/                                ← UNCHANGED this session
-│   ├── pyproject.toml                       ruff/mypy config
-│   ├── tests/                               119 tests
+├── pipeline/
+│   ├── pyproject.toml                                Py 3.11+, ruff + mypy strict
+│   ├── tests/                                        134 tests
+│   │   └── test_review_melody.py                     ★ updated for blocks schema
 │   └── zpevnik_pipeline/
 │       ├── cli.py
 │       ├── models.py
@@ -355,84 +448,76 @@ In rough priority order:
 │       ├── parse/
 │       ├── output/
 │       └── review/
-│           ├── server.py                    FastAPI app
-│           └── static/                      reviewer UI
+│           ├── server.py                             ★ _validate_melody → blocks
+│           └── static/
+│               ├── index.html                        notation panel + melody editor
+│               ├── app.js                            ES module; debounced preview;
+│               │                                    EMPTY_MELODY = {header:'', blocks:[]}
+│               ├── assemble.js                       ★ plain-JS port of assembleAbc
+│               └── style.css
 │
 ├── app/
-│   ├── package.json                         + abcjs ^6.6.3
-│   ├── public/songs                         → ../../songs symlink
+│   ├── package.json                                  + react-native-webview, +
+│   │                                                 @testing-library/react,
+│   │                                                 @testing-library/jest-dom, jsdom
+│   ├── vitest.config.ts                              ★ NEW — jsdom env, RN→RN-Web alias
+│   ├── vitest.setup.ts                               ★ NEW — localStorage polyfill +
+│   │                                                  jest-dom matchers
+│   ├── public/songs                                  → ../../songs symlink
 │   ├── app/
-│   │   ├── _layout.tsx                      Stack root
-│   │   ├── index.tsx                        list with search
-│   │   └── song/[id].tsx                    ★ fetches melody.json,
-│   │                                          calls assembleAbc, passes
-│   │                                          to AbcView + SongView
+│   │   ├── _layout.tsx                               Stack root
+│   │   ├── index.tsx                                 list with search
+│   │   └── song/[id].tsx                             ★ autoscroll rAF loop;
+│   │                                                  {!showStaves && <SongView/>}
 │   └── src/shared/
 │       ├── components/
-│       │   ├── AbcView.tsx                  ★ NEW — abcjs wrapper
-│       │   ├── SongControls.tsx             notation/transpose/font/staves
-│       │   └── SongView.tsx                 text-only ChordPro renderer
+│       │   ├── AbcView.tsx                           ★ web DOM render OR WebView
+│       │   ├── AbcView.test.tsx                      ★ NEW — 5 cases, web path
+│       │   ├── SongControls.tsx                      ★ + Autoscroll ▶/⏸ + stepper
+│       │   ├── SongView.tsx
+│       │   └── SongView.test.tsx                     ★ NEW — 7 cases
 │       ├── chordpro/
-│       │   ├── parser.ts                    + parser.test.ts
-│       │   ├── transpose.ts                 + transpose.test.ts
-│       │   └── notation.ts                  + notation.test.ts
-│       ├── melody/                          ★ NEW
-│       │   ├── assemble.ts                  ★ interleaving logic
-│       │   └── assemble.test.ts             7 cases
+│       │   ├── parser.ts                             + parser.test.ts
+│       │   ├── transpose.ts                          + transpose.test.ts
+│       │   └── notation.ts                           + notation.test.ts
+│       │                                             toEnglish/toCzech ASYMMETRIC
+│       ├── melody/
+│       │   ├── assemble.ts                           ★ Melody = { header, blocks[] };
+│       │   │                                          no interleave
+│       │   └── assemble.test.ts                      ★ 6 cases
 │       ├── search/
-│       │   ├── fold.ts                      + fold.test.ts
+│       │   └── fold.ts                               + fold.test.ts
 │       ├── store/
-│       │   └── settings.ts                  zustand persist
+│       │   └── settings.ts                           autoScrollSpeed default 30
 │       └── types/
-│           └── song.ts                      SongMeta TS mirror
+│           └── song.ts
 │
 ├── songs/
-│   ├── index.json                           hand-authored corpus index
+│   ├── index.json
 │   ├── 001-pana-chvalit-budu/
-│   │   ├── meta.json                        reviewStatus: approved
-│   │   ├── song.cho                         hand-authored ChordPro
-│   │   └── melody.json                      ★ NEW — { header, verses[], chorus }
+│   │   ├── meta.json
+│   │   ├── song.cho                                  V {C} V structure
+│   │   └── melody.json                               ★ blocks: [V, C, V]
 │   ├── 002-hospodin-je-muj-pastyr/
 │   │   ├── meta.json
 │   │   ├── song.cho
-│   │   └── melody.json                      ★ NEW
+│   │   └── melody.json                               ★ blocks: [V, C, V]
 │   └── 003-ja-mam-v-nebi-otce/
 │       ├── meta.json
-│       ├── song.cho
-│       └── melody.json                      ★ NEW (3/4 time, dense eighths)
+│       ├── song.cho                                  3/4 time
+│       └── melody.json                               ★ blocks: [V, C, V]
 │
-└── audio/                                   empty (v2 — Whisper sync)
+└── audio/                                            empty (v2 — Whisper sync)
 ```
 
 ★ = high-leverage files for the next session.
 
-**Git status:** working tree clean. 25 commits total. Remote
-`origin = git@github.com:maxa-ondrej/zpevnik.git` (private).
+**Git status:** working tree clean. 33 commits total on `main`. Remote
+`origin = git@github.com:maxa-ondrej/zpevnik.git` (private). Author
+identity `Ondrej Maxa <ondrej.maxa11@gmail.com>` (repo-local).
 
-```
-4cc5163 Notation: fix song 3 — 3/4 time needs denser melodies
-a2867d1 Notation: w: per music line, scale honors A-/A+
-3fce7d9 Notation: JSON sidecar, auto chorus interleave, size buttons wired
-d0e6fba Notation: repeat the staff per verse instead of stacking lyrics
-958f45b App: transpose binds to notation, lyrics under notes, roomy layout
-5c61d38 App: render real music notation via abcjs
-33e9d23 Seed 3 hand-authored demo songs for the reader
-40446e3 Refresh HANDOVER for the app-wired + reviewer + lint-clean session
-1f13e2b App: unit tests for parser, transpose, notation, fold
-c05760a App: persist settings on native via AsyncStorage
-ff01ccd Pipeline: pass ruff + mypy --strict cleanly
-1c584f4 Review server: API + reviewer UI + tests
-5890533 Housekeeping: accept expo-cli gitignore drift, untrack expo-env.d.ts
-0dfcf4e Refresh HANDOVER for the stages-0..12 + app-wired sessions
-1862e56 App: search, settings persistence, dynamic header title
-0105080 App: expose notation/transpose/font/staves controls on song page
-f772da9 App: load real songs from /songs/, surface stave PNGs
-c8174ee Pipeline stages 6-12: alignment, ChordPro emission, write-out
-…
-```
-
-**Memory updates this session:** none new (the `feedback_autonomy.md`
-entry from earlier still applies).
+**Memory updates this session:** none new (`feedback_autonomy.md` and
+`project_zpevnik.md` still apply).
 
 **Reproduction commands** (next session can run these as-is):
 
@@ -442,18 +527,18 @@ cd /Users/ondrej.maxa/Projects/zpevnik/pipeline
 PYTHONPATH=. .venv/bin/python -m pytest tests/
 .venv/bin/ruff check .
 .venv/bin/mypy zpevnik_pipeline tests
-# expect: 119 passed; ruff clean; mypy clean
+# expect: 134 passed; ruff clean; mypy 6 pre-existing import-untyped warns
 
 # App tests + types
 cd /Users/ondrej.maxa/Projects/zpevnik/app
 npm test
 npx tsc --noEmit
-# expect: 35 passed; tsc clean
+# expect: 46 passed; tsc clean
 
-# Reader app
+# Reader
 cd /Users/ondrej.maxa/Projects/zpevnik/app
 npx expo start --web --port 8081
-# → http://localhost:8081/  (lists 3 demo songs with proper notation)
+# → http://localhost:8081/
 
 # Reviewer
 cd /Users/ondrej.maxa/Projects/zpevnik
