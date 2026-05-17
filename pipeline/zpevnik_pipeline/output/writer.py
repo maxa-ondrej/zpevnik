@@ -73,14 +73,30 @@ def write_song(
 
 
 def write_index(songs_root: Path, metas: list[SongMeta]) -> Path:
-    """Rewrite ``songs/index.json`` with the given (validated) metas."""
-    index = SongIndex(
-        generatedAt=datetime.now(UTC),
-        songs=sorted(
-            metas, key=lambda m: (m.number is None, m.number or 0, m.id)
-        ),
+    """Rewrite ``songs/index.json`` with the given (validated) metas.
+
+    Skips the write if the on-disk song list already matches — keeps
+    ``generatedAt`` stable so the file doesn't churn in git when nothing
+    has actually changed (relevant for reviewer hits that touch only
+    metadata views).
+    """
+    sorted_metas = sorted(
+        metas, key=lambda m: (m.number is None, m.number or 0, m.id)
     )
     path = songs_root / "index.json"
+
+    if path.exists():
+        try:
+            existing = SongIndex.model_validate_json(path.read_text(encoding="utf-8"))
+            if [m.model_dump(mode="json") for m in existing.songs] == [
+                m.model_dump(mode="json") for m in sorted_metas
+            ]:
+                return path
+        except Exception:
+            # Malformed / partial / wrong-shape → fall through and rewrite.
+            pass
+
+    index = SongIndex(generatedAt=datetime.now(UTC), songs=sorted_metas)
     _atomic_write_text(
         path,
         json.dumps(index.model_dump(mode="json"), indent=2, ensure_ascii=False) + "\n",

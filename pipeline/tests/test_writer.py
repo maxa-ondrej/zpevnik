@@ -112,3 +112,45 @@ def test_write_index_round_trips_through_pydantic(tmp_path: Path) -> None:
 
     loaded = SongIndex.model_validate_json((tmp_path / "index.json").read_text())
     assert [m.id for m in loaded.songs] == ["001"]
+
+
+def test_write_index_keeps_generatedAt_stable_when_songs_unchanged(
+    tmp_path: Path,
+) -> None:
+    """A second call with identical songs must NOT touch the file."""
+    write_index(tmp_path, [_meta()])
+    first_at = json.loads((tmp_path / "index.json").read_text())["generatedAt"]
+    first_mtime = (tmp_path / "index.json").stat().st_mtime_ns
+
+    write_index(tmp_path, [_meta()])
+    second_at = json.loads((tmp_path / "index.json").read_text())["generatedAt"]
+    second_mtime = (tmp_path / "index.json").stat().st_mtime_ns
+
+    assert first_at == second_at
+    # mtime equality is the stronger check: the file wasn't touched at all.
+    assert first_mtime == second_mtime
+
+
+def test_write_index_rewrites_when_songs_change(tmp_path: Path) -> None:
+    write_index(tmp_path, [_meta()])
+    first_at = json.loads((tmp_path / "index.json").read_text())["generatedAt"]
+
+    write_index(
+        tmp_path,
+        [_meta(), _meta(id="002", slug="b", title="B", number=2)],
+    )
+    doc = json.loads((tmp_path / "index.json").read_text())
+    assert [s["id"] for s in doc["songs"]] == ["001", "002"]
+    # Timestamps come from `datetime.now(UTC)` and are formatted to
+    # microseconds; back-to-back calls usually differ, but in the unlikely
+    # event they don't, the songs-list assertion above still proves a
+    # rewrite happened.
+    assert doc["generatedAt"] >= first_at
+
+
+def test_write_index_rewrites_when_a_field_changes(tmp_path: Path) -> None:
+    """A title edit on an existing song should still trigger a rewrite."""
+    write_index(tmp_path, [_meta(title="Original")])
+    write_index(tmp_path, [_meta(title="Edited")])
+    doc = json.loads((tmp_path / "index.json").read_text())
+    assert doc["songs"][0]["title"] == "Edited"
