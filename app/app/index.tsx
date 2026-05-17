@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,7 +10,9 @@ import {
   View,
 } from 'react-native';
 
-import { matches } from '../src/shared/search/fold';
+import { parseChordPro } from '../src/shared/chordpro/parser';
+import { fold, matches } from '../src/shared/search/fold';
+import { extractLyrics } from '../src/shared/search/lyrics';
 import { useTheme } from '../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../src/shared/types/song';
 
@@ -22,6 +24,16 @@ type State =
 export default function SongListScreen() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [query, setQuery] = useState('');
+  /**
+   * Folded lyric text per song id, populated in the background after the
+   * index loads. Empty until ready; title/number search works immediately.
+   * Stored in a ref so updates don't re-render the whole list — we only
+   * read it inside the search useMemo, which re-runs when `query` changes.
+   */
+  const [lyricsBySong, setLyricsBySong] = useState<Map<string, string>>(
+    () => new Map(),
+  );
+  const lyricsLoadedRef = useRef(false);
   const theme = useTheme();
 
   useEffect(() => {
@@ -32,6 +44,29 @@ export default function SongListScreen() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const index = (await res.json()) as SongIndex;
         if (!cancelled) setState({ kind: 'ready', songs: index.songs });
+
+        // Background-load every song's chordpro and build a folded lyric
+        // index. Failures per-song are non-fatal — that song just won't
+        // match lyric queries until the next load.
+        if (!lyricsLoadedRef.current) {
+          lyricsLoadedRef.current = true;
+          const entries = await Promise.all(
+            index.songs.map(async (s): Promise<[string, string] | null> => {
+              try {
+                const r = await fetch(`/songs/${s.id}-${s.slug}/song.cho`);
+                if (!r.ok) return null;
+                const cho = await r.text();
+                return [s.id, extractLyrics(parseChordPro(cho))];
+              } catch {
+                return null;
+              }
+            }),
+          );
+          if (cancelled) return;
+          const map = new Map<string, string>();
+          for (const e of entries) if (e) map.set(e[0], e[1]);
+          setLyricsBySong(map);
+        }
       } catch (err) {
         if (!cancelled) setState({ kind: 'error', message: String(err) });
       }
@@ -43,9 +78,16 @@ export default function SongListScreen() {
 
   const filtered = useMemo(() => {
     if (state.kind !== 'ready') return [];
-    if (query.trim().length === 0) return state.songs;
-    return state.songs.filter((s) => matches(s.title, query) || matches(String(s.number ?? ''), query));
-  }, [state, query]);
+    const trimmed = query.trim();
+    if (trimmed.length === 0) return state.songs;
+    const needle = fold(trimmed);
+    return state.songs.filter(
+      (s) =>
+        matches(s.title, query) ||
+        matches(String(s.number ?? ''), query) ||
+        (lyricsBySong.get(s.id)?.includes(needle) ?? false),
+    );
+  }, [state, query, lyricsBySong]);
 
   if (state.kind === 'loading') {
     return (
@@ -81,7 +123,7 @@ export default function SongListScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search by title or number…"
+          placeholder="Search title, number, or lyrics…"
           placeholderTextColor={theme.textDim}
           style={[
             styles.search,
