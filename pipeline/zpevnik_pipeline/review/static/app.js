@@ -285,7 +285,50 @@ function renderBlocks() {
       scheduleNotationRender();
     });
 
+    wireBlockDragHandlers(card, idx);
+
     container.appendChild(cardNode);
+  });
+}
+
+function wireBlockDragHandlers(card, idx) {
+  card.addEventListener('dragstart', (ev) => {
+    // Inside a textarea the browser already handles text-drag — let it.
+    if (ev.target instanceof HTMLTextAreaElement) {
+      ev.preventDefault();
+      return;
+    }
+    ev.dataTransfer.setData('text/plain', String(idx));
+    ev.dataTransfer.effectAllowed = 'move';
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document
+      .querySelectorAll('#melody-blocks .melody-block.drop-target')
+      .forEach((el) => el.classList.remove('drop-target'));
+  });
+  card.addEventListener('dragover', (ev) => {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'move';
+    card.classList.add('drop-target');
+  });
+  card.addEventListener('dragleave', () => {
+    card.classList.remove('drop-target');
+  });
+  card.addEventListener('drop', (ev) => {
+    ev.preventDefault();
+    card.classList.remove('drop-target');
+    const fromIdx = Number(ev.dataTransfer.getData('text/plain'));
+    if (!Number.isInteger(fromIdx) || fromIdx === idx) return;
+    const [moved] = currentMelody.blocks.splice(fromIdx, 1);
+    // After splicing out, the visual index of `idx` may have shifted by one
+    // if we removed from before it.
+    const targetIdx = fromIdx < idx ? idx - 1 : idx;
+    currentMelody.blocks.splice(targetIdx, 0, moved);
+    renderBlocks();
+    focusBlockAt(targetIdx);
+    scheduleNotationRender();
   });
 }
 
