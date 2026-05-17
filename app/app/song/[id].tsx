@@ -17,6 +17,7 @@ import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
 import { useSettings } from '../../src/shared/store/settings';
+import { useTheme } from '../../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../../src/shared/types/song';
 
 type State =
@@ -54,6 +55,7 @@ export default function SongScreen() {
   const transpose = useSettings((s) => s.transpose);
   const fontSize = useSettings((s) => s.fontSize);
   const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
+  const theme = useTheme();
 
   // --- Autoscroll machinery ----------------------------------------------
   const [isPlaying, setIsPlaying] = useState(false);
@@ -180,16 +182,18 @@ export default function SongScreen() {
 
   if (state.kind === 'loading') {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator />
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
 
   if (state.kind === 'error') {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>Couldn't load song: {state.message}</Text>
+      <View style={[styles.container, { backgroundColor: theme.bg }]}>
+        <Text style={[styles.error, { color: theme.danger }]}>
+          Couldn't load song: {state.message}
+        </Text>
       </View>
     );
   }
@@ -201,12 +205,13 @@ export default function SongScreen() {
   return (
     <ScrollView
       ref={scrollRef}
+      style={{ backgroundColor: theme.bg }}
       contentContainerStyle={styles.container}
       onScroll={handleScroll}
       scrollEventThrottle={16}
     >
       <Stack.Screen options={{ title: headerTitle }} />
-      <Text style={styles.title}>{state.meta.title}</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
       <SongControls isPlaying={isPlaying} onTogglePlay={togglePlay} />
       {showStaves && state.abc !== null && (
         <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
@@ -217,7 +222,7 @@ export default function SongScreen() {
             <Image
               key={uri}
               source={{ uri }}
-              style={styles.stave}
+              style={[styles.stave, { backgroundColor: theme.bgAlt }]}
               resizeMode="contain"
               accessibilityLabel="Stave notation"
             />
@@ -233,7 +238,7 @@ const styles = StyleSheet.create({
   container: { padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: '600', marginBottom: 12 },
-  error: { color: '#a00' },
+  error: {},
   staves: { marginBottom: 16, gap: 6 },
-  stave: { width: '100%', aspectRatio: 12, backgroundColor: '#fafafa' },
+  stave: { width: '100%', aspectRatio: 12 },
 });

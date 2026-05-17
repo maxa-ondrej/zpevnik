@@ -9,6 +9,7 @@ import { render as renderNotation } from '../chordpro/notation';
 import type { ParsedSong, SongLine } from '../chordpro/parser';
 import { transposeChord } from '../chordpro/transpose';
 import { useSettings } from '../store/settings';
+import { useTheme, type Theme } from '../store/theme';
 
 interface Props {
   song: ParsedSong;
@@ -16,6 +17,7 @@ interface Props {
 
 export function SongView({ song }: Props) {
   const { notation, transpose, fontSize, lineSpacing } = useSettings();
+  const theme = useTheme();
   return (
     <View style={styles.container}>
       {song.lines.map((line, i) => (
@@ -26,6 +28,7 @@ export function SongView({ song }: Props) {
           lineSpacing={lineSpacing}
           transpose={transpose}
           notation={notation}
+          theme={theme}
         />
       ))}
     </View>
@@ -38,19 +41,25 @@ interface LineRowProps {
   lineSpacing: number;
   transpose: number;
   notation: 'cs' | 'en';
+  theme: Theme;
 }
 
-function LineRow({ line, fontSize, lineSpacing, transpose, notation }: LineRowProps) {
+function LineRow({ line, fontSize, lineSpacing, transpose, notation, theme }: LineRowProps) {
   if (line.segments.length === 0) {
     return <View style={{ height: fontSize * lineSpacing }} />;
   }
   return (
-    <View style={[styles.line, line.section === 'chorus' && styles.chorus]}>
+    <View
+      style={[
+        styles.line,
+        line.section === 'chorus' && [styles.chorus, { borderLeftColor: theme.textMuted }],
+      ]}
+    >
       <View style={styles.chordRow}>
         {line.segments.map((seg, i) => (
           <Text
             key={`c${i}`}
-            style={[styles.chord, { fontSize: fontSize * 0.85 }]}
+            style={[styles.chord, { fontSize: fontSize * 0.85, color: theme.accent }]}
           >
             {seg.chord ? renderNotation(transposeChord(seg.chord, transpose), notation) : ''}
             {seg.text.length > 0 ? ' '.repeat(seg.text.length) : ''}
@@ -59,7 +68,7 @@ function LineRow({ line, fontSize, lineSpacing, transpose, notation }: LineRowPr
       </View>
       <View style={styles.lyricRow}>
         {line.segments.map((seg, i) => (
-          <Text key={`l${i}`} style={[styles.lyric, { fontSize }]}>
+          <Text key={`l${i}`} style={[styles.lyric, { fontSize, color: theme.text }]}>
             {seg.text}
           </Text>
         ))}
@@ -71,9 +80,9 @@ function LineRow({ line, fontSize, lineSpacing, transpose, notation }: LineRowPr
 const styles = StyleSheet.create({
   container: { padding: 16 },
   line: { marginBottom: 8 },
-  chorus: { paddingLeft: 16, borderLeftWidth: 2, borderLeftColor: '#888' },
+  chorus: { paddingLeft: 16, borderLeftWidth: 2 },
   chordRow: { flexDirection: 'row' },
   lyricRow: { flexDirection: 'row' },
-  chord: { fontFamily: 'monospace', color: '#0a6', fontWeight: '600' },
+  chord: { fontFamily: 'monospace', fontWeight: '600' },
   lyric: { fontFamily: 'monospace' },
 });
