@@ -24,7 +24,7 @@ const BASE_FONT_SIZE = 16;
 const BASE_SCALE = 1.25;
 const ABCJS_CDN = 'https://cdn.jsdelivr.net/npm/abcjs@6.6.3/dist/abcjs-basic-min.js';
 
-function buildScale(fontSize: number): number {
+export function buildScale(fontSize: number): number {
   return BASE_SCALE * (fontSize / BASE_FONT_SIZE);
 }
 
@@ -35,8 +35,11 @@ function buildScale(fontSize: number): number {
  *
  * NOTE: do NOT pass `responsive: 'resize'` here — it makes the SVG fit
  * the container width and effectively ignores `scale`.
+ *
+ * Exported for testing — the WebView itself is hard to mount under jsdom,
+ * but the HTML it loads is a pure function we can pin.
  */
-function buildHtml(abc: string, scale: number, visualTranspose: number): string {
+export function buildHtml(abc: string, scale: number, visualTranspose: number): string {
   const abcLiteral = JSON.stringify(abc);
   return `<!doctype html>
 <html>

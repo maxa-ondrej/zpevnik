@@ -16,7 +16,7 @@
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { AbcView } from './AbcView';
+import { AbcView, buildHtml, buildScale } from './AbcView';
 
 // AbcView does `import abcjs from 'abcjs'`, so the module's `default` export
 // must be a mock object exposing `renderAbc` — we capture it for assertions.
@@ -91,5 +91,55 @@ describe('AbcView (web path)', () => {
     // a single root view on the web path.
     expect(container.firstElementChild).not.toBeNull();
     expect(container.firstElementChild?.tagName.toLowerCase()).toBe('div');
+  });
+});
+
+describe('buildScale', () => {
+  test('returns BASE_SCALE × (fontSize / 16)', () => {
+    expect(buildScale(16)).toBe(1.25);
+    expect(buildScale(32)).toBe(2.5);
+    expect(buildScale(8)).toBe(0.625);
+  });
+});
+
+describe('buildHtml (native WebView payload)', () => {
+  const ABC = 'X:1\nT:Test\nM:4/4\nK:C\nC D E F |';
+
+  test('embeds the ABC source as a JSON literal (preserves quoting + newlines)', () => {
+    const html = buildHtml(ABC, 1.25, 0);
+    // JSON.stringify quotes the string and escapes newlines — the literal
+    // appears verbatim in the rendered HTML.
+    expect(html).toContain(JSON.stringify(ABC));
+  });
+
+  test('renderAbc options include scale and visualTranspose from args', () => {
+    const html = buildHtml(ABC, 2.5, 7);
+    expect(html).toMatch(/scale:\s*2\.5/);
+    expect(html).toMatch(/visualTranspose:\s*7/);
+  });
+
+  test('loads abcjs from jsdelivr CDN', () => {
+    const html = buildHtml(ABC, 1.25, 0);
+    expect(html).toContain('https://cdn.jsdelivr.net/npm/abcjs@6.6.3');
+  });
+
+  test('posts a {kind:"size",height} message back to RN', () => {
+    const html = buildHtml(ABC, 1.25, 0);
+    expect(html).toContain("kind: 'size'");
+    expect(html).toContain('ReactNativeWebView.postMessage');
+  });
+
+  test('omits responsive: resize (known abcjs scale-killer)', () => {
+    const html = buildHtml(ABC, 1.25, 0);
+    expect(html).not.toMatch(/responsive\s*:/);
+  });
+
+  test('escapes embedded quotes in the ABC string', () => {
+    const tricky = 'X:1\nT:He said "hi"\nK:C\nC';
+    const html = buildHtml(tricky, 1.25, 0);
+    // JSON.stringify escapes inner quotes — the JSON-encoded literal MUST
+    // appear in full; raw quotes would break the surrounding JS string.
+    expect(html).toContain(JSON.stringify(tricky));
+    expect(html).not.toContain('He said "hi"');
   });
 });
