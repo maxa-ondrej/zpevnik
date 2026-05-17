@@ -13,6 +13,7 @@ import {
 import { parseChordPro } from '../src/shared/chordpro/parser';
 import { fold, matches } from '../src/shared/search/fold';
 import { extractLyrics } from '../src/shared/search/lyrics';
+import { useRecents } from '../src/shared/store/recents';
 import { useTheme } from '../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../src/shared/types/song';
 
@@ -34,6 +35,7 @@ export default function SongListScreen() {
     () => new Map(),
   );
   const lyricsLoadedRef = useRef(false);
+  const recents = useRecents((s) => s.recents);
   const theme = useTheme();
 
   useEffect(() => {
@@ -88,6 +90,17 @@ export default function SongListScreen() {
         (lyricsBySong.get(s.id)?.includes(needle) ?? false),
     );
   }, [state, query, lyricsBySong]);
+
+  /** Recent songs in mark-order (newest first), filtered to known ids. */
+  const recentSongs = useMemo(() => {
+    if (state.kind !== 'ready') return [];
+    const byId = new Map(state.songs.map((s) => [s.id, s] as const));
+    return recents
+      .map((id) => byId.get(id))
+      .filter((s): s is SongMeta => s !== undefined);
+  }, [state, recents]);
+
+  const showRecents = query.trim().length === 0 && recentSongs.length > 0;
 
   if (state.kind === 'loading') {
     return (
@@ -144,6 +157,30 @@ export default function SongListScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(s) => s.id}
+          ListHeaderComponent={
+            showRecents ? (
+              <View>
+                <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+                  Recently viewed
+                </Text>
+                {recentSongs.map((s) => (
+                  <Link
+                    key={`r-${s.id}`}
+                    href={{ pathname: '/song/[id]', params: { id: s.id } }}
+                    asChild
+                  >
+                    <Pressable style={[styles.row, { borderColor: theme.borderSoft }]}>
+                      <Text style={[styles.rowNumber, { color: theme.textMuted }]}>
+                        {s.number ?? ''}
+                      </Text>
+                      <Text style={[styles.rowTitle, { color: theme.text }]}>{s.title}</Text>
+                    </Pressable>
+                  </Link>
+                ))}
+                <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>All songs</Text>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <Link href={{ pathname: '/song/[id]', params: { id: item.id } }} asChild>
               <Pressable style={[styles.row, { borderColor: theme.borderSoft }]}>
@@ -184,4 +221,12 @@ const styles = StyleSheet.create({
   empty: { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
   emptyHint: { textAlign: 'center' },
+  sectionLabel: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 6,
+  },
 });

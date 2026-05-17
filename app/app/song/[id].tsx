@@ -16,6 +16,7 @@ import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
+import { useRecents } from '../../src/shared/store/recents';
 import { useSettings } from '../../src/shared/store/settings';
 import { useTheme } from '../../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../../src/shared/types/song';
@@ -55,7 +56,13 @@ export default function SongScreen() {
   const transpose = useSettings((s) => s.transpose);
   const fontSize = useSettings((s) => s.fontSize);
   const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
+  const markRecent = useRecents((s) => s.mark);
   const theme = useTheme();
+
+  // Record this song as recently viewed. Fires once per id change.
+  useEffect(() => {
+    if (typeof id === 'string' && id.length > 0) markRecent(id);
+  }, [id, markRecent]);
 
   // --- Autoscroll machinery ----------------------------------------------
   const [isPlaying, setIsPlaying] = useState(false);
