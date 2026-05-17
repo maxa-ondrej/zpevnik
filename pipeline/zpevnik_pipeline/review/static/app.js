@@ -1,4 +1,5 @@
 import { assembleAbc } from '/static/assemble.js';
+import { parseChordPro } from '/static/chordpro.js';
 
 const listEl = document.getElementById('song-list');
 const detailEl = document.getElementById('detail');
@@ -9,6 +10,7 @@ const blockTpl = document.getElementById('block-template');
 const EMPTY_MELODY = { header: '', blocks: [] };
 const BLOCK_TYPES = ['verse', 'chorus', 'bridge'];
 const NOTATION_DEBOUNCE_MS = 300;
+const CHORDPRO_DEBOUNCE_MS = 150;
 
 let allSongs = [];
 let currentId = null;
@@ -18,6 +20,7 @@ let loadedMelody = null;
 /** Mutable working copy bound to the structured editor. */
 let currentMelody = cloneMelody(EMPTY_MELODY);
 let notationDebounce = null;
+let chordproDebounce = null;
 
 const fold = (s) =>
   (s ?? '').toString().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase();
@@ -154,15 +157,18 @@ function renderDetail() {
     });
   });
 
+  form.chordpro.addEventListener('input', () => scheduleChordproRender());
+
   form.addEventListener('submit', onSave);
   node.querySelector('#reload').addEventListener('click', () => selectSong(currentId));
 
   detailEl.replaceChildren(node);
 
   renderBlocks();
-  // Initial paint of the notation preview. Wait a tick so the template has
-  // been attached and the #notation-target node is reachable.
+  // Initial paint of both previews. Wait a tick so the template has
+  // been attached and the target nodes are reachable.
   scheduleNotationRender(0);
+  scheduleChordproRender(0);
 }
 
 function renderBlocks() {
@@ -247,6 +253,68 @@ function scheduleNotationRender(delay = NOTATION_DEBOUNCE_MS) {
     notationDebounce = null;
     renderNotation();
   }, delay);
+}
+
+function scheduleChordproRender(delay = CHORDPRO_DEBOUNCE_MS) {
+  if (chordproDebounce !== null) {
+    clearTimeout(chordproDebounce);
+  }
+  chordproDebounce = setTimeout(() => {
+    chordproDebounce = null;
+    renderChordpro();
+  }, delay);
+}
+
+function renderChordpro() {
+  const target = document.getElementById('chordpro-target');
+  const status = document.getElementById('chordpro-status');
+  if (!target || !status) return;
+
+  const form = document.getElementById('edit-form');
+  const source = form?.chordpro?.value ?? '';
+  if (source.trim().length === 0) {
+    status.textContent = 'Empty — type chord/lyric content to preview.';
+    status.dataset.tone = 'muted';
+    target.replaceChildren();
+    return;
+  }
+
+  const parsed = parseChordPro(source);
+  target.replaceChildren();
+
+  let lineCount = 0;
+  parsed.lines.forEach((line) => {
+    const row = document.createElement('div');
+    row.className = 'cp-line';
+    if (line.section === 'chorus') row.classList.add('cp-chorus');
+    if (line.section === 'bridge') row.classList.add('cp-bridge');
+
+    if (line.segments.length === 0) {
+      row.classList.add('cp-blank');
+      target.appendChild(row);
+      return;
+    }
+    lineCount += 1;
+
+    line.segments.forEach((seg) => {
+      const cell = document.createElement('div');
+      cell.className = 'cp-cell';
+      const chord = document.createElement('span');
+      chord.className = 'cp-chord';
+      // nbsp keeps the row height stable even when the segment has no chord.
+      chord.textContent = seg.chord ?? ' ';
+      const lyric = document.createElement('span');
+      lyric.className = 'cp-lyric';
+      lyric.textContent = seg.text.length > 0 ? seg.text : ' ';
+      cell.appendChild(chord);
+      cell.appendChild(lyric);
+      row.appendChild(cell);
+    });
+    target.appendChild(row);
+  });
+
+  status.textContent = `${lineCount} line${lineCount === 1 ? '' : 's'}`;
+  status.dataset.tone = 'ok';
 }
 
 function renderNotation() {

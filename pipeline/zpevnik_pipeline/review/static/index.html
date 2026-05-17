@@ -29,13 +29,22 @@
         <h2 data-bind="title-display"></h2>
       </header>
       <section class="staves" hidden></section>
-      <section class="notation-panel">
-        <header>
-          <h3>Notation preview</h3>
-          <span class="notation-status" id="notation-status"></span>
-        </header>
-        <div id="notation-target" class="notation-target"></div>
-      </section>
+      <div class="preview-grid">
+        <section class="preview-panel chordpro-panel">
+          <header>
+            <h3>Chord chart preview</h3>
+            <span class="preview-status" id="chordpro-status"></span>
+          </header>
+          <div id="chordpro-target" class="chordpro-target"></div>
+        </section>
+        <section class="preview-panel notation-panel">
+          <header>
+            <h3>Notation preview</h3>
+            <span class="preview-status" id="notation-status"></span>
+          </header>
+          <div id="notation-target" class="notation-target"></div>
+        </section>
+      </div>
       <form id="edit-form">
         <div class="row">
           <label>Title<input name="title" type="text" required /></label>
