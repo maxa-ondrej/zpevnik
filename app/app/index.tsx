@@ -1,4 +1,4 @@
-import { Link, Stack, useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -144,20 +144,6 @@ export default function SongListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/setlists')}
-              style={styles.headerLink}
-              accessibilityRole="link"
-              accessibilityLabel="Open setlists"
-            >
-              <Text style={[styles.headerLinkText, { color: theme.accent }]}>Setlists</Text>
-            </Pressable>
-          ),
-        }}
-      />
       <View style={[styles.searchBar, { borderColor: theme.borderSoft }]}>
         <TextInput
           value={query}
@@ -196,6 +182,14 @@ export default function SongListScreen() {
         <Text style={[styles.count, { color: theme.textMuted }]}>
           {filtered.length}/{state.songs.length}
         </Text>
+        <Pressable
+          onPress={() => router.push('/setlists')}
+          style={[styles.setlistsLink, { borderColor: theme.border, backgroundColor: theme.inputBg }]}
+          accessibilityRole="link"
+          accessibilityLabel="Open setlists"
+        >
+          <Text style={[styles.setlistsLinkText, { color: theme.accent }]}>Setlists</Text>
+        </Pressable>
       </View>
       {filtered.length === 0 ? (
         <View style={styles.empty}>
@@ -297,6 +291,11 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 6,
   },
-  headerLink: { paddingHorizontal: 12, paddingVertical: 6 },
-  headerLinkText: { fontSize: 15, fontWeight: '500' },
+  setlistsLink: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderRadius: 6,
+  },
+  setlistsLinkText: { fontSize: 13, fontWeight: '500' },
 });

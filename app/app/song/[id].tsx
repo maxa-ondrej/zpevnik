@@ -362,7 +362,12 @@ export default function SongScreen() {
           ))}
         </View>
       )}
-      {!showStaves && (
+      {/* SongView (lyrics+chords) renders when:
+           - staves are off (the normal text view), OR
+           - play mode is on (so the line highlight is visible even when
+             the user has staves enabled — full note-on-staff highlighting
+             would need abcjs TimingCallbacks, future work). */}
+      {(!showStaves || isFollowing) && (
         <SongView
           song={state.song}
           highlightedLineIndex={isFollowing ? followLine : undefined}
