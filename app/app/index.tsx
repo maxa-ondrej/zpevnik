@@ -1,4 +1,4 @@
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ type State =
   | { kind: 'error'; message: string };
 
 export default function SongListScreen() {
+  const router = useRouter();
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [query, setQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -146,15 +147,14 @@ export default function SongListScreen() {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Link href="/setlists" asChild>
-              <Pressable
-                style={({ pressed }) => [styles.headerLink, pressed && { opacity: 0.6 }]}
-                accessibilityRole="link"
-                accessibilityLabel="Open setlists"
-              >
-                <Text style={[styles.headerLinkText, { color: theme.accent }]}>Setlists</Text>
-              </Pressable>
-            </Link>
+            <Pressable
+              onPress={() => router.push('/setlists')}
+              style={styles.headerLink}
+              accessibilityRole="link"
+              accessibilityLabel="Open setlists"
+            >
+              <Text style={[styles.headerLinkText, { color: theme.accent }]}>Setlists</Text>
+            </Pressable>
           ),
         }}
       />
