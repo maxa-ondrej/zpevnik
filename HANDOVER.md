@@ -3,14 +3,13 @@
 ## Summary
 
 A long session that cleared every non-blocked item from the morning
-handover, then walked the spec's §7.1 v1 feature list and closed five
-more gaps: full-text lyric search, capo indicator, line-spacing UI,
-recents, favorites. Fifteen feature commits + four handover refreshes,
-all pushed to `origin/main` at `fbc5f8d`. Tests: pipeline 137 (was 134),
-app 79 (was 46). The only v1 spec items still open are **setlists**
-(meaningful UX scope — new navigation surface) and **native
-offline-first asset bundling**; everything else is either done or
-blocked on the real PDF / Whisper audio.
+handover, then walked the spec's §7.1 v1 feature list and closed every
+remaining gap including the biggest one — **setlists**. Sixteen feature
+commits + five handover refreshes, all pushed to `origin/main` at
+`0e6d6fa`. Tests: pipeline 137 (was 134), app 87 (was 46). The only v1
+reader feature still open is **native offline-first asset bundling**
+(infrastructure, not UX); everything else is done or blocked on the
+real PDF / Whisper audio.
 
 ## What Was Worked On & What Got Done
 
