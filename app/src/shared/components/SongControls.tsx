@@ -8,6 +8,11 @@ const FONT_MAX = 32;
 const FONT_STEP = 2;
 const TRANSPOSE_MIN = -11;
 const TRANSPOSE_MAX = 11;
+const CAPO_MIN = 0;
+const CAPO_MAX = 11;
+const LINE_SPACING_MIN = 1.0;
+const LINE_SPACING_MAX = 2.5;
+const LINE_SPACING_STEP = 0.1;
 const SCROLL_MIN = 0;
 const SCROLL_MAX = 200;
 const SCROLL_STEP = 10;
@@ -23,13 +28,17 @@ export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}
   const {
     notation,
     transpose,
+    capo,
     fontSize,
+    lineSpacing,
     showStaves,
     darkMode,
     autoScrollSpeed,
     setNotation,
     setTranspose,
+    setCapo,
     setFontSize,
+    setLineSpacing,
     setShowStaves,
     setDarkMode,
     setAutoScrollSpeed,
@@ -60,6 +69,21 @@ export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}
           label="+"
         />
       </Group>
+      <Group label="Capo" theme={theme}>
+        <Step
+          theme={theme}
+          onPress={() => setCapo(Math.max(CAPO_MIN, capo - 1))}
+          disabled={capo <= CAPO_MIN}
+          label="−"
+        />
+        <Text style={[styles.value, { color: theme.text }]}>{capo}</Text>
+        <Step
+          theme={theme}
+          onPress={() => setCapo(Math.min(CAPO_MAX, capo + 1))}
+          disabled={capo >= CAPO_MAX}
+          label="+"
+        />
+      </Group>
       <Group label="Size" theme={theme}>
         <Step
           theme={theme}
@@ -72,6 +96,34 @@ export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}
           onPress={() => setFontSize(Math.min(FONT_MAX, fontSize + FONT_STEP))}
           disabled={fontSize >= FONT_MAX}
           label="A+"
+        />
+      </Group>
+      <Group label="Spacing" theme={theme}>
+        <Step
+          theme={theme}
+          onPress={() =>
+            setLineSpacing(
+              Math.max(
+                LINE_SPACING_MIN,
+                Math.round((lineSpacing - LINE_SPACING_STEP) * 10) / 10,
+              ),
+            )
+          }
+          disabled={lineSpacing <= LINE_SPACING_MIN + 0.001}
+          label="−"
+        />
+        <Step
+          theme={theme}
+          onPress={() =>
+            setLineSpacing(
+              Math.min(
+                LINE_SPACING_MAX,
+                Math.round((lineSpacing + LINE_SPACING_STEP) * 10) / 10,
+              ),
+            )
+          }
+          disabled={lineSpacing >= LINE_SPACING_MAX - 0.001}
+          label="+"
         />
       </Group>
       <Group label="Staves" theme={theme}>

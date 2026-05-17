@@ -48,10 +48,14 @@ function LineRow({ line, fontSize, lineSpacing, transpose, notation, theme }: Li
   if (line.segments.length === 0) {
     return <View style={{ height: fontSize * lineSpacing }} />;
   }
+  // Scale the per-line gap so the user's lineSpacing setting actually shows
+  // up between chord/lyric rows, not just on blank lines.
+  const lineMargin = 8 * lineSpacing;
   return (
     <View
       style={[
         styles.line,
+        { marginBottom: lineMargin },
         line.section === 'chorus' && [styles.chorus, { borderLeftColor: theme.textMuted }],
       ]}
     >
@@ -79,7 +83,9 @@ function LineRow({ line, fontSize, lineSpacing, transpose, notation, theme }: Li
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  line: { marginBottom: 8 },
+  // marginBottom is overridden inline by `lineMargin` so the lineSpacing
+  // setting actually affects per-line gap.
+  line: {},
   chorus: { paddingLeft: 16, borderLeftWidth: 2 },
   chordRow: { flexDirection: 'row' },
   lyricRow: { flexDirection: 'row' },
