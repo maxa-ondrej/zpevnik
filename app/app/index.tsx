@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,7 @@ import {
 import { parseChordPro } from '../src/shared/chordpro/parser';
 import { fold, matches } from '../src/shared/search/fold';
 import { extractLyrics } from '../src/shared/search/lyrics';
+import { useFavorites } from '../src/shared/store/favorites';
 import { useRecents } from '../src/shared/store/recents';
 import { useTheme } from '../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../src/shared/types/song';
@@ -25,6 +26,7 @@ type State =
 export default function SongListScreen() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [query, setQuery] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   /**
    * Folded lyric text per song id, populated in the background after the
    * index loads. Empty until ready; title/number search works immediately.
@@ -36,6 +38,11 @@ export default function SongListScreen() {
   );
   const lyricsLoadedRef = useRef(false);
   const recents = useRecents((s) => s.recents);
+  const favorites = useFavorites((s) => s.favorites);
+  const isFavorite = useCallback(
+    (id: string) => favorites.includes(id),
+    [favorites],
+  );
   const theme = useTheme();
 
   useEffect(() => {
@@ -80,16 +87,19 @@ export default function SongListScreen() {
 
   const filtered = useMemo(() => {
     if (state.kind !== 'ready') return [];
+    const base = showFavoritesOnly
+      ? state.songs.filter((s) => favorites.includes(s.id))
+      : state.songs;
     const trimmed = query.trim();
-    if (trimmed.length === 0) return state.songs;
+    if (trimmed.length === 0) return base;
     const needle = fold(trimmed);
-    return state.songs.filter(
+    return base.filter(
       (s) =>
         matches(s.title, query) ||
         matches(String(s.number ?? ''), query) ||
         (lyricsBySong.get(s.id)?.includes(needle) ?? false),
     );
-  }, [state, query, lyricsBySong]);
+  }, [state, query, lyricsBySong, showFavoritesOnly, favorites]);
 
   /** Recent songs in mark-order (newest first), filtered to known ids. */
   const recentSongs = useMemo(() => {
@@ -100,7 +110,8 @@ export default function SongListScreen() {
       .filter((s): s is SongMeta => s !== undefined);
   }, [state, recents]);
 
-  const showRecents = query.trim().length === 0 && recentSongs.length > 0;
+  const showRecents =
+    query.trim().length === 0 && !showFavoritesOnly && recentSongs.length > 0;
 
   if (state.kind === 'loading') {
     return (
@@ -145,13 +156,39 @@ export default function SongListScreen() {
           autoCorrect={false}
           autoCapitalize="none"
         />
+        <Pressable
+          onPress={() => setShowFavoritesOnly((v) => !v)}
+          style={[
+            styles.favFilterBtn,
+            {
+              borderColor: showFavoritesOnly ? theme.accent : theme.border,
+              backgroundColor: showFavoritesOnly ? theme.accent : theme.inputBg,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={showFavoritesOnly ? 'Show all songs' : 'Show favorites only'}
+          accessibilityState={{ selected: showFavoritesOnly }}
+        >
+          <Text
+            style={[
+              styles.favFilterIcon,
+              { color: showFavoritesOnly ? theme.accentText : theme.textMuted },
+            ]}
+          >
+            ★
+          </Text>
+        </Pressable>
         <Text style={[styles.count, { color: theme.textMuted }]}>
           {filtered.length}/{state.songs.length}
         </Text>
       </View>
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={[styles.emptyHint, { color: theme.textMuted }]}>No matches.</Text>
+          <Text style={[styles.emptyHint, { color: theme.textMuted }]}>
+            {showFavoritesOnly && favorites.length === 0
+              ? 'No favorites yet — tap ★ on a song to add it.'
+              : 'No matches.'}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -174,6 +211,9 @@ export default function SongListScreen() {
                         {s.number ?? ''}
                       </Text>
                       <Text style={[styles.rowTitle, { color: theme.text }]}>{s.title}</Text>
+                      {isFavorite(s.id) && (
+                        <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
+                      )}
                     </Pressable>
                   </Link>
                 ))}
@@ -186,6 +226,9 @@ export default function SongListScreen() {
               <Pressable style={[styles.row, { borderColor: theme.borderSoft }]}>
                 <Text style={[styles.rowNumber, { color: theme.textMuted }]}>{item.number ?? ''}</Text>
                 <Text style={[styles.rowTitle, { color: theme.text }]}>{item.title}</Text>
+                {isFavorite(item.id) && (
+                  <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
+                )}
               </Pressable>
             </Link>
           )}
@@ -215,9 +258,19 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   count: { fontSize: 12, fontVariant: ['tabular-nums'] },
-  row: { flexDirection: 'row', padding: 16, gap: 12, borderBottomWidth: 1 },
+  favFilterBtn: {
+    width: 34,
+    height: 34,
+    borderWidth: 1,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favFilterIcon: { fontSize: 16, lineHeight: 18 },
+  row: { flexDirection: 'row', padding: 16, gap: 12, borderBottomWidth: 1, alignItems: 'center' },
   rowNumber: { width: 40, fontVariant: ['tabular-nums'] },
   rowTitle: { flex: 1, fontSize: 16 },
+  rowFav: { fontSize: 16 },
   empty: { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
   emptyHint: { textAlign: 'center' },

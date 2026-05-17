@@ -5,6 +5,7 @@ import {
   Image,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
+import { useFavorites } from '../../src/shared/store/favorites';
 import { useRecents } from '../../src/shared/store/recents';
 import { useSettings } from '../../src/shared/store/settings';
 import { useTheme } from '../../src/shared/store/theme';
@@ -57,6 +59,9 @@ export default function SongScreen() {
   const fontSize = useSettings((s) => s.fontSize);
   const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
   const markRecent = useRecents((s) => s.mark);
+  const favorites = useFavorites((s) => s.favorites);
+  const toggleFavorite = useFavorites((s) => s.toggle);
+  const isFavorite = typeof id === 'string' && favorites.includes(id);
   const theme = useTheme();
 
   // Record this song as recently viewed. Fires once per id change.
@@ -218,7 +223,22 @@ export default function SongScreen() {
       scrollEventThrottle={16}
     >
       <Stack.Screen options={{ title: headerTitle }} />
-      <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
+        <Pressable
+          onPress={() => {
+            if (typeof id === 'string') toggleFavorite(id);
+          }}
+          style={({ pressed }) => [styles.favBtn, pressed && { opacity: 0.6 }]}
+          accessibilityRole="button"
+          accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          accessibilityState={{ selected: isFavorite }}
+        >
+          <Text style={[styles.favIcon, { color: isFavorite ? theme.accent : theme.textDim }]}>
+            {isFavorite ? '★' : '☆'}
+          </Text>
+        </Pressable>
+      </View>
       <SongControls isPlaying={isPlaying} onTogglePlay={togglePlay} />
       {showStaves && state.abc !== null && (
         <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
@@ -244,7 +264,16 @@ export default function SongScreen() {
 const styles = StyleSheet.create({
   container: { padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 12 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 8,
+  },
+  title: { fontSize: 22, fontWeight: '600', flex: 1 },
+  favBtn: { padding: 4 },
+  favIcon: { fontSize: 26, lineHeight: 28 },
   error: {},
   staves: { marginBottom: 16, gap: 6 },
   stave: { width: '100%', aspectRatio: 12 },
