@@ -3,14 +3,14 @@
 ## Summary
 
 A long session that cleared every non-blocked item from the morning
-handover, then walked the spec's §7.1 v1 feature list and closed three
-remaining gaps: full-text lyric search, capo indicator, line-spacing UI.
-Thirteen feature commits + three handover refreshes, all pushed to
-`origin/main` at `0f9d0f1`. Tests: pipeline 137 (was 134), app 70
-(was 46). The only v1 spec items still open are **favorites / recents /
-setlists** (significant UX scope) and **native offline-first asset
-bundling**; everything else is either done or blocked on the real PDF /
-Whisper audio.
+handover, then walked the spec's §7.1 v1 feature list and closed five
+more gaps: full-text lyric search, capo indicator, line-spacing UI,
+recents, favorites. Fifteen feature commits + four handover refreshes,
+all pushed to `origin/main` at `fbc5f8d`. Tests: pipeline 137 (was 134),
+app 79 (was 46). The only v1 spec items still open are **setlists**
+(meaningful UX scope — new navigation surface) and **native
+offline-first asset bundling**; everything else is either done or
+blocked on the real PDF / Whisper audio.
 
 ## What Was Worked On & What Got Done
 
@@ -29,10 +29,12 @@ Items from the morning's `Clear Next Steps`:
 | 9  | Reviewer transpose + Cs/En toggle for chord preview   | ✅ `ffbf916`                 |
 | 10 | Reviewer polish (hint label + Alt+arrow reorder)      | ✅ `9f64c96`                 |
 
-Thirteen feature commits this session, all on `main`, all pushed to
+Fifteen feature commits this session, all on `main`, all pushed to
 `origin/main`:
 
 ```
+fbc5f8d App: favorites — toggle, list indicator, filter
+02ad81c App: recently viewed songs section on the list
 0f9d0f1 App: capo indicator + line spacing UI
 4714b54 App: full-text lyric search
 9f64c96 Reviewer: hint + Alt+arrow reorder for blocks
@@ -62,9 +64,9 @@ dc54b65 Reviewer: structured per-block melody editor
 | Line spacing                                          | ✅ `0f9d0f1`                   |
 | Dark mode                                             | ✅                             |
 | Manual auto-scroll                                    | ✅                             |
-| Favorites                                             | ❌ not started                 |
-| Recents                                               | ❌ not started                 |
-| Setlists                                              | ❌ not started                 |
+| Favorites                                             | ✅ `fbc5f8d`                   |
+| Recents                                               | ✅ `02ad81c`                   |
+| Setlists                                              | ❌ not started — see Next Steps|
 | Offline-first (web bundling done; native asset bundling) | ⚠️ partial — web works     |
 
 ### Commit-by-commit notes (this session, in chronological order)
@@ -312,26 +314,22 @@ dc54b65 Reviewer: structured per-block melody editor
 
 ## Clear Next Steps
 
-The v1 spec's bullet-listable feature surface is essentially closed.
-Remaining work splits cleanly:
+The v1 spec's bullet-listable feature surface is down to two items:
 
-**Bigger v1 UX features** (genuinely worth doing, but each is a small
-project on its own):
+**Bigger v1 UX features** (still unbuilt; each is its own scope):
 
-1. **Favorites.** A heart toggle on the detail page + a "Favorites"
-   filter / segmented control on the list. Persist a `Set<string>` of
-   song ids in the settings store.
+1. **Setlists.** Local-only named lists. The most invasive remaining
+   spec item because it introduces a new top-level navigation surface
+   (a "Setlists" tab or drawer). Needs:
+   - `useSetlists()` store: `{ setlists: {id, name, songIds[]}[],
+     create, rename, delete, addSong, removeSong, reorder }`
+   - List view of setlists with song counts
+   - Detail view of one setlist with reorderable rows
+   - "Add to setlist" sheet from the song detail page
+   - Decide: stack-add-tab navigation, or modal-only browse from
+     the song list?
 
-2. **Recents.** Track last-opened-at per song; surface a "Recently
-   viewed" section above the search results (or a tab). Probably wants
-   a separate `useRecents()` store so persistence/eviction is its own
-   concern.
-
-3. **Setlists.** Local-only named lists. Add/remove songs, reorder,
-   open setlist → first song. Most invasive of the three because it
-   introduces a new top-level navigation surface.
-
-4. **Native offline-first.** On web, songs are fetched from
+2. **Native offline-first.** On web, songs are fetched from
    `/songs/index.json` — `/public/songs` is a symlink to the repo's
    `songs/`. Native (iOS/Android) currently has nothing equivalent;
    the spec calls for "songs bundled with the app or synced once."
