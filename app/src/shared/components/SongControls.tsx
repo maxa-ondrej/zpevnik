@@ -21,9 +21,17 @@ interface SongControlsProps {
   /** When provided, renders the autoscroll play/pause + speed stepper group. */
   isPlaying?: boolean;
   onTogglePlay?: () => void;
+  /** When provided, renders the play (tempo-paced follow) toggle. */
+  isFollowing?: boolean;
+  onToggleFollow?: () => void;
 }
 
-export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}) {
+export function SongControls({
+  isPlaying,
+  onTogglePlay,
+  isFollowing,
+  onToggleFollow,
+}: SongControlsProps = {}) {
   const theme = useTheme();
   const {
     notation,
@@ -45,6 +53,7 @@ export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}
   } = useSettings();
 
   const showAutoScroll = onTogglePlay !== undefined;
+  const showPlay = onToggleFollow !== undefined;
 
   return (
     <View style={[styles.bar, { borderColor: theme.borderSoft }]}>
@@ -139,6 +148,16 @@ export function SongControls({ isPlaying, onTogglePlay }: SongControlsProps = {}
         <Toggle theme={theme} active={darkMode === 'dark'} onPress={() => setDarkMode('dark')} label="☾" />
         <Toggle theme={theme} active={darkMode === 'system'} onPress={() => setDarkMode('system')} label="Auto" />
       </Group>
+      {showPlay && (
+        <Group label="Play" theme={theme}>
+          <Toggle
+            theme={theme}
+            active={isFollowing ?? false}
+            onPress={onToggleFollow!}
+            label={isFollowing ? '⏸' : '▶'}
+          />
+        </Group>
+      )}
       {showAutoScroll && (
         <Group label="Autoscroll" theme={theme}>
           <Toggle

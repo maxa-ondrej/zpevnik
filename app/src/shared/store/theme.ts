@@ -24,6 +24,9 @@ export interface Theme {
   border: string;
   borderSoft: string;
   accent: string;
+  /** Tinted background derived from `accent`; used for soft highlights
+   *  (play-mode line, etc.). Readable text on top should be `text`. */
+  accentBg: string;
   accentText: string;
   danger: string;
   inputBg: string;
@@ -39,6 +42,7 @@ const LIGHT: Theme = {
   border: '#ddd',
   borderSoft: '#eee',
   accent: '#0a6',
+  accentBg: '#e6f5ee',
   accentText: '#ffffff',
   danger: '#a00',
   inputBg: '#ffffff',
@@ -54,6 +58,7 @@ const DARK: Theme = {
   border: '#333',
   borderSoft: '#222',
   accent: '#3dd498',
+  accentBg: '#163026',
   accentText: '#0a1f17',
   danger: '#ff8b8b',
   inputBg: '#1c1c1c',

@@ -71,6 +71,35 @@ export default function SongScreen() {
     if (typeof id === 'string' && id.length > 0) markRecent(id);
   }, [id, markRecent]);
 
+  // --- Play (tempo-paced follow) machinery -------------------------------
+  // Highlights one ChordPro line at a time at the song's tempo, and scrolls
+  // to keep that line in view. Line-level granularity is the MVP — beat-
+  // accurate sync per note would need melody.json + abcjs TimingCallbacks.
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLine, setFollowLine] = useState(0);
+  /** Y-coordinate of each rendered line in SongView, populated via
+   *  onLineLayout from below. Used to scrollTo a useful offset. */
+  const lineYsRef = useRef<Map<number, number>>(new Map());
+  const followIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopFollow = useCallback(() => {
+    if (followIntervalRef.current !== null) {
+      clearInterval(followIntervalRef.current);
+      followIntervalRef.current = null;
+    }
+  }, []);
+
+  const toggleFollow = useCallback(() => {
+    setIsFollowing((f) => {
+      if (!f) setFollowLine(0); // restart from the top on play press
+      return !f;
+    });
+  }, []);
+
+  const onLineLayout = useCallback((index: number, y: number, _height: number) => {
+    lineYsRef.current.set(index, y);
+  }, []);
+
   // --- Autoscroll machinery ----------------------------------------------
   const [isPlaying, setIsPlaying] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
@@ -139,6 +168,54 @@ export default function SongScreen() {
   // Unmount safety net
   useEffect(() => stopLoop, [stopLoop]);
 
+  // Follow-loop: advance one line at the song's tempo. BPM defaults to 100
+  // and beatsPerLine to 4 (rough 4/4 default; future improvement: derive
+  // from melody.json measure structure).
+  useEffect(() => {
+    if (!isFollowing) {
+      stopFollow();
+      return;
+    }
+    const meta = state.kind === 'ready' ? state.meta : null;
+    const bpm = meta?.tempo ?? 100;
+    const beatsPerLine = 4;
+    const intervalMs = (60_000 / bpm) * beatsPerLine;
+
+    followIntervalRef.current = setInterval(() => {
+      setFollowLine((current) => {
+        const totalLines = state.kind === 'ready' ? state.song.lines.length : 0;
+        const next = current + 1;
+        if (next >= totalLines) {
+          // Reached the end — stop on the last line.
+          setIsFollowing(false);
+          return current;
+        }
+        return next;
+      });
+    }, intervalMs);
+
+    return stopFollow;
+  }, [isFollowing, state, stopFollow]);
+
+  // When the followed line advances, scroll so it sits ~30% from the top.
+  useEffect(() => {
+    if (!isFollowing) return;
+    const y = lineYsRef.current.get(followLine);
+    if (y === undefined) return;
+    // SongView is rendered inside the same ScrollView as the title + controls,
+    // so its origin is offset by those siblings. The `y` we record is
+    // SongView-local; we approximate the parent offset by the static
+    // ScrollView padding plus a small head-of-content fudge.
+    const headOffset = layoutHeightRef.current * 0.3;
+    const targetY = Math.max(0, y - headOffset);
+    scrollRef.current?.scrollTo({ y: targetY, animated: true });
+    currentYRef.current = targetY;
+    expectedYRef.current = targetY;
+  }, [isFollowing, followLine]);
+
+  // Unmount safety
+  useEffect(() => stopFollow, [stopFollow]);
+
   const togglePlay = useCallback(() => {
     setIsPlaying((p) => !p);
   }, []);
@@ -161,6 +238,9 @@ export default function SongScreen() {
   useEffect(() => {
     let cancelled = false;
     setIsPlaying(false);
+    setIsFollowing(false);
+    setFollowLine(0);
+    lineYsRef.current.clear();
     currentYRef.current = 0;
     expectedYRef.current = 0;
     contentHeightRef.current = 0;
@@ -260,7 +340,12 @@ export default function SongScreen() {
           onClose={() => setSetlistSheetOpen(false)}
         />
       )}
-      <SongControls isPlaying={isPlaying} onTogglePlay={togglePlay} />
+      <SongControls
+        isPlaying={isPlaying}
+        onTogglePlay={togglePlay}
+        isFollowing={isFollowing}
+        onToggleFollow={toggleFollow}
+      />
       {showStaves && state.abc !== null && (
         <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
       )}
@@ -277,7 +362,13 @@ export default function SongScreen() {
           ))}
         </View>
       )}
-      {!showStaves && <SongView song={state.song} />}
+      {!showStaves && (
+        <SongView
+          song={state.song}
+          highlightedLineIndex={isFollowing ? followLine : undefined}
+          onLineLayout={onLineLayout}
+        />
+      )}
     </ScrollView>
   );
 }
