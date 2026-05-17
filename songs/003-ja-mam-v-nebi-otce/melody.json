@@ -1,8 +1,17 @@
 {
   "header": "X:1\nT:Já mám v nebi Otce\nM:3/4\nL:1/4\nQ:1/4=96\nK:G",
-  "verses": [
-    "\"^Verse 1\"\n\"G\" G/2 B/2 d/2 c/2 A/2 G/2 | \"D\" A/2 F/2 D/2 E/2 F/2 G/2 |\nw: Já mám v ne-bi Ot-ce mi-lu-jí-cí-ho,\n\"Em\" E G/2 G/2 B/2 B/2 | \"C\" c B G/2 G/2 |\nw: on mě ve-de ces-tou ži-vo-ta.\n\"G\" G B/2 B/2 d/2 d/2 | \"D\" A F D/2 D/2 |\nw: Skr-ze Sy-na při-šlo spa-se-ní,\n\"C\" E G/2 G/2 F/2 F/2 | \"G\" D G G/2 G/2 |]\nw: Duch Sva-tý ži-je ve mně sa-mém.",
-    "\"^Verse 2\"\n\"G\" G/2 B/2 d/2 c/2 A/2 G/2 | \"D\" A/2 F/2 D/2 E/2 F/2 G/2 |\nw: Když mě svět o-pus-tí a zra-dí, * * *\n\"Em\" E G/2 G/2 B/2 B/2 | \"C\" c B G/2 G/2 |\nw: O-tec můj ni-kdy ne-zkla-me. *\n\"G\" G B/2 B/2 d/2 d/2 | \"D\" A F D/2 D/2 |\nw: V je-ho ru-kou je můj ži-vot,\n\"C\" E G/2 G/2 F/2 F/2 | \"G\" D G G/2 G/2 |]\nw: bez-peč-ně mě ne-se do-mů. *"
-  ],
-  "chorus": "\"^Chorus\"\n\"Em\" E G B | \"Bm\" A2 z |\nw: Slá-va Ot-ci,\n\"C\" c B G/2 G/2 | \"D\" A G F/2 F/2 |\nw: Sy-nu i Du-chu Sva-té-mu.\n\"G\" G B d | \"D\" A F2 |\nw: Na-vě-ky vě-ků,\n\"C\" E F G | \"G\" G2 z |]\nw: a-men, a-men."
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\n\"G\" G/2 B/2 d/2 c/2 A/2 G/2 | \"D\" A/2 F/2 D/2 E/2 F/2 G/2 |\nw: Já mám v ne-bi Ot-ce mi-lu-jí-cí-ho,\n\"Em\" E G/2 G/2 B/2 B/2 | \"C\" c B G/2 G/2 |\nw: on mě ve-de ces-tou ži-vo-ta.\n\"G\" G B/2 B/2 d/2 d/2 | \"D\" A F D/2 D/2 |\nw: Skr-ze Sy-na při-šlo spa-se-ní,\n\"C\" E G/2 G/2 F/2 F/2 | \"G\" D G G/2 G/2 |]\nw: Duch Sva-tý ži-je ve mně sa-mém."
+    },
+    {
+      "type": "chorus",
+      "body": "\"^Chorus\"\n\"Em\" E G B | \"Bm\" A2 z |\nw: Slá-va Ot-ci,\n\"C\" c B G/2 G/2 | \"D\" A G F/2 F/2 |\nw: Sy-nu i Du-chu Sva-té-mu.\n\"G\" G B d | \"D\" A F2 |\nw: Na-vě-ky vě-ků,\n\"C\" E F G | \"G\" G2 z |]\nw: a-men, a-men."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n\"G\" G/2 B/2 d/2 c/2 A/2 G/2 | \"D\" A/2 F/2 D/2 E/2 F/2 G/2 |\nw: Když mě svět o-pus-tí a zra-dí, * * *\n\"Em\" E G/2 G/2 B/2 B/2 | \"C\" c B G/2 G/2 |\nw: O-tec můj ni-kdy ne-zkla-me. *\n\"G\" G B/2 B/2 d/2 d/2 | \"D\" A F D/2 D/2 |\nw: V je-ho ru-kou je můj ži-vot,\n\"C\" E G/2 G/2 F/2 F/2 | \"G\" D G G/2 G/2 |]\nw: bez-peč-ně mě ne-se do-mů. *"
+    }
+  ]
 }

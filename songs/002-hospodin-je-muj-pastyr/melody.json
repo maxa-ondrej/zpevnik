@@ -1,8 +1,17 @@
 {
   "header": "X:1\nT:Hospodin je můj pastýř\nM:4/4\nL:1/4\nQ:1/4=72\nK:D",
-  "verses": [
-    "\"^Verse 1\"\n\"D\" D F A G/2 G/2 | \"A\" c A G/2 G/2 F |\nw: Hos-po-din je můj pas-týř věr-ný, *\n\"G\" G B A G/2 G/2 | \"D\" F E D/2 D/2 C/2 C/2 |\nw: ne-bu-du mít ne-do-stat-ku ni-če-ho.\n\"D\" D F A G/2 G/2 | \"A\" c B A F/2 F/2 |\nw: Na pas-tvi-nách ze-le-ných mě vo-dí,\n\"Bm\" B A G F/2 F/2 | \"G\" E \"A\" F/2 F/2 \"D\" D2 |]\nw: k vo-dám klid-ným mě při-vá-dí.",
-    "\"^Verse 2\"\n\"D\" D F A G/2 G/2 | \"A\" c A G/2 G/2 F |\nw: I když pů-jdu ro-klí stí-nu smr-ti,\n\"G\" G B A G/2 G/2 | \"D\" F E D/2 D/2 C/2 C/2 |\nw: ne-bu-du se bát zlé-ho. * * * *\n\"D\" D F A G/2 G/2 | \"A\" c B A F/2 F/2 |\nw: Tvá hůl a tvá ber-la po-tě-šu-jí,\n\"Bm\" B A G F/2 F/2 | \"G\" E \"A\" F/2 F/2 \"D\" D2 |]\nw: ty jsi se mnou na ces-tě. * *"
-  ],
-  "chorus": "\"^Chorus\"\n\"G\" G B A G | \"D\" F A d c |\nw: A-le-lu-ja, a-le-lu-ja,\n\"A\" c B A G | \"D\" F A d2 |\nw: a-le-lu-ja, můj Pa-ne.\n\"G\" G B A G/2 G/2 | \"D\" F A \"Bm\" B B/2 B/2 |\nw: Zpí-vej-me Pá-nu z ce-lé du-še,\n\"G\" G F E D | \"A\" c \"D\" d c F |]\nw: on je na-še ú-to-čiš-tě."
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\n\"D\" D F A G/2 G/2 | \"A\" c A G/2 G/2 F |\nw: Hos-po-din je můj pas-týř věr-ný, *\n\"G\" G B A G/2 G/2 | \"D\" F E D/2 D/2 C/2 C/2 |\nw: ne-bu-du mít ne-do-stat-ku ni-če-ho.\n\"D\" D F A G/2 G/2 | \"A\" c B A F/2 F/2 |\nw: Na pas-tvi-nách ze-le-ných mě vo-dí,\n\"Bm\" B A G F/2 F/2 | \"G\" E \"A\" F/2 F/2 \"D\" D2 |]\nw: k vo-dám klid-ným mě při-vá-dí."
+    },
+    {
+      "type": "chorus",
+      "body": "\"^Chorus\"\n\"G\" G B A G | \"D\" F A d c |\nw: A-le-lu-ja, a-le-lu-ja,\n\"A\" c B A G | \"D\" F A d2 |\nw: a-le-lu-ja, můj Pa-ne.\n\"G\" G B A G/2 G/2 | \"D\" F A \"Bm\" B B/2 B/2 |\nw: Zpí-vej-me Pá-nu z ce-lé du-še,\n\"G\" G F E D | \"A\" c \"D\" d c F |]\nw: on je na-še ú-to-čiš-tě."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n\"D\" D F A G/2 G/2 | \"A\" c A G/2 G/2 F |\nw: I když pů-jdu ro-klí stí-nu smr-ti,\n\"G\" G B A G/2 G/2 | \"D\" F E D/2 D/2 C/2 C/2 |\nw: ne-bu-du se bát zlé-ho. * * * *\n\"D\" D F A G/2 G/2 | \"A\" c B A F/2 F/2 |\nw: Tvá hůl a tvá ber-la po-tě-šu-jí,\n\"Bm\" B A G F/2 F/2 | \"G\" E \"A\" F/2 F/2 \"D\" D2 |]\nw: ty jsi se mnou na ces-tě. * *"
+    }
+  ]
 }

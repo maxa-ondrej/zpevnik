@@ -210,27 +210,38 @@ def create_app(songs_dir: Path) -> FastAPI:
     return api
 
 
-def _validate_melody(body: object) -> None:
-    """Validate a melody.json payload: header (str), verses (list[str]).
+_BLOCK_TYPES = frozenset({"verse", "chorus", "bridge"})
 
-    The optional ``chorus`` field, if present, must be a string. Any other
-    fields are accepted to leave room for future schema growth.
+
+def _validate_melody(body: object) -> None:
+    """Validate a melody.json payload: header (str), blocks (list of typed bodies).
+
+    Each block must be ``{"type": "verse"|"chorus"|"bridge", "body": str}``.
+    Order matters — that's how chorus placement is expressed.
     """
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="melody must be a JSON object")
     header = body.get("header")
     if not isinstance(header, str):
         raise HTTPException(status_code=400, detail="melody.header must be a string")
-    verses = body.get("verses")
-    if not isinstance(verses, list) or not all(isinstance(v, str) for v in verses):
-        raise HTTPException(
-            status_code=400, detail="melody.verses must be a list of strings"
-        )
-    chorus = body.get("chorus")
-    if chorus is not None and not isinstance(chorus, str):
-        raise HTTPException(
-            status_code=400, detail="melody.chorus, if present, must be a string"
-        )
+    blocks = body.get("blocks")
+    if not isinstance(blocks, list):
+        raise HTTPException(status_code=400, detail="melody.blocks must be a list")
+    for i, block in enumerate(blocks):
+        if not isinstance(block, dict):
+            raise HTTPException(
+                status_code=400, detail=f"melody.blocks[{i}] must be an object"
+            )
+        btype = block.get("type")
+        if btype not in _BLOCK_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"melody.blocks[{i}].type must be one of {sorted(_BLOCK_TYPES)}",
+            )
+        if not isinstance(block.get("body"), str):
+            raise HTTPException(
+                status_code=400, detail=f"melody.blocks[{i}].body must be a string"
+            )
 
 
 def _atomic_write_json(path: Path, data: object) -> None:

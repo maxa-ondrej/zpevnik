@@ -57,9 +57,20 @@ def client(tmp_path: Path) -> tuple[TestClient, Path]:
     return TestClient(create_app(songs_dir)), songs_dir
 
 
+def _ok_melody() -> dict[str, object]:
+    return {
+        "header": "X:1\nK:C",
+        "blocks": [
+            {"type": "verse", "body": "C D E F"},
+            {"type": "chorus", "body": "G A B c"},
+            {"type": "verse", "body": "c B A G"},
+        ],
+    }
+
+
 def test_get_melody_returns_body(client: tuple[TestClient, Path]) -> None:
     c, songs_dir = client
-    melody = {"header": "X:1\nK:C", "verses": ["C D E F"], "chorus": "G A B c"}
+    melody = _ok_melody()
     _write_melody(songs_dir, "001", "test-song", melody)
 
     r = c.get("/api/songs/001/melody")
@@ -80,7 +91,7 @@ def test_get_melody_404_when_song_missing(client: tuple[TestClient, Path]) -> No
 
 def test_put_melody_writes_file(client: tuple[TestClient, Path]) -> None:
     c, songs_dir = client
-    payload = {"header": "X:1\nK:G", "verses": ["G A B c"], "chorus": "d e f g"}
+    payload = _ok_melody()
     r = c.put("/api/songs/001/melody", json=payload)
     assert r.status_code == 200, r.text
     assert r.json() == payload
@@ -91,52 +102,60 @@ def test_put_melody_writes_file(client: tuple[TestClient, Path]) -> None:
     assert on_disk == payload
 
 
-def test_put_melody_allows_missing_chorus(client: tuple[TestClient, Path]) -> None:
+def test_put_melody_allows_empty_blocks(client: tuple[TestClient, Path]) -> None:
     c, _ = client
-    r = c.put(
-        "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"]},
-    )
+    r = c.put("/api/songs/001/melody", json={"header": "X:1\nK:C", "blocks": []})
     assert r.status_code == 200, r.text
 
 
 def test_put_melody_rejects_non_object(client: tuple[TestClient, Path]) -> None:
     c, _ = client
-    # FastAPI parses any JSON body — a list is valid JSON but invalid melody.
     r = c.put("/api/songs/001/melody", json=["nope"])
     assert r.status_code == 400
 
 
 def test_put_melody_rejects_missing_header(client: tuple[TestClient, Path]) -> None:
     c, _ = client
-    r = c.put("/api/songs/001/melody", json={"verses": ["C D E F"]})
+    r = c.put("/api/songs/001/melody", json={"blocks": []})
     assert r.status_code == 400
 
 
-def test_put_melody_rejects_non_string_verses(client: tuple[TestClient, Path]) -> None:
+def test_put_melody_rejects_missing_blocks(client: tuple[TestClient, Path]) -> None:
+    c, _ = client
+    r = c.put("/api/songs/001/melody", json={"header": "X:1\nK:C"})
+    assert r.status_code == 400
+
+
+def test_put_melody_rejects_bad_block_type(client: tuple[TestClient, Path]) -> None:
     c, _ = client
     r = c.put(
         "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": [1, 2, 3]},
+        json={"header": "X:1\nK:C", "blocks": [{"type": "intro", "body": "C"}]},
     )
     assert r.status_code == 400
 
 
-def test_put_melody_rejects_non_string_chorus(client: tuple[TestClient, Path]) -> None:
+def test_put_melody_rejects_non_string_body(client: tuple[TestClient, Path]) -> None:
     c, _ = client
     r = c.put(
         "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"], "chorus": 42},
+        json={"header": "X:1\nK:C", "blocks": [{"type": "verse", "body": 42}]},
+    )
+    assert r.status_code == 400
+
+
+def test_put_melody_rejects_non_object_block(client: tuple[TestClient, Path]) -> None:
+    c, _ = client
+    r = c.put(
+        "/api/songs/001/melody",
+        json={"header": "X:1\nK:C", "blocks": ["nope"]},
     )
     assert r.status_code == 400
 
 
 def test_put_melody_404_when_song_missing(client: tuple[TestClient, Path]) -> None:
     c, _ = client
-    r = c.put(
-        "/api/songs/999/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"]},
-    )
+    r = c.put("/api/songs/999/melody", json=_ok_melody())
     assert r.status_code == 404
 
 
@@ -144,10 +163,7 @@ def test_put_melody_promotes_auto_to_flagged(client: tuple[TestClient, Path]) ->
     """Saving a melody on an auto-status song should flip it to flagged,
     matching the chordpro PUT behavior."""
     c, songs_dir = client
-    r = c.put(
-        "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"]},
-    )
+    r = c.put("/api/songs/001/melody", json=_ok_melody())
     assert r.status_code == 200
 
     meta_on_disk = json.loads(
@@ -158,31 +174,22 @@ def test_put_melody_promotes_auto_to_flagged(client: tuple[TestClient, Path]) ->
 
 def test_put_melody_leaves_approved_status_untouched(client: tuple[TestClient, Path]) -> None:
     c, songs_dir = client
-    # Bump to approved via the existing endpoint.
     c.put("/api/songs/001", json={"reviewStatus": "approved"})
 
-    r = c.put(
-        "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"]},
-    )
+    r = c.put("/api/songs/001/melody", json=_ok_melody())
     assert r.status_code == 200
 
     meta_on_disk = json.loads(
         (songs_dir / "001-test-song" / "meta.json").read_text(encoding="utf-8")
     )
-    # No demotion / re-promotion: approved stays approved.
     assert meta_on_disk["reviewStatus"] == "approved"
 
 
 def test_put_melody_leaves_flagged_status_untouched(client: tuple[TestClient, Path]) -> None:
     c, songs_dir = client
-    # Get to flagged by touching the title without picking a status.
     c.put("/api/songs/001", json={"title": "Edited once"})
 
-    r = c.put(
-        "/api/songs/001/melody",
-        json={"header": "X:1\nK:C", "verses": ["C D E F"]},
-    )
+    r = c.put("/api/songs/001/melody", json=_ok_melody())
     assert r.status_code == 200
 
     meta_on_disk = json.loads(

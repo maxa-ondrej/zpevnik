@@ -5,7 +5,8 @@ const detailEl = document.getElementById('detail');
 const searchEl = document.getElementById('search');
 const tpl = document.getElementById('detail-template');
 
-const EMPTY_MELODY = { header: '', verses: [], chorus: '' };
+const EMPTY_MELODY = { header: '', blocks: [] };
+const BLOCK_TYPES = new Set(['verse', 'chorus', 'bridge']);
 const NOTATION_DEBOUNCE_MS = 300;
 
 let allSongs = [];
@@ -163,25 +164,28 @@ function renderNotation() {
     return;
   }
 
-  if (
-    typeof parsed?.header !== 'string' ||
-    !Array.isArray(parsed?.verses) ||
-    !parsed.verses.every((v) => typeof v === 'string')
-  ) {
-    status.textContent = 'melody.json missing header/verses';
+  if (typeof parsed?.header !== 'string' || !Array.isArray(parsed?.blocks)) {
+    status.textContent = 'melody.json missing header/blocks';
     status.dataset.tone = 'error';
     target.innerHTML = '';
     return;
   }
-  if (parsed.chorus !== undefined && typeof parsed.chorus !== 'string') {
-    status.textContent = 'melody.chorus must be a string';
+  const badBlock = parsed.blocks.find(
+    (b) =>
+      !b ||
+      typeof b !== 'object' ||
+      !BLOCK_TYPES.has(b.type) ||
+      typeof b.body !== 'string',
+  );
+  if (badBlock) {
+    status.textContent = 'each block needs {type: verse|chorus|bridge, body: string}';
     status.dataset.tone = 'error';
     target.innerHTML = '';
     return;
   }
 
-  if (!parsed.header.trim() && parsed.verses.length === 0) {
-    status.textContent = 'Empty melody — fill in header + verses to preview.';
+  if (!parsed.header.trim() && parsed.blocks.length === 0) {
+    status.textContent = 'Empty melody — fill in header + blocks to preview.';
     status.dataset.tone = 'muted';
     target.innerHTML = '';
     return;
@@ -194,11 +198,7 @@ function renderNotation() {
     return;
   }
 
-  const abc = assembleAbc({
-    header: parsed.header,
-    verses: parsed.verses,
-    chorus: parsed.chorus || undefined,
-  });
+  const abc = assembleAbc({ header: parsed.header, blocks: parsed.blocks });
 
   try {
     // NOTE: do NOT pass `responsive: 'resize'` — it silently neutralises
