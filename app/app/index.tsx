@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, Stack } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -143,6 +143,21 @@ export default function SongListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Link href="/setlists" asChild>
+              <Pressable
+                style={({ pressed }) => [styles.headerLink, pressed && { opacity: 0.6 }]}
+                accessibilityRole="link"
+                accessibilityLabel="Open setlists"
+              >
+                <Text style={[styles.headerLinkText, { color: theme.accent }]}>Setlists</Text>
+              </Pressable>
+            </Link>
+          ),
+        }}
+      />
       <View style={[styles.searchBar, { borderColor: theme.borderSoft }]}>
         <TextInput
           value={query}
@@ -282,4 +297,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 6,
   },
+  headerLink: { paddingHorizontal: 12, paddingVertical: 6 },
+  headerLinkText: { fontSize: 15, fontWeight: '500' },
 });

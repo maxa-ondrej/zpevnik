@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { AbcView } from '../../src/shared/components/AbcView';
+import { AddToSetlistSheet } from '../../src/shared/components/AddToSetlistSheet';
 import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
@@ -62,6 +63,7 @@ export default function SongScreen() {
   const favorites = useFavorites((s) => s.favorites);
   const toggleFavorite = useFavorites((s) => s.toggle);
   const isFavorite = typeof id === 'string' && favorites.includes(id);
+  const [setlistSheetOpen, setSetlistSheetOpen] = useState(false);
   const theme = useTheme();
 
   // Record this song as recently viewed. Fires once per id change.
@@ -226,6 +228,18 @@ export default function SongScreen() {
       <View style={styles.titleRow}>
         <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
         <Pressable
+          onPress={() => setSetlistSheetOpen(true)}
+          style={({ pressed }) => [
+            styles.setlistBtn,
+            { borderColor: theme.border, backgroundColor: theme.inputBg },
+            pressed && { opacity: 0.6 },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add to setlist"
+        >
+          <Text style={[styles.setlistBtnText, { color: theme.text }]}>+ Setlist</Text>
+        </Pressable>
+        <Pressable
           onPress={() => {
             if (typeof id === 'string') toggleFavorite(id);
           }}
@@ -239,6 +253,13 @@ export default function SongScreen() {
           </Text>
         </Pressable>
       </View>
+      {typeof id === 'string' && (
+        <AddToSetlistSheet
+          songId={id}
+          visible={setlistSheetOpen}
+          onClose={() => setSetlistSheetOpen(false)}
+        />
+      )}
       <SongControls isPlaying={isPlaying} onTogglePlay={togglePlay} />
       {showStaves && state.abc !== null && (
         <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
@@ -272,6 +293,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: { fontSize: 22, fontWeight: '600', flex: 1 },
+  setlistBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 6,
+  },
+  setlistBtnText: { fontSize: 13, fontWeight: '500' },
   favBtn: { padding: 4 },
   favIcon: { fontSize: 26, lineHeight: 28 },
   error: {},

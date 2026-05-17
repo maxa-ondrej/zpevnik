@@ -19,6 +19,8 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ title: 'Zpěvník' }} />
         <Stack.Screen name="song/[id]" options={{ title: '' }} />
+        <Stack.Screen name="setlists/index" options={{ title: 'Setlists' }} />
+        <Stack.Screen name="setlists/[id]" options={{ title: 'Setlist' }} />
       </Stack>
     </SafeAreaProvider>
   );
