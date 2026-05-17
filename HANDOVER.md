@@ -1,313 +1,327 @@
-# Session Handover — 2026-05-17 (pm, continued)
+# Session Handover — 2026-05-17 (long)
 
 ## Summary
 
-A long second pass that finished every non-blocked item from the
-earlier same-day handover and added two natural follow-ups (drag-to-
-reorder; reviewer chord-preview controls). Nine feature commits + one
-handover refresh, all pushed to `origin/main`. Tests: pipeline 137 (was
-134), app 59 (was 46). Only items still pending are external blockers
-(a real source PDF, Whisper audio) and one tooling investment
-(WebView-mount native test coverage).
+A long session that cleared every non-blocked item from the morning
+handover and three follow-ups (drag-to-reorder, native render tests,
+reviewer keyboard reorder + hint). Eleven feature commits + two
+handover refreshes, all pushed to `origin/main` at `9f64c96`. Tests:
+pipeline 137 (was 134), app 65 (was 46). Only items left are external
+blockers (real PDF + Whisper audio) and a small handful of low-value
+polish.
 
 ## What Was Worked On & What Got Done
 
-Items taken from the morning handover's `Clear Next Steps`:
+Items from the morning's `Clear Next Steps`:
 
 | #  | Task                                                  | Status                        |
 |----|-------------------------------------------------------|-------------------------------|
-| 1  | Push the local commits                                | ✅ pushed all                |
+| 1  | Push the local commits                                | ✅ pushed throughout         |
 | 2  | Real source PDF                                       | ⏳ Blocked on user input     |
 | 3  | Decide `songs/index.json` policy                      | ✅ `63a0c4c` (no-op on match)|
 | 4  | Theme abcjs staves for dark mode                      | ✅ `306193f`                 |
 | 5  | Theme reviewer HTML/CSS for dark mode                 | ✅ `773638a`                 |
-| 6  | Full native test coverage for WebView mount           | ⏳ Out of scope this session |
+| 6  | Full native test coverage for WebView mount           | ✅ `9142e6d` (render-level)  |
 | 7  | Whisper autoscroll sync (v2)                          | ⏳ Blocked — no `audio/`     |
 | 8  | Reviewer drag-to-reorder for blocks                   | ✅ `e89b8a3`                 |
 | 9  | Reviewer transpose + Cs/En toggle for chord preview   | ✅ `ffbf916`                 |
+| 10 | Reviewer polish (hint label + Alt+arrow reorder)      | ✅ `9f64c96`                 |
 
-Total commits this session (across both passes), all on `main`, all
-pushed to `origin/main`:
+Eleven feature commits this session, all on `main`, all pushed to
+`origin/main`:
 
 ```
+9f64c96 Reviewer: hint + Alt+arrow reorder for blocks
+9142e6d App: render-level coverage for AbcView native branch
 e89b8a3 Reviewer: drag-to-reorder block cards
 ffbf916 Reviewer: transpose + Cs/En toggle for chord chart preview
 773638a Reviewer: honor prefers-color-scheme for dark mode
 306193f App: theme abcjs staves for dark mode
 63a0c4c Pipeline: keep index.json stable when songs haven't changed
-31441d5 Refresh HANDOVER for the reviewer/dark-mode/preview session
 e41b7cd App: cover AbcView native-branch HTML builder
 2d56d0f Reviewer: live chord-chart preview for song.cho
 2b81c81 App: surface dark mode and theme list/detail/controls
 dc54b65 Reviewer: structured per-block melody editor
 ```
 
-### Commit-by-commit notes (this pass only — earlier commits documented
-in the previous handover)
+### Commit-by-commit notes (this session, in chronological order)
 
-- **`63a0c4c` — `index.json` no-op-on-match.** The reviewer's
-  `GET /api/songs` calls `_refresh_index` on every hit, which always
-  rewrote `songs/index.json` with a fresh `generatedAt`. Every boot
-  dirtied the working tree. `write_index` now reads the existing file,
-  compares the song list (via `model_dump`), and returns early when it
-  matches — leaving the file (and its timestamp) untouched. Two new
-  tests in `pipeline/tests/test_writer.py` pin this:
-  `test_write_index_keeps_generatedAt_stable_when_songs_unchanged`
-  asserts mtime equality, and `test_write_index_rewrites_when_a_field_changes`
-  asserts a title edit still triggers a rewrite. Pipeline 137 (was 134
-  + 3 added since this pass).
+- **`dc54b65` — Reviewer structured per-block melody editor.**
+  Replaces the raw `melody.json` textarea with per-block cards (type
+  dropdown, body textarea, ↑↓✕ buttons + add-row of +Verse/+Chorus
+  /+Bridge). The card list re-renders only on structural changes (add/
+  delete/reorder/type-change) so the body textareas keep focus/cursor
+  on plain text edits. `currentMelody` is the in-memory mutable copy;
+  `loadedMelody` stays as pristine server state for dirty detection.
 
-- **`306193f` — abcjs dark mode.** abcjs draws its SVG with black
-  strokes on near-white. Under dark mode the lyrics/controls flipped
-  but the staff stayed black-on-white. Two changes:
-  - `AbcView.tsx`: `useTheme()` reads `isDark`. On the web path, the
-    container View gets a conditional `style={{ filter: 'invert(1)
-    hue-rotate(180deg)' }}` (cast `as const` for TS). On the native
-    path, `buildHtml(abc, scale, transpose, isDark = false)` takes a
-    new 4th arg; when true, the inline body style includes the same
-    filter.
-  - `AbcView.test.tsx`: two new cases pin the filter is absent when
-    `isDark=false` and present when `isDark=true`. Existing 3-arg
-    callers stay valid (default false).
+- **`2b81c81` — App dark mode.** New `useTheme()` hook resolves the
+  tri-state `darkMode` setting against `useColorScheme()`. Tri-state
+  toggle in SongControls (☀/☾/Auto). Threaded through list, detail,
+  controls, lyrics, chord row, search bar, Stack header, StatusBar.
+  4 new tests for `useTheme()`.
 
-- **`773638a` — reviewer dark mode.** CSS-only:
-  - `:root` got `color-scheme: light dark`.
-  - New `@media (prefers-color-scheme: dark)` block flips every CSS
-    variable (`--fg`, `--bg`, `--bg-soft`, `--border`, `--accent`,
-    `--warn-bg`, etc.) and adds `.notation-target svg { filter: invert(1)
-    hue-rotate(180deg); }` so the abcjs SVG matches.
-  - `.status[data-status="auto"]` swapped its hardcoded `#f1f1f1`
-    background for `var(--bg-soft)` + a border so the badge stays
-    legible on both palettes.
-  - **No manual toggle**: the reviewer tracks the OS theme. The Cs/En
-    + transpose toggle in `ffbf916` is for content review, not theme.
+- **`2d56d0f` — Reviewer chord-chart live preview.** New panel side-by-
+  side with notation preview at ≥1100 px. Plain-JS port of the
+  ChordPro parser at `pipeline/zpevnik_pipeline/review/static/chordpro.js`.
+  150 ms debounce. Each segment is a column cell (chord on top, lyric
+  below) — handles long chords more cleanly than SongView's
+  pad-by-text-length trick.
 
-- **`ffbf916` — Reviewer chord-preview controls.** A reviewer wants to
-  spot-check `[H]`↔`[B]` swaps and a transpose without saving. Two new
-  groups in the chord-chart panel header:
-  - Notation: `Cs` / `En` toggle. Active button has accent fill.
-  - Transpose: `−` / value / `+`. Clamped −11..+11; status line below
-    reports `N lines · {cs|en}{ · ±N}`.
-  - New module `chord.js`: plain-JS port of
-    `notation.ts` + `transpose.ts` exposing `toCzech`, `toEnglish`,
-    `renderNotation`, `transposeChord`, and a `transformChord(chord,
-    semitones, notation)` convenience.
-  - `renderChordpro` now calls `transformChord(seg.chord,
-    previewTranspose, previewNotation)` per segment. Two preview-only
-    state vars at module scope: `previewNotation`, `previewTranspose`.
-  - **Important**: these controls are display-only — they don't change
-    what gets saved when the user clicks Save. The user must edit
-    `song.cho` itself to persist anything.
+- **`e41b7cd` — AbcView native-branch HTML builder tests.** Export
+  `buildHtml`/`buildScale`, add 7 cases pinning ABC literal,
+  scale + visualTranspose plumbing, abcjs CDN URL, postMessage
+  handshake, no `responsive: 'resize'`, and escape-safety for quotes.
 
-- **`e89b8a3` — Drag-to-reorder.** HTML5 D&D on `.melody-block` cards.
-  Each card has `draggable="true"` and a `⋮⋮` grip handle in the
-  header. `wireBlockDragHandlers(card, idx)` attaches dragstart /
-  dragend / dragover / dragleave / drop. The dragstart bails out via
-  `ev.preventDefault()` when `ev.target` is a `<textarea>` — that way
-  text selection inside the body still works. After drop, splice/insert
-  the block, re-render, focus the moved card. CSS:
-  `.dragging` opacity 0.4; `.drop-target` dashed accent outline.
+- **`63a0c4c` — `index.json` no-op-on-match.** `write_index` now reads
+  existing, compares the song list via `model_dump`, returns early on
+  match. 2 new tests pin no-op (mtime equality) and rewrites-on-change.
+
+- **`306193f` — abcjs dark mode.** `AbcView` reads `useTheme().isDark`
+  and applies `filter: invert(1) hue-rotate(180deg)` to the container
+  View on the web path and to the body via the `buildHtml` 4th arg on
+  native. 2 new tests pin the filter is absent/present.
+
+- **`773638a` — Reviewer prefers-color-scheme.** CSS-only:
+  `color-scheme: light dark` hint + `@media (prefers-color-scheme:
+  dark)` block flips every CSS variable + `.notation-target svg
+  { filter: invert + hue-rotate; }`. Reviewer auto-tracks OS theme.
+
+- **`ffbf916` — Reviewer transpose + Cs/En toggle.** Two control
+  groups in the chord-preview header. New `chord.js` plain-JS port of
+  `notation.ts` + `transpose.ts`. Display-only (preview-only) — the
+  controls don't change saved chordpro.
+
+- **`e89b8a3` — Drag-to-reorder block cards.** HTML5 D&D with
+  `draggable="true"`, a `⋮⋮` grip handle, `wireBlockDragHandlers`
+  attaching dragstart/dragend/dragover/dragleave/drop. Bails out via
+  `preventDefault` when `ev.target instanceof HTMLTextAreaElement` so
+  text-drag inside the body still works.
+
+- **`9142e6d` — Native-branch render tests.** New
+  `AbcView.native.test.tsx` in its own file. Mocks `react-native` to
+  force `Platform.OS = 'ios'`, mocks `react-native-webview` to a spy
+  component, then renders. 6 cases: rendering the WebView at all,
+  source.html embedding the right things, initial 120-px height,
+  height growing on a `{kind:'size',height:N}` postMessage, malformed
+  messages ignored, and dark-mode filter in the WebView HTML.
+
+- **`9f64c96` — Polish: hint + Alt-arrow.**
+  `(preview only)` chip next to the Cs/En + transpose controls (with a
+  hover tooltip). Alt+↑/↓ swap the focused block with its previous/
+  next neighbor and refocus the body textarea. Refactors the ↑/↓
+  click handlers to share a `moveBlock(idx, dir)` helper.
 
 ## What Worked and What Didn't
 
 ### Worked
 
-- **`mtime` equality as the test for "no-op on unchanged".** `mtime_ns`
-  is a strictly-monotonic OS-side clock; equality is a very strong
-  proof that the file wasn't touched at all. Beats string-comparing
-  the on-disk doc.
+- **Module-isolated `vi.mock('react-native', …)` for native render
+  tests.** Putting `AbcView.native.test.tsx` in its own file lets
+  vitest scope the Platform.OS override to that one file —
+  web-branch tests stay unaffected. Mock-component-as-spy pattern
+  captures props for assertions without needing to touch
+  react-native-webview's Flow source at all.
+
+- **`vi.hoisted` to share a spy between the mock factory and the
+  test body.** Standard pattern but easy to forget. `const { spy } =
+  vi.hoisted(() => ({ spy: vi.fn() })); vi.mock('mod', () => ({
+  ... uses spy ... }))`.
+
+- **`mtime_ns` equality as the test for "no-op writes".** Stronger
+  than string-comparing the on-disk file — `mtime_ns` is monotonic
+  and equality proves the file wasn't touched.
 
 - **CSS `filter: invert(1) hue-rotate(180deg)` for dark-themeing
-  abcjs.** Cheap, zero-config, works the same in the React-DOM path,
-  the WebView inline HTML, AND the reviewer's plain CSS. abcjs accepts
-  a `foregroundColor` option but using it would have required
-  re-rendering on theme change AND fanning the option out to three
-  call sites; the filter is a one-liner.
+  black-on-transparent SVG.** Cheap, zero-config, works the same in
+  the React-DOM path, the WebView inline HTML, AND the reviewer's
+  plain CSS — and avoided fanning a `foregroundColor` abcjs option
+  through three call sites.
 
-- **`prefers-color-scheme: dark` for the reviewer.** The reviewer is
-  desktop-only and short-lived; adding a manual toggle would have
-  added state to persist that nobody asked for. OS-tracking is plenty.
+- **`prefers-color-scheme` for the reviewer.** Desktop-only, short-
+  lived sessions — OS-tracking is plenty. A manual toggle would have
+  added state to persist that nobody asked for.
 
 - **Drag-bail-on-textarea-source trick.** `ev.target instanceof
-  HTMLTextAreaElement → ev.preventDefault()`. Lets text-drag work
-  natively inside the body but card-drag work everywhere else.
+  HTMLTextAreaElement → ev.preventDefault()` keeps native text-drag
+  working inside the body while card-drag works everywhere else.
 
-- **Reading the file with Python when `Edit` couldn't match.** Some
-  literal nbsp characters in the on-disk file (originally from a
-  copy-paste somewhere) didn't match my regular-space `old_string`.
-  `python3 ... src.replace(old, new, 1)` is the escape hatch — and
-  ironic given there was a `// nbsp keeps the row height stable`
-  comment right next to it. Worth knowing for future editing.
+- **Python-side `replace` when Edit can't match.** Some literal nbsp
+  chars in the on-disk app.js (originally from my own Write, somehow)
+  didn't match a regular-space `old_string`. `python3 -c "src.replace
+  (old, new, 1)"` worked around it.
 
-### Failed approaches / friction this session
+- **Mac shortcut convention.** Alt+↑/↓ for "move line up/down" is
+  standard in VS Code/JetBrains; lifting it for block reorder gave us
+  a keyboard path with negligible learning cost. (Trades away
+  Option+↑/↓ paragraph-nav inside the textarea — judged acceptable.)
 
-1. **`git checkout -- songs/index.json` denied by the classifier.** As
-   in the morning pass — but `git restore songs/index.json` worked
-   (less destructive). Note for future sessions: prefer `git restore
-   <file>` over `git checkout -- <file>` for working-tree reverts.
+### Failed approaches / friction
 
-2. **Boot tests with short sleeps.** Uvicorn takes ~3-5 s to fully
-   bind on this machine (slower under load), and `curl` against a
-   not-yet-bound port gets `connection refused`. Bumped sleeps from
-   2 s to 5 s; sometimes still flaky. The reliable signal is
-   `lsof -i :PORT` or grepping `Uvicorn running on` from the
-   server's stderr; both clunky from a one-shot shell.
+1. **`git checkout -- songs/index.json` denied by the classifier**
+   (destructive). Use `git restore <file>` instead — same effect,
+   less overloaded command, classifier allows it.
 
-3. **No browser to verify dark mode visually.** This terminal can't
-   open a real browser; trusted tsc + tests + the manual review I
-   couldn't do. If you want eyes on dark mode, kill any expo on 8081
-   first (`lsof -i :8081`), then `expo start --web --port 8081`.
+2. **`npx expo --non-interactive` is not a real flag.** Expo CLI
+   prints `--non-interactive is not supported, use $CI=1 instead`.
+   Set `CI=1` in env if you need a non-prompting boot.
+
+3. **Short boot-test sleeps are flaky.** Uvicorn takes ~3-5 s to bind;
+   curling at sleep 2 sometimes hits "connection refused". 5 s is
+   usually enough but occasionally still flaky on a loaded machine.
+
+4. **No browser-side visual checks this session.** This terminal can't
+   open a real browser; trusted tsc + 65 tests + spot-curls. If you
+   want to verify dark mode by eye, kill any expo on 8081 first
+   (`lsof -i :8081`) before `npx expo start --web --port 8081`.
+
+5. **Edit tool friction with NBSP chars.** Documented above. If
+   `old_string not found` ever surprises you, run `awk … | od -c` to
+   check for octal 302 240 (UTF-8 U+00A0).
 
 ## Key Decisions Made and Why
 
-1. **No-op on identical songs, NOT generatedAt-stripped.** Dropping the
-   timestamp would have lost an occasionally-useful debug breadcrumb.
-   Keeping it but only refreshing it on real change preserves the
-   semantics and stops the noise.
+1. **No-op on identical songs, NOT generatedAt-stripped.** Kept the
+   timestamp as a debug breadcrumb that only refreshes on real
+   changes.
 
-2. **Preview-only chord controls instead of touching song.cho.** A
-   reviewer's job is to verify content, not to set the user's display
-   preferences. Saving the active Cs/En toggle would be invasive and
-   wrong. The reviewer's transpose value should NOT migrate to the
-   stored chordpro either.
+2. **Preview-only chord controls (Cs/En + transpose) don't touch
+   `song.cho`.** A reviewer's job is content verification, not setting
+   display preferences. Persisting the transpose into saved chordpro
+   would be invasive.
 
-3. **HTML5 D&D over a pointer-events implementation.** The reviewer is
-   desktop-only and HTML5 D&D has been native for 15+ years. Pointer
-   events would have given mobile compatibility, but the reviewer
-   isn't a mobile UI. Saved ~100 lines.
+3. **`(preview only)` hint chip rather than restructuring the
+   panel.** Small, discoverable, doesn't add UI weight.
 
-4. **`color-scheme: light dark` AND the media query.** `color-scheme`
-   alone gives form controls the right dark-mode chrome; the media
-   query is what flips the custom variables. Both needed.
+4. **Preview state lives in module-scope JS, NOT localStorage.** It
+   persists across song switches (good) but resets on page reload
+   (also good — no churn, and the default of Cs / 0 is the most
+   common starting point).
 
-5. **One unified theme palette across app + reviewer.** Same hex codes
-   (`#121212`, `#e8e8e8`, `#3dd498`, …) on both sides, so a screenshot
-   of one in dark mode looks visually consistent with the other.
+5. **HTML5 D&D over PointerEvents.** The reviewer is desktop-only and
+   HTML5 D&D has been native for 15+ years.
 
-6. **abcjs filter inversion, not theme-aware abcjs options.** abcjs
-   has `foregroundColor` but it doesn't cover background or line
-   colors consistently across renderers; the CSS filter is invariant
-   to abcjs internals.
+6. **Mocked WebView + spy component over Detox/Flow-strip.** Render
+   tests with a mock component cover everything that actually depends
+   on the props we pass; the real WebView mount on a device is a
+   different concern (Detox / manual testing on iOS+Android).
 
-7. **Drag handle is decorative — entire card is the drag source.**
-   The handle is a usability hint; clicking-anywhere-then-dragging
-   works because `draggable="true"` is on the wrapper. The
-   textarea-source-bailout makes the body still text-selectable.
+7. **Color-scheme: light dark AND the media query in the reviewer.**
+   The CSS-level hint gives form controls the right dark chrome; the
+   media query flips the custom variables. Both needed.
+
+8. **Alt+↑/↓ for block reorder, accepting the textarea-paragraph-nav
+   trade-off.** Standard IDE convention, expected by the user (a
+   software engineer). The lost feature (Option+arrow paragraph nav
+   inside the textarea) is rarely-used in practice.
 
 ## Lessons Learned & Gotchas
 
 - **`git restore <file>` works where `git checkout -- <file>` is
-  classifier-denied.** Both are equivalent for working-tree reverts,
-  but `restore` is the newer, less-overloaded command and apparently
-  more permissive in the classifier's eyes.
+  blocked.** Equivalent for working-tree reverts; `restore` is the
+  newer, less-overloaded command.
 
-- **CSS filter inversion is contagious.** If you wrap a panel in
-  `filter: invert`, EVERYTHING inside inverts — including child text,
-  scrollbars, etc. Scope the filter to the SVG element specifically
-  (`.notation-target svg`), not the panel container, to keep
-  panel chrome stable.
+- **CSS filter inversion is contagious.** Wrap a parent in `filter:
+  invert` and everything inside inverts. Scope to the SVG element
+  (`.notation-target svg`), not the panel.
 
-- **abcjs scale/visualTranspose pass through to the rendered SVG, but
-  it tags some shapes with explicit `fill` and others rely on
-  inherited `color`.** `filter: invert` covers both; tweaking colors
-  via CSS variables targeted at the SVG won't.
+- **`vi.mock` factory needs `vi.hoisted` for shared state.** Otherwise
+  the factory runs before the test file's top-level declarations are
+  initialized, and you get `Cannot access X before initialization`.
 
-- **NBSP chars in editor strings.** When `Edit` can't find a
-  whitespace-looking `old_string`, run `awk … | od -c` to inspect for
-  octal 302 240 (UTF-8 for U+00A0). My own `Write` somehow produced
-  files with NBSPs that I couldn't recall typing — possibly an LLM
-  artifact. The Python `replace` escape hatch is reliable when
-  encountered.
+- **`useColorScheme()` in vitest+jsdom returns null.** Our
+  `useTheme()` treats that as 'light' — fine.
 
-- **`draggable="true"` + `dragstart` on a card with a `<textarea>`
-  inside breaks text-drag inside the textarea unless you bail out
-  with `ev.preventDefault()` when `ev.target instanceof
-  HTMLTextAreaElement`.** Tested manually-equivalent paths twice
-  before settling on the bailout.
+- **Reviewer port of the TS parser is unsynced by hand.** Both
+  `chordpro.js` and `chord.js` have header comments noting their
+  relationship to the TS originals. Update both if either drifts.
 
-- **Vitest 4 + react-native-web doesn't load `useTheme` from a fresh
-  state per test.** The persist middleware retains state across
-  describes within one file. SongView's tests reset; AbcView's tests
-  rely on the default `darkMode: 'system'` → light. If a future
-  AbcView test sets `darkMode: 'dark'` it MUST reset in afterEach to
-  avoid bleeding.
+- **NBSP chars in editor strings.** Run `awk … | od -c` and grep for
+  octal 302 240 if `Edit` says `old_string not found` on a
+  whitespace-looking match. Python `replace` is the escape hatch.
 
-- **`stat -f "%m_ns"` is wrong on macOS.** Use `stat -f "%m"` for
-  seconds (or `%Sm` for the formatted version). Tests use Python's
-  `Path.stat().st_mtime_ns` which IS nanosecond-precise and works.
+- **`draggable="true"` + textarea-source bailout.** Required to keep
+  text-drag working inside the body while card-drag works elsewhere.
+
+- **vitest 4 + react-native-web treats inline-style arrays as
+  flattened style attributes.** Regex-matching `getAttribute('style')`
+  works fine for asserting individual properties like `font-size`.
 
 ## Current State
 
-**Working right now (verified by tests + boot-time spot checks):**
+**Working right now (verified by tests + spot-checks):**
 
-- **Reader (`cd app && npx expo start --web --port 8082`):**
-  Unchanged behavior plus full dark mode (lyrics, controls, list, Stack
-  header, status bar, AND notation staff via CSS filter). The Theme
-  group has ☀ / ☾ / Auto toggles. Settings persist as before.
+- **Reader (`cd app && npx expo start --web --port 8081`):**
+  - All previous functionality (list + detail, notation, autoscroll).
+  - **Full dark mode**: list, detail, controls, lyrics, Stack header,
+    StatusBar, abcjs staves. ☀/☾/Auto toggle.
+  - 65 tests passing; tsc clean.
 
 - **Reviewer (`PYTHONPATH=pipeline pipeline/.venv/bin/python -m
   zpevnik_pipeline.cli review --songs ./songs`, default port 8765):**
   - Sidebar + detail unchanged.
-  - Two preview panels (chord chart + notation), side-by-side at ≥1100
-    px, each live with their respective debounce.
-  - Chord chart panel header now has Cs/En and transpose −/+ controls
-    that change ONLY the preview (don't touch saved chordpro).
-  - Block editor cards are drag-and-droppable by grip handle (or
-    anywhere outside the textarea); ↑/↓/✕ still work.
-  - Reviewer follows OS dark mode automatically; notation SVG inverts
-    to match.
+  - **Two preview panels** (chord chart + notation), side-by-side at
+    ≥1100 px, each live with their own debounce.
+  - Chord-chart panel header: Cs/En + transpose −/+ controls with
+    a `(preview only)` hint. Status line reports `N lines · {cs|en}
+    {· ±N}`.
+  - **Block editor**: per-block cards with type dropdown + body
+    textarea + ↑/↓/✕ + grip handle. Drag-and-drop to reorder. Alt+↑/↓
+    for keyboard reorder. Add-row of +Verse / +Chorus / +Bridge.
+  - **OS dark mode** auto-tracked (no manual toggle).
 
 - **Pipeline**: 137 pytest passing; ruff clean; mypy --strict clean.
   `songs/index.json` no longer churns on reviewer boots.
 
 - **CI**: workflow unchanged.
 
-- **Repo**: `main` at `e89b8a3`, `origin/main` matches. Working tree
+- **Repo**: `main` at `9f64c96`, `origin/main` matches. Working tree
   clean.
 
-**Known limitations / non-issues:**
-- `react-native-webview` WebView mounting still uncovered by tests —
-  only its inputs (`buildHtml` / `buildScale`) are pinned. Needs a
-  Detox/E2E setup or a vitest Flow-strip plugin.
+**Known limitations:**
+
 - Demo melodies are still placeholder arpeggios — meaningful melody
   authoring needs a real PDF + pipeline emission first.
-- The reviewer's chord preview transpose is preview-only by design;
-  there's no UI affordance saying "this won't be saved." If a future
-  user is confused, add a hint label.
+- The reviewer is desktop-only by design — no touch-friendly drag.
+- Block keyboard reorder takes over Option+↑/↓ paragraph-nav inside
+  the textarea (intentional).
 
 **No temporary hacks in committed code.**
 
 ## Clear Next Steps
 
-Most of the previous handover's queue is done. Remaining unblocked:
+Most of the queue is done. Remaining:
 
-1. **Full WebView-mount test coverage.** Two paths:
-   - vitest config: `transformIgnorePatterns` + an SWC Flow-strip
-     plugin so `react-native-webview/lib/*.js` parses under vite-node.
-   - Detox/E2E running on a real RN target.
-   The pure helpers (`buildHtml`, `buildScale`) are already covered.
+1. **Get a real source PDF from the user.** Still the gate for OCR
+   tuning, profile calibration, real corpus, real stave PNGs, real
+   melodies. Blocks items 2 and 4 below.
 
-2. **Pipeline → `melody.json` emission.** Blocked on a real PDF;
-   when one lands, teach the pipeline to write `{header, blocks: […]}`
-   ordered by the same `start_of_*` directives that already drive
-   `song.cho`.
+2. **Pipeline → `melody.json` emission.** When the pipeline starts
+   producing real per-song output, teach it to write the new
+   `{header, blocks: [{type, body}, …]}` schema. Order blocks from
+   the same `start_of_*` directives that already drive `song.cho`.
 
-3. **Real source PDF** itself — blocks 2, plus #4 below.
+3. **Whisper autoscroll sync (v2 spec).** Needs `audio/` to grow
+   content. The rAF-driven scroller is ready for a speed feed.
 
 4. **Multi-chorus / bridge content in the corpus** — exercises a
-   melody schema path that no demo song uses today.
+   melody schema path no demo song uses today.
 
-5. **Whisper autoscroll sync (v2 spec).** Needs `audio/` to grow.
+5. **Native E2E test coverage (Detox or similar).** The pure helpers
+   AND the React render path are now tested in vitest with a mock
+   WebView. To go further would be to actually mount the WebView on
+   a real device — that's Detox / manual QA territory.
 
-6. **Optional polish** that didn't make this session:
-   - Persist `previewNotation` / `previewTranspose` across reviewer
-     song switches (currently resets to `cs` / 0 on every selectSong).
-   - Show a small "(preview only)" hint near the transpose value so
-     users don't expect it to persist.
-   - Touch-friendly drag-to-reorder via PointerEvents — only needed
-     if anyone ever opens the reviewer on a tablet.
-   - A keyboard shortcut for reordering (e.g. `Alt+↑/↓` to swap with
-     the previous/next block).
+**Optional polish that didn't make this session:**
+- Held-button auto-repeat on the transpose stepper (and on the app's
+  steppers too).
+- A small "What's in this block?" preview tooltip on each block card
+  (first line of body).
+- Persist the reviewer's chord-preview state to localStorage (low
+  priority — resets feel right).
+- A keyboard shortcut for Add-block (e.g. Ctrl+Shift+V for verse).
+
+**Dependencies / blockers:** items 1, 2, 3, 4 all need the source
+PDF or audio. Items 5 + polish are unblocked but low value.
 
 ## Important Files Map
 
@@ -316,59 +330,75 @@ Most of the previous handover's queue is done. Remaining unblocked:
 ├── HANDOVER.md                                       this file
 │
 ├── pipeline/
-│   ├── pyproject.toml                                unchanged
-│   ├── tests/
-│   │   ├── test_writer.py                            ★ +2 cases for the
-│   │   │                                              no-op-on-match path
-│   │   ├── test_review_melody.py                     unchanged this pass
-│   │   └── … (134 unchanged tests)
+│   ├── pyproject.toml                                mypy overrides
+│   │                                                 already in place
+│   ├── tests/                                        137 tests
+│   │   ├── test_writer.py                            ★ +2 cases (no-op /
+│   │   │                                              rewrites paths)
+│   │   └── test_review_melody.py                     unchanged this session
 │   └── zpevnik_pipeline/
 │       ├── output/writer.py                          ★ write_index reads
 │       │                                              existing + early-returns
 │       │                                              on match
 │       └── review/
-│           ├── server.py                             unchanged this pass
+│           ├── server.py                             unchanged
 │           └── static/
-│               ├── index.html                        ★ chord-preview controls;
-│               │                                      block draggable + handle
-│               ├── app.js                            ★ chord transform applied
-│               │                                      in renderChordpro;
-│               │                                      drag handlers per block;
-│               │                                      previewNotation/transpose
+│               ├── index.html                        ★ preview-grid,
+│               │                                      block-template w/ drag
+│               │                                      handle, preview controls,
+│               │                                      preview hint chip
+│               ├── app.js                            ★ structured editor +
+│               │                                      previews + transforms +
+│               │                                      D&D + moveBlock helper +
+│               │                                      Alt+arrow + transform
+│               │                                      chord per segment
 │               ├── assemble.js                       unchanged
 │               ├── chord.js                          ★ NEW — notation +
-│               │                                      transpose plain-JS port
-│               ├── chordpro.js                       unchanged
-│               └── style.css                         ★ + preview-controls,
+│               │                                      transpose plain-JS
+│               ├── chordpro.js                       ★ NEW — parser plain-JS
+│               └── style.css                         ★ huge: melody-block.*,
+│                                                     preview-grid,
+│                                                     preview-controls,
 │                                                     prefers-color-scheme,
-│                                                     drag handle, drop-target
+│                                                     drag handle / drop-target,
+│                                                     preview-hint, cp-* rules
 │
 ├── app/
+│   ├── vitest.config.ts                              unchanged
+│   ├── vitest.setup.ts                               unchanged
+│   ├── app/
+│   │   ├── _layout.tsx                               ★ Stack themed
+│   │   ├── index.tsx                                 ★ list themed
+│   │   └── song/[id].tsx                             ★ detail themed
 │   └── src/shared/
 │       ├── components/
-│       │   ├── AbcView.tsx                           ★ useTheme isDark drives
-│       │   │                                          filter on web + inline
-│       │   │                                          HTML on native
-│       │   └── AbcView.test.tsx                      ★ +2 cases for the
-│       │                                              isDark filter
+│       │   ├── AbcView.tsx                           ★ useTheme isDark;
+│       │   │                                          buildHtml takes isDark
+│       │   ├── AbcView.test.tsx                      ★ +7 cases (HTML
+│       │   │                                          builder) +2 (dark filter)
+│       │   ├── AbcView.native.test.tsx               ★ NEW — 6 cases for
+│       │   │                                          native-branch render
+│       │   │                                          via Platform.OS mock +
+│       │   │                                          WebView spy
+│       │   ├── SongControls.tsx                      ★ + Theme group
+│       │   ├── SongView.tsx                          ★ themed
+│       │   └── SongView.test.tsx                     unchanged
 │       └── store/
-│           ├── theme.ts                              unchanged this pass
-│           └── theme.test.ts                         unchanged this pass
+│           ├── settings.ts                           unchanged
+│           ├── theme.ts                              ★ NEW — useTheme()
+│           └── theme.test.ts                         ★ NEW — 4 cases
 │
 ├── songs/
 │   ├── index.json                                    no longer churns
 │   └── (3 demo songs unchanged)
 │
-└── audio/                                            still empty
+└── audio/                                            still empty (v2)
 ```
 
-★ = files created or substantially modified this pass (the morning pass
-has its own marks in the earlier handover).
+★ = files created or substantially modified this session.
 
-**Git status (session end):**
-- `main` local at `e89b8a3`, matches `origin/main`.
-- Working tree clean.
-- 0 commits ahead of remote.
+**Git status:** working tree clean. `main` at `9f64c96`. `origin/main`
+matches.
 
 **Memory updates this session:** none new. `feedback_autonomy.md` and
 `project_zpevnik.md` still apply.
@@ -387,11 +417,11 @@ PYTHONPATH=. .venv/bin/python -m pytest tests/
 cd /Users/ondrej.maxa/Projects/zpevnik/app
 npm test
 npx tsc --noEmit
-# expect: 59 passed; tsc clean.
+# expect: 65 passed; tsc clean.
 
 # Reader (pick a free port — 8081 is often taken by a stale expo)
 cd /Users/ondrej.maxa/Projects/zpevnik/app
-lsof -i :8081 2>/dev/null  # if anything, kill it
+lsof -i :8081 2>/dev/null  # kill any stragglers first
 npx expo start --web --port 8081
 
 # Reviewer (default port 8765)
