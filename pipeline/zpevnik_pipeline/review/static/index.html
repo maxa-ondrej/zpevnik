@@ -50,10 +50,24 @@
             ChordPro
             <textarea name="chordpro" spellcheck="false" rows="18"></textarea>
           </label>
-          <label class="editor-melody">
-            melody.json
-            <textarea name="melody" spellcheck="false" rows="18"></textarea>
-          </label>
+          <div class="editor-melody">
+            <div class="editor-melody-head">
+              <span class="field-label">melody.json</span>
+              <span class="hint">structured</span>
+            </div>
+            <label>
+              Header
+              <textarea name="melodyHeader" spellcheck="false" rows="4"
+                placeholder="X:1&#10;T:Title&#10;M:4/4&#10;L:1/4&#10;K:C"></textarea>
+            </label>
+            <div class="melody-blocks-label">Blocks</div>
+            <div id="melody-blocks" class="melody-blocks"></div>
+            <div class="melody-add-row" id="melody-add-row">
+              <button type="button" data-add-type="verse">+ Verse</button>
+              <button type="button" data-add-type="chorus">+ Chorus</button>
+              <button type="button" data-add-type="bridge">+ Bridge</button>
+            </div>
+          </div>
         </div>
         <div class="row">
           <label>Review status
@@ -70,6 +84,22 @@
         </div>
         <p id="save-status" aria-live="polite"></p>
       </form>
+    </template>
+    <template id="block-template">
+      <div class="melody-block">
+        <header>
+          <select data-act="type" aria-label="Block type">
+            <option value="verse">Verse</option>
+            <option value="chorus">Chorus</option>
+            <option value="bridge">Bridge</option>
+          </select>
+          <span class="spacer"></span>
+          <button type="button" data-act="up" aria-label="Move up" title="Move up">↑</button>
+          <button type="button" data-act="down" aria-label="Move down" title="Move down">↓</button>
+          <button type="button" data-act="delete" aria-label="Delete block" title="Delete block">✕</button>
+        </header>
+        <textarea data-act="body" rows="6" spellcheck="false"></textarea>
+      </div>
     </template>
     <script type="module" src="/static/app.js"></script>
   </body>

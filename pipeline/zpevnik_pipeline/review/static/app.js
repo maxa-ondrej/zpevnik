@@ -3,21 +3,36 @@ import { assembleAbc } from '/static/assemble.js';
 const listEl = document.getElementById('song-list');
 const detailEl = document.getElementById('detail');
 const searchEl = document.getElementById('search');
-const tpl = document.getElementById('detail-template');
+const detailTpl = document.getElementById('detail-template');
+const blockTpl = document.getElementById('block-template');
 
 const EMPTY_MELODY = { header: '', blocks: [] };
-const BLOCK_TYPES = new Set(['verse', 'chorus', 'bridge']);
+const BLOCK_TYPES = ['verse', 'chorus', 'bridge'];
 const NOTATION_DEBOUNCE_MS = 300;
 
 let allSongs = [];
 let currentId = null;
 let currentDetail = null;
-/** Mirrors what was loaded from the server so we know whether to PUT melody. */
+/** Last-known server state — never mutated; used for dirty detection. */
 let loadedMelody = null;
+/** Mutable working copy bound to the structured editor. */
+let currentMelody = cloneMelody(EMPTY_MELODY);
 let notationDebounce = null;
 
 const fold = (s) =>
   (s ?? '').toString().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase();
+
+function cloneMelody(m) {
+  return {
+    header: String(m?.header ?? ''),
+    blocks: Array.isArray(m?.blocks)
+      ? m.blocks.map((b) => ({
+          type: BLOCK_TYPES.includes(b?.type) ? b.type : 'verse',
+          body: String(b?.body ?? ''),
+        }))
+      : [],
+  };
+}
 
 async function loadList() {
   const r = await fetch('/api/songs');
@@ -82,18 +97,18 @@ async function selectSong(id) {
   if (melodyRes.status === 200) {
     loadedMelody = await melodyRes.json();
   } else if (melodyRes.status === 404) {
-    // No sidecar yet — surface an editable stub the user can fill in.
     loadedMelody = null;
   } else {
     loadedMelody = null;
     console.warn(`GET melody.json failed (${melodyRes.status})`);
   }
 
+  currentMelody = cloneMelody(loadedMelody ?? EMPTY_MELODY);
   renderDetail();
 }
 
 function renderDetail() {
-  const node = tpl.content.cloneNode(true);
+  const node = detailTpl.content.cloneNode(true);
   const m = currentDetail.meta;
 
   node.querySelector('[data-bind="reviewStatus"]').textContent = m.reviewStatus;
@@ -121,18 +136,107 @@ function renderDetail() {
   form.chordpro.value = currentDetail.chordpro;
   form.reviewStatus.value = m.reviewStatus;
 
-  const melodyForForm = loadedMelody ?? EMPTY_MELODY;
-  form.melody.value = JSON.stringify(melodyForForm, null, 2);
+  const headerArea = form.querySelector('textarea[name="melodyHeader"]');
+  headerArea.value = currentMelody.header;
+  headerArea.addEventListener('input', () => {
+    currentMelody.header = headerArea.value;
+    scheduleNotationRender();
+  });
+
+  const addRow = form.querySelector('#melody-add-row');
+  addRow.querySelectorAll('button[data-add-type]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentMelody.blocks.push({ type: btn.dataset.addType, body: '' });
+      renderBlocks();
+      const cards = document.querySelectorAll('#melody-blocks .melody-block');
+      cards[cards.length - 1]?.querySelector('textarea')?.focus();
+      scheduleNotationRender();
+    });
+  });
 
   form.addEventListener('submit', onSave);
   node.querySelector('#reload').addEventListener('click', () => selectSong(currentId));
-  form.melody.addEventListener('input', () => scheduleNotationRender());
 
   detailEl.replaceChildren(node);
 
+  renderBlocks();
   // Initial paint of the notation preview. Wait a tick so the template has
-  // been attached and the #notation-target node is reachable by id.
+  // been attached and the #notation-target node is reachable.
   scheduleNotationRender(0);
+}
+
+function renderBlocks() {
+  const container = document.getElementById('melody-blocks');
+  if (!container) return;
+  container.replaceChildren();
+
+  if (currentMelody.blocks.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'melody-blocks-empty';
+    empty.textContent = 'No blocks yet — add one below.';
+    container.appendChild(empty);
+    return;
+  }
+
+  currentMelody.blocks.forEach((block, idx) => {
+    const cardNode = blockTpl.content.cloneNode(true);
+    const card = cardNode.querySelector('.melody-block');
+    card.dataset.type = block.type;
+    card.dataset.index = String(idx);
+
+    const select = card.querySelector('[data-act="type"]');
+    select.value = block.type;
+    select.addEventListener('change', () => {
+      currentMelody.blocks[idx].type = select.value;
+      card.dataset.type = select.value;
+      scheduleNotationRender();
+    });
+
+    const bodyArea = card.querySelector('[data-act="body"]');
+    bodyArea.value = block.body;
+    bodyArea.addEventListener('input', () => {
+      currentMelody.blocks[idx].body = bodyArea.value;
+      scheduleNotationRender();
+    });
+
+    const upBtn = card.querySelector('[data-act="up"]');
+    upBtn.disabled = idx === 0;
+    upBtn.addEventListener('click', () => {
+      [currentMelody.blocks[idx - 1], currentMelody.blocks[idx]] = [
+        currentMelody.blocks[idx],
+        currentMelody.blocks[idx - 1],
+      ];
+      renderBlocks();
+      focusBlockAt(idx - 1);
+      scheduleNotationRender();
+    });
+
+    const downBtn = card.querySelector('[data-act="down"]');
+    downBtn.disabled = idx === currentMelody.blocks.length - 1;
+    downBtn.addEventListener('click', () => {
+      [currentMelody.blocks[idx + 1], currentMelody.blocks[idx]] = [
+        currentMelody.blocks[idx],
+        currentMelody.blocks[idx + 1],
+      ];
+      renderBlocks();
+      focusBlockAt(idx + 1);
+      scheduleNotationRender();
+    });
+
+    const deleteBtn = card.querySelector('[data-act="delete"]');
+    deleteBtn.addEventListener('click', () => {
+      currentMelody.blocks.splice(idx, 1);
+      renderBlocks();
+      scheduleNotationRender();
+    });
+
+    container.appendChild(cardNode);
+  });
+}
+
+function focusBlockAt(idx) {
+  const cards = document.querySelectorAll('#melody-blocks .melody-block');
+  cards[idx]?.querySelector('textarea')?.focus();
 }
 
 function scheduleNotationRender(delay = NOTATION_DEBOUNCE_MS) {
@@ -148,43 +252,9 @@ function scheduleNotationRender(delay = NOTATION_DEBOUNCE_MS) {
 function renderNotation() {
   const target = document.getElementById('notation-target');
   const status = document.getElementById('notation-status');
-  if (!target) return;
+  if (!target || !status) return;
 
-  const form = document.getElementById('edit-form');
-  if (!form) return;
-
-  const raw = form.melody.value;
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    status.textContent = `JSON: ${err.message}`;
-    status.dataset.tone = 'error';
-    target.innerHTML = '';
-    return;
-  }
-
-  if (typeof parsed?.header !== 'string' || !Array.isArray(parsed?.blocks)) {
-    status.textContent = 'melody.json missing header/blocks';
-    status.dataset.tone = 'error';
-    target.innerHTML = '';
-    return;
-  }
-  const badBlock = parsed.blocks.find(
-    (b) =>
-      !b ||
-      typeof b !== 'object' ||
-      !BLOCK_TYPES.has(b.type) ||
-      typeof b.body !== 'string',
-  );
-  if (badBlock) {
-    status.textContent = 'each block needs {type: verse|chorus|bridge, body: string}';
-    status.dataset.tone = 'error';
-    target.innerHTML = '';
-    return;
-  }
-
-  if (!parsed.header.trim() && parsed.blocks.length === 0) {
+  if (!currentMelody.header.trim() && currentMelody.blocks.length === 0) {
     status.textContent = 'Empty melody — fill in header + blocks to preview.';
     status.dataset.tone = 'muted';
     target.innerHTML = '';
@@ -198,7 +268,10 @@ function renderNotation() {
     return;
   }
 
-  const abc = assembleAbc({ header: parsed.header, blocks: parsed.blocks });
+  const abc = assembleAbc({
+    header: currentMelody.header,
+    blocks: currentMelody.blocks,
+  });
 
   try {
     // NOTE: do NOT pass `responsive: 'resize'` — it silently neutralises
@@ -237,24 +310,11 @@ async function onSave(ev) {
     tempo: form.tempo.value === '' ? null : Number(form.tempo.value),
     chordpro: form.chordpro.value,
   };
-  // Only send reviewStatus if the user picked a different value than the
-  // current state — that way the server's auto→flagged auto-promotion
-  // kicks in when the user edits content without touching the dropdown.
   if (form.reviewStatus.value !== currentDetail.meta.reviewStatus) {
     payload.reviewStatus = form.reviewStatus.value;
   }
 
-  // Parse the melody textarea up-front so we can fail fast (and clearly)
-  // before we touch the network.
-  let melodyPayload;
-  try {
-    melodyPayload = JSON.parse(form.melody.value);
-  } catch (err) {
-    status.textContent = `melody.json: ${err.message}`;
-    status.dataset.tone = 'error';
-    saveBtn.disabled = false;
-    return;
-  }
+  const melodyPayload = cloneMelody(currentMelody);
 
   // Decide whether to PUT the melody. We always send it when the user
   // edited the field, but if they left an absent-melody stub at its
@@ -293,6 +353,7 @@ async function onSave(ev) {
         throw new Error(`melody PUT ${mr.status}: ${body}`);
       }
       loadedMelody = await mr.json();
+      currentMelody = cloneMelody(loadedMelody);
     }
 
     await loadList();
