@@ -168,11 +168,16 @@ export default function SongScreen() {
   // Unmount safety net
   useEffect(() => stopLoop, [stopLoop]);
 
-  // Follow-loop: advance one line at the song's tempo. BPM defaults to 100
-  // and beatsPerLine to 4 (rough 4/4 default; future improvement: derive
-  // from melody.json measure structure).
+  // Follow-loop fallback: only used when AbcView is NOT rendered (no
+  // staves on, or no melody.json). When the AbcView IS on screen, its
+  // abcjs TimingCallbacks drives playback at note-level granularity and
+  // calls back via `onBeat`; this setInterval is a coarser line-by-line
+  // backup so play mode still does something useful in lyrics-only view.
+  const useAbcjsTiming =
+    state.kind === 'ready' && showStaves && state.abc !== null;
+
   useEffect(() => {
-    if (!isFollowing) {
+    if (!isFollowing || useAbcjsTiming) {
       stopFollow();
       return;
     }
@@ -195,7 +200,28 @@ export default function SongScreen() {
     }, intervalMs);
 
     return stopFollow;
-  }, [isFollowing, state, stopFollow]);
+  }, [isFollowing, useAbcjsTiming, state, stopFollow]);
+
+  // When abcjs is the timing source, derive the current lyric line from
+  // the beat callback. Fired by AbcView via onBeat. We snap the line index
+  // by even distribution — fine for hymns where each line is roughly the
+  // same length; a future improvement is to use measure structure from
+  // melody.json directly.
+  const onAbcBeat = useCallback(
+    (beatNumber: number, totalBeats: number) => {
+      if (state.kind !== 'ready' || totalBeats <= 0) return;
+      const lineCount = state.song.lines.length;
+      if (lineCount === 0) return;
+      const beatsPerLine = totalBeats / lineCount;
+      const idx = Math.min(lineCount - 1, Math.floor(beatNumber / beatsPerLine));
+      setFollowLine(idx);
+    },
+    [state],
+  );
+
+  const onAbcFollowEnd = useCallback(() => {
+    setIsFollowing(false);
+  }, []);
 
   // When the followed line advances, scroll so it sits ~30% from the top.
   useEffect(() => {
@@ -347,7 +373,15 @@ export default function SongScreen() {
         onToggleFollow={toggleFollow}
       />
       {showStaves && state.abc !== null && (
-        <AbcView abc={state.abc} transpose={transpose} fontSize={fontSize} />
+        <AbcView
+          abc={state.abc}
+          transpose={transpose}
+          fontSize={fontSize}
+          isFollowing={isFollowing}
+          tempo={state.meta.tempo ?? undefined}
+          onBeat={onAbcBeat}
+          onFollowEnd={onAbcFollowEnd}
+        />
       )}
       {showStaves && state.staveUris.length > 0 && (
         <View style={styles.staves}>

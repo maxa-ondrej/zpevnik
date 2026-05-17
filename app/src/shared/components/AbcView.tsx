@@ -5,6 +5,12 @@
  * On iOS / Android we wrap abcjs inside a `WebView` that loads the library
  * from a CDN and posts its rendered height back to RN so the staff is
  * visible without scrolling inside the WebView.
+ *
+ * When `isFollowing` is set on the web path, the component drives abcjs
+ * `TimingCallbacks` at the song's tempo: each played event highlights the
+ * current notehead (and its `w:` syllable) red on the SVG, and beat
+ * progress is reported via `onBeat` so the parent can sync a lyric-line
+ * highlight in `SongView`.
  */
 
 import abcjs from 'abcjs';
@@ -20,11 +26,23 @@ interface Props {
   transpose?: number;
   /** Lyric font size in px. Drives abcjs's `scale` so the staff grows with the text. */
   fontSize?: number;
+  /** When true (and we're on web with a parsed visualObj), play through
+   *  the notation, highlighting each note as it sounds. */
+  isFollowing?: boolean;
+  /** BPM (quarters-per-minute). Default 100 if undefined. */
+  tempo?: number;
+  /** Fires on every beat tick with the current beat number and the total
+   *  beats in the piece — used by the parent to sync lyric-line highlight. */
+  onBeat?: (beatNumber: number, totalBeats: number) => void;
+  /** Fires when playback reaches the end (eventCallback gets null). */
+  onFollowEnd?: () => void;
 }
 
 const BASE_FONT_SIZE = 16;
 const BASE_SCALE = 1.25;
 const ABCJS_CDN = 'https://cdn.jsdelivr.net/npm/abcjs@6.6.3/dist/abcjs-basic-min.js';
+const HIGHLIGHT_CLASS = 'abcjs-note-highlighted';
+const HIGHLIGHT_STYLE_ID = 'abcjs-note-highlight-style';
 
 export function buildScale(fontSize: number): number {
   return BASE_SCALE * (fontSize / BASE_FONT_SIZE);
@@ -101,23 +119,81 @@ export function buildHtml(
 </html>`;
 }
 
-export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props) {
+function ensureHighlightStyle() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(HIGHLIGHT_STYLE_ID)) return;
+  const el = document.createElement('style');
+  el.id = HIGHLIGHT_STYLE_ID;
+  // High specificity + !important because abcjs sets `fill`/`stroke` inline
+  // on a lot of elements; we need to override those. Red survives the
+  // dark-mode `filter: invert` better than the theme accent does.
+  el.textContent = `
+    .${HIGHLIGHT_CLASS},
+    .${HIGHLIGHT_CLASS} path,
+    .${HIGHLIGHT_CLASS} ellipse {
+      fill: #c0392b !important;
+      stroke: #c0392b !important;
+    }
+    .${HIGHLIGHT_CLASS} text { fill: #c0392b !important; }
+  `;
+  document.head.appendChild(el);
+}
+
+type AbcEventElement = Element | AbcEventElement[];
+
+function flattenElements(arr: AbcEventElement | AbcEventElement[] | null | undefined): Element[] {
+  if (!arr) return [];
+  if (Array.isArray(arr)) return arr.flatMap(flattenElements);
+  if (typeof Element !== 'undefined' && arr instanceof Element) return [arr];
+  return [];
+}
+
+function clearHighlights(container: HTMLElement | null) {
+  if (!container) return;
+  container
+    .querySelectorAll(`.${HIGHLIGHT_CLASS}`)
+    .forEach((el) => el.classList.remove(HIGHLIGHT_CLASS));
+}
+
+export function AbcView({
+  abc,
+  transpose = 0,
+  fontSize = BASE_FONT_SIZE,
+  isFollowing = false,
+  tempo,
+  onBeat,
+  onFollowEnd,
+}: Props) {
   const ref = useRef<View>(null);
   const [height, setHeight] = useState<number>(120);
   const scale = buildScale(fontSize);
   const isDark = useTheme().isDark;
+  // visualObj is needed by TimingCallbacks. We capture it from the render
+  // call and keep it in a ref so the timing effect can read the latest.
+  // Use `unknown` since abcjs's types aren't installed.
+  const visualObjRef = useRef<unknown>(null);
+  const timingRef = useRef<{ stop?: () => void } | null>(null);
+  // Keep the latest callbacks in refs so the timing effect doesn't need to
+  // re-create the TimingCallbacks on every render that closes over them.
+  const onBeatRef = useRef(onBeat);
+  const onFollowEndRef = useRef(onFollowEnd);
+  useEffect(() => {
+    onBeatRef.current = onBeat;
+    onFollowEndRef.current = onFollowEnd;
+  }, [onBeat, onFollowEnd]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const el = ref.current as unknown as HTMLElement | null;
     if (!el) return;
+    ensureHighlightStyle();
 
     // NOTE: do NOT pass `responsive: 'resize'` here — it makes the SVG fit
     // the container width and effectively ignores `scale`, so A-/A+ stops
     // affecting the staff. Letting abcjs compute its own width × scale
     // gives us a properly resizable staff at the cost of horizontal
     // overflow on narrow screens (which we'll address with CSS later).
-    abcjs.renderAbc(el, abc, {
+    const result = abcjs.renderAbc(el, abc, {
       staffwidth: 740,
       visualTranspose: transpose,
       scale,
@@ -127,7 +203,67 @@ export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props
       paddingbottom: 12,
       lineThickness: 0.2,
     });
+    // abcjs.renderAbc returns an array of "visualObj" parses, one per
+    // tune. We use the first (our melody files all carry one tune).
+    visualObjRef.current = Array.isArray(result) ? result[0] : null;
   }, [abc, transpose, fontSize, scale]);
+
+  // TimingCallbacks: drive playback on the web path when isFollowing is
+  // true. Per-note highlight is applied to event.elements via a CSS class;
+  // beat progress is reported upward for the parent's lyric-line sync.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const container = ref.current as unknown as HTMLElement | null;
+    if (!isFollowing) {
+      if (timingRef.current?.stop) {
+        try {
+          timingRef.current.stop();
+        } catch {
+          // ignore — TimingCallbacks throws on already-stopped occasionally
+        }
+      }
+      timingRef.current = null;
+      clearHighlights(container);
+      return;
+    }
+    const visualObj = visualObjRef.current;
+    if (!visualObj) return;
+    const TimingCallbacksCtor =
+      (abcjs as unknown as { TimingCallbacks?: new (vo: unknown, params: object) => { stop: () => void; start: () => void } })
+        .TimingCallbacks;
+    if (typeof TimingCallbacksCtor !== 'function') return;
+
+    const tc = new TimingCallbacksCtor(visualObj, {
+      qpm: tempo ?? 100,
+      eventCallback: (event: { elements?: AbcEventElement[] } | null) => {
+        clearHighlights(container);
+        if (event === null) {
+          // End of song.
+          onFollowEndRef.current?.();
+          return;
+        }
+        if (event.elements) {
+          flattenElements(event.elements).forEach((el) =>
+            el.classList?.add(HIGHLIGHT_CLASS),
+          );
+        }
+      },
+      beatCallback: (beatNumber: number, totalBeats: number) => {
+        onBeatRef.current?.(beatNumber, totalBeats);
+      },
+    });
+    timingRef.current = tc;
+    tc.start();
+    return () => {
+      try {
+        tc.stop();
+      } catch {
+        // ignore
+      }
+      timingRef.current = null;
+      clearHighlights(container);
+    };
+  }, [isFollowing, tempo, abc, transpose, fontSize, scale]);
 
   if (Platform.OS === 'web') {
     // CSS `filter: invert + hue-rotate` flips the black SVG abcjs draws
