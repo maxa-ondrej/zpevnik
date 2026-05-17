@@ -256,33 +256,31 @@ function renderBlocks() {
 
     const upBtn = card.querySelector('[data-act="up"]');
     upBtn.disabled = idx === 0;
-    upBtn.addEventListener('click', () => {
-      [currentMelody.blocks[idx - 1], currentMelody.blocks[idx]] = [
-        currentMelody.blocks[idx],
-        currentMelody.blocks[idx - 1],
-      ];
-      renderBlocks();
-      focusBlockAt(idx - 1);
-      scheduleNotationRender();
-    });
+    upBtn.addEventListener('click', () => moveBlock(idx, -1));
 
     const downBtn = card.querySelector('[data-act="down"]');
     downBtn.disabled = idx === currentMelody.blocks.length - 1;
-    downBtn.addEventListener('click', () => {
-      [currentMelody.blocks[idx + 1], currentMelody.blocks[idx]] = [
-        currentMelody.blocks[idx],
-        currentMelody.blocks[idx + 1],
-      ];
-      renderBlocks();
-      focusBlockAt(idx + 1);
-      scheduleNotationRender();
-    });
+    downBtn.addEventListener('click', () => moveBlock(idx, 1));
 
     const deleteBtn = card.querySelector('[data-act="delete"]');
     deleteBtn.addEventListener('click', () => {
       currentMelody.blocks.splice(idx, 1);
       renderBlocks();
       scheduleNotationRender();
+    });
+
+    // Keyboard: Alt+↑ / Alt+↓ to swap with the previous/next block.
+    // Lives on the card so it fires no matter which inner control is
+    // focused (textarea, select, button).
+    card.addEventListener('keydown', (ev) => {
+      if (!ev.altKey) return;
+      if (ev.key === 'ArrowUp' && idx > 0) {
+        ev.preventDefault();
+        moveBlock(idx, -1);
+      } else if (ev.key === 'ArrowDown' && idx < currentMelody.blocks.length - 1) {
+        ev.preventDefault();
+        moveBlock(idx, 1);
+      }
     });
 
     wireBlockDragHandlers(card, idx);
@@ -335,6 +333,18 @@ function wireBlockDragHandlers(card, idx) {
 function focusBlockAt(idx) {
   const cards = document.querySelectorAll('#melody-blocks .melody-block');
   cards[idx]?.querySelector('textarea')?.focus();
+}
+
+function moveBlock(idx, dir) {
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= currentMelody.blocks.length) return;
+  [currentMelody.blocks[targetIdx], currentMelody.blocks[idx]] = [
+    currentMelody.blocks[idx],
+    currentMelody.blocks[targetIdx],
+  ];
+  renderBlocks();
+  focusBlockAt(targetIdx);
+  scheduleNotationRender();
 }
 
 function scheduleNotationRender(delay = NOTATION_DEBOUNCE_MS) {

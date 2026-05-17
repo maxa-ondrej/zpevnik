@@ -176,6 +176,14 @@ section.preview-panel > header h3 {
   min-width: 22px;
   text-align: center;
 }
+.preview-hint {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-style: italic;
+  cursor: help;
+}
 
 .notation-target {
   padding: 12px;
