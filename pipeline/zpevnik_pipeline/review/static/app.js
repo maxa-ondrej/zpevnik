@@ -1,4 +1,5 @@
 import { assembleAbc } from '/static/assemble.js';
+import { transformChord } from '/static/chord.js';
 import { parseChordPro } from '/static/chordpro.js';
 
 const listEl = document.getElementById('song-list');
@@ -12,6 +13,9 @@ const BLOCK_TYPES = ['verse', 'chorus', 'bridge'];
 const NOTATION_DEBOUNCE_MS = 300;
 const CHORDPRO_DEBOUNCE_MS = 150;
 
+const TRANSPOSE_MIN = -11;
+const TRANSPOSE_MAX = 11;
+
 let allSongs = [];
 let currentId = null;
 let currentDetail = null;
@@ -21,6 +25,9 @@ let loadedMelody = null;
 let currentMelody = cloneMelody(EMPTY_MELODY);
 let notationDebounce = null;
 let chordproDebounce = null;
+/** Preview-only — does not mutate the stored chordpro. */
+let previewNotation = 'cs';
+let previewTranspose = 0;
 
 const fold = (s) =>
   (s ?? '').toString().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase();
@@ -159,16 +166,58 @@ function renderDetail() {
 
   form.chordpro.addEventListener('input', () => scheduleChordproRender());
 
+  // Preview-only controls — these do NOT mutate song.cho, they only
+  // re-render the chord chart so the reviewer can spot-check Cs/En
+  // and transpose without saving.
+  const controls = node.querySelector('#chordpro-controls');
+  controls.querySelectorAll('button[data-act="notation"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      previewNotation = btn.dataset.value;
+      updatePreviewControlState();
+      renderChordpro();
+    });
+  });
+  controls.querySelector('button[data-act="transpose-down"]').addEventListener('click', () => {
+    previewTranspose = Math.max(TRANSPOSE_MIN, previewTranspose - 1);
+    updatePreviewControlState();
+    renderChordpro();
+  });
+  controls.querySelector('button[data-act="transpose-up"]').addEventListener('click', () => {
+    previewTranspose = Math.min(TRANSPOSE_MAX, previewTranspose + 1);
+    updatePreviewControlState();
+    renderChordpro();
+  });
+
   form.addEventListener('submit', onSave);
   node.querySelector('#reload').addEventListener('click', () => selectSong(currentId));
 
   detailEl.replaceChildren(node);
 
+  updatePreviewControlState();
   renderBlocks();
   // Initial paint of both previews. Wait a tick so the template has
   // been attached and the target nodes are reachable.
   scheduleNotationRender(0);
   scheduleChordproRender(0);
+}
+
+function updatePreviewControlState() {
+  const controls = document.getElementById('chordpro-controls');
+  if (!controls) return;
+  controls.querySelectorAll('button[data-act="notation"]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.value === previewNotation);
+  });
+  controls
+    .querySelector('button[data-act="transpose-down"]')
+    .toggleAttribute('disabled', previewTranspose <= TRANSPOSE_MIN);
+  controls
+    .querySelector('button[data-act="transpose-up"]')
+    .toggleAttribute('disabled', previewTranspose >= TRANSPOSE_MAX);
+  const valueEl = document.getElementById('chordpro-transpose-value');
+  if (valueEl) {
+    valueEl.textContent =
+      previewTranspose > 0 ? `+${previewTranspose}` : String(previewTranspose);
+  }
 }
 
 function renderBlocks() {
@@ -301,8 +350,11 @@ function renderChordpro() {
       cell.className = 'cp-cell';
       const chord = document.createElement('span');
       chord.className = 'cp-chord';
+      const rendered = seg.chord
+        ? transformChord(seg.chord, previewTranspose, previewNotation)
+        : null;
       // nbsp keeps the row height stable even when the segment has no chord.
-      chord.textContent = seg.chord ?? ' ';
+      chord.textContent = rendered ?? ' ';
       const lyric = document.createElement('span');
       lyric.className = 'cp-lyric';
       lyric.textContent = seg.text.length > 0 ? seg.text : ' ';
@@ -313,7 +365,11 @@ function renderChordpro() {
     target.appendChild(row);
   });
 
-  status.textContent = `${lineCount} line${lineCount === 1 ? '' : 's'}`;
+  const xposeNote =
+    previewTranspose !== 0
+      ? ` · ${previewTranspose > 0 ? '+' : ''}${previewTranspose}`
+      : '';
+  status.textContent = `${lineCount} line${lineCount === 1 ? '' : 's'} · ${previewNotation}${xposeNote}`;
   status.dataset.tone = 'ok';
 }
 

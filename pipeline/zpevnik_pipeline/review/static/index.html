@@ -33,7 +33,18 @@
         <section class="preview-panel chordpro-panel">
           <header>
             <h3>Chord chart preview</h3>
-            <span class="preview-status" id="chordpro-status"></span>
+            <div class="preview-controls" id="chordpro-controls">
+              <div class="preview-control-group" role="group" aria-label="Notation">
+                <button type="button" data-act="notation" data-value="cs">Cs</button>
+                <button type="button" data-act="notation" data-value="en">En</button>
+              </div>
+              <div class="preview-control-group" role="group" aria-label="Transpose">
+                <button type="button" data-act="transpose-down" aria-label="Transpose down">−</button>
+                <span class="preview-transpose" id="chordpro-transpose-value">0</span>
+                <button type="button" data-act="transpose-up" aria-label="Transpose up">+</button>
+              </div>
+              <span class="preview-status" id="chordpro-status"></span>
+            </div>
           </header>
           <div id="chordpro-target" class="chordpro-target"></div>
         </section>

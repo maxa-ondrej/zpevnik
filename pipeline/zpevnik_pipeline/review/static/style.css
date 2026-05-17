@@ -135,6 +135,48 @@ section.preview-panel > header h3 {
 .preview-status[data-tone="ok"]    { color: var(--accent); }
 .preview-status[data-tone="muted"] { color: var(--muted); }
 
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.preview-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.preview-controls button {
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  border-radius: 3px;
+  cursor: pointer;
+  min-width: 22px;
+}
+.preview-controls button:hover:not(:disabled) {
+  color: var(--fg);
+  background: var(--bg-soft);
+}
+.preview-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.preview-controls button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.preview-transpose {
+  font-size: 11px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  min-width: 22px;
+  text-align: center;
+}
+
 .notation-target {
   padding: 12px;
   overflow-x: auto;
