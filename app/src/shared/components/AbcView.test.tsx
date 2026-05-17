@@ -142,4 +142,14 @@ describe('buildHtml (native WebView payload)', () => {
     expect(html).toContain(JSON.stringify(tricky));
     expect(html).not.toContain('He said "hi"');
   });
+
+  test('omits the dark filter when isDark is unset / false', () => {
+    expect(buildHtml(ABC, 1.25, 0)).not.toMatch(/filter:\s*invert/);
+    expect(buildHtml(ABC, 1.25, 0, false)).not.toMatch(/filter:\s*invert/);
+  });
+
+  test('injects an invert + hue-rotate filter when isDark=true', () => {
+    const html = buildHtml(ABC, 1.25, 0, true);
+    expect(html).toMatch(/filter:\s*invert\(1\)\s*hue-rotate\(180deg\)/);
+  });
 });

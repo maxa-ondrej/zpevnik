@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { useTheme } from '../store/theme';
+
 interface Props {
   abc: string;
   /** Semitones to shift the rendered notation. Matches the user's transpose setting. */
@@ -36,18 +38,29 @@ export function buildScale(fontSize: number): number {
  * NOTE: do NOT pass `responsive: 'resize'` here — it makes the SVG fit
  * the container width and effectively ignores `scale`.
  *
+ * In dark mode we apply a CSS `invert + hue-rotate` filter on the body so
+ * the black-on-transparent SVG abcjs produces reads as white-on-dark. The
+ * RN background under the WebView stays transparent (themed by the
+ * surrounding View).
+ *
  * Exported for testing — the WebView itself is hard to mount under jsdom,
  * but the HTML it loads is a pure function we can pin.
  */
-export function buildHtml(abc: string, scale: number, visualTranspose: number): string {
+export function buildHtml(
+  abc: string,
+  scale: number,
+  visualTranspose: number,
+  isDark = false,
+): string {
   const abcLiteral = JSON.stringify(abc);
+  const darkFilter = isDark ? 'filter: invert(1) hue-rotate(180deg);' : '';
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <style>
-  html, body { margin: 0; padding: 0; background: transparent; }
+  html, body { margin: 0; padding: 0; background: transparent; ${darkFilter} }
   #paper { padding: 0; }
 </style>
 </head>
@@ -92,6 +105,7 @@ export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props
   const ref = useRef<View>(null);
   const [height, setHeight] = useState<number>(120);
   const scale = buildScale(fontSize);
+  const isDark = useTheme().isDark;
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -116,10 +130,15 @@ export function AbcView({ abc, transpose = 0, fontSize = BASE_FONT_SIZE }: Props
   }, [abc, transpose, fontSize, scale]);
 
   if (Platform.OS === 'web') {
-    return <View ref={ref} style={{ marginBottom: 24 }} />;
+    // CSS `filter: invert + hue-rotate` flips the black SVG abcjs draws
+    // into white-on-dark without needing to know any abcjs internals.
+    const darkStyle = isDark
+      ? { filter: 'invert(1) hue-rotate(180deg)' as const }
+      : null;
+    return <View ref={ref} style={[{ marginBottom: 24 }, darkStyle]} />;
   }
 
-  const html = buildHtml(abc, scale, transpose);
+  const html = buildHtml(abc, scale, transpose, isDark);
 
   const onMessage = (event: WebViewMessageEvent) => {
     try {
