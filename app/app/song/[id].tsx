@@ -83,6 +83,9 @@ export default function SongScreen() {
    *  scroll target. */
   const lineYsRef = useRef<Map<number, number>>(new Map());
   const songViewYRef = useRef(0);
+  /** AbcView's y inside the outer ScrollView, captured via onLayout on the
+   *  wrapping View. Combined with abcjs's reported staff-line y. */
+  const abcViewYRef = useRef(0);
   const followIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopFollow = useCallback(() => {
@@ -226,6 +229,23 @@ export default function SongScreen() {
     setIsFollowing(false);
   }, []);
 
+  // Scroll the outer ScrollView so the new staff line is in view. AbcView
+  // reports a local y (relative to itself); we offset by abcViewYRef to
+  // get the absolute scroll target.
+  const onAbcStaffLineChange = useCallback((yInsideAbcView: number) => {
+    const absoluteY = abcViewYRef.current + yInsideAbcView;
+    const viewportTop = currentYRef.current;
+    const viewportBottom = viewportTop + layoutHeightRef.current;
+    const inView = absoluteY >= viewportTop + 20 && absoluteY <= viewportBottom - 80;
+    if (inView) return;
+
+    const headOffset = Math.max(60, layoutHeightRef.current * 0.25);
+    const targetY = Math.max(0, absoluteY - headOffset);
+    scrollRef.current?.scrollTo({ y: targetY, animated: true });
+    currentYRef.current = targetY;
+    expectedYRef.current = targetY;
+  }, []);
+
   // When the followed line advances, scroll so it sits ~30% from the top
   // — ONLY if the line is currently outside the viewport. This avoids
   // overriding manual scroll on every beat while still bringing the
@@ -287,6 +307,7 @@ export default function SongScreen() {
     setFollowLine(0);
     lineYsRef.current.clear();
     songViewYRef.current = 0;
+    abcViewYRef.current = 0;
     currentYRef.current = 0;
     expectedYRef.current = 0;
     contentHeightRef.current = 0;
@@ -393,15 +414,22 @@ export default function SongScreen() {
         onToggleFollow={toggleFollow}
       />
       {showStaves && state.abc !== null && (
-        <AbcView
-          abc={state.abc}
-          transpose={transpose}
-          fontSize={fontSize}
-          isFollowing={isFollowing}
-          tempo={state.meta.tempo ?? undefined}
-          onBeat={onAbcBeat}
-          onFollowEnd={onAbcFollowEnd}
-        />
+        <View
+          onLayout={(ev) => {
+            abcViewYRef.current = ev.nativeEvent.layout.y;
+          }}
+        >
+          <AbcView
+            abc={state.abc}
+            transpose={transpose}
+            fontSize={fontSize}
+            isFollowing={isFollowing}
+            tempo={state.meta.tempo ?? undefined}
+            onBeat={onAbcBeat}
+            onFollowEnd={onAbcFollowEnd}
+            onStaffLineChange={onAbcStaffLineChange}
+          />
+        </View>
       )}
       {showStaves && state.staveUris.length > 0 && (
         <View style={styles.staves}>
@@ -416,13 +444,12 @@ export default function SongScreen() {
           ))}
         </View>
       )}
-      {/* SongView (lyrics+chords) renders when:
-           - staves are off (the normal text view), OR
-           - play mode is on (so the line highlight is visible even when
-             the user has staves enabled). The wrapping View captures
-             SongView's y inside the outer ScrollView so the follow-mode
-             scroll target is absolute, not SongView-local. */}
-      {(!showStaves || isFollowing) && (
+      {/* SongView (lyrics+chords) renders ONLY when staves are off — the
+           text doubles up with the staff's `w:` syllables, and during play
+           we already get the per-note highlight on the staff itself.
+           The wrapping View captures SongView's y inside the outer
+           ScrollView so the line-fallback scroll target is absolute. */}
+      {!showStaves && (
         <View
           onLayout={(ev) => {
             songViewYRef.current = ev.nativeEvent.layout.y;

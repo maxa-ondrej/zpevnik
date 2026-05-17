@@ -36,6 +36,11 @@ interface Props {
   onBeat?: (beatNumber: number, totalBeats: number) => void;
   /** Fires when playback reaches the end (eventCallback gets null). */
   onFollowEnd?: () => void;
+  /** Fires when playback enters a new staff line, with the y-coordinate of
+   *  the first highlighted element *relative to AbcView's container*.
+   *  The parent uses it to scroll the outer ScrollView so the new staff
+   *  line is in view. */
+  onStaffLineChange?: (yInsideAbcView: number) => void;
 }
 
 const BASE_FONT_SIZE = 16;
@@ -163,6 +168,7 @@ export function AbcView({
   tempo,
   onBeat,
   onFollowEnd,
+  onStaffLineChange,
 }: Props) {
   const ref = useRef<View>(null);
   const [height, setHeight] = useState<number>(120);
@@ -177,10 +183,12 @@ export function AbcView({
   // re-create the TimingCallbacks on every render that closes over them.
   const onBeatRef = useRef(onBeat);
   const onFollowEndRef = useRef(onFollowEnd);
+  const onStaffLineChangeRef = useRef(onStaffLineChange);
   useEffect(() => {
     onBeatRef.current = onBeat;
     onFollowEndRef.current = onFollowEnd;
-  }, [onBeat, onFollowEnd]);
+    onStaffLineChangeRef.current = onStaffLineChange;
+  }, [onBeat, onFollowEnd, onStaffLineChange]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -233,19 +241,41 @@ export function AbcView({
         .TimingCallbacks;
     if (typeof TimingCallbacksCtor !== 'function') return;
 
+    let lastLine: number | null = null;
     const tc = new TimingCallbacksCtor(visualObj, {
       qpm: tempo ?? 100,
-      eventCallback: (event: { elements?: AbcEventElement[] } | null) => {
+      eventCallback: (
+        event: { elements?: AbcEventElement[]; line?: number } | null,
+      ) => {
         clearHighlights(container);
         if (event === null) {
           // End of song.
           onFollowEndRef.current?.();
           return;
         }
-        if (event.elements) {
-          flattenElements(event.elements).forEach((el) =>
-            el.classList?.add(HIGHLIGHT_CLASS),
-          );
+        const highlighted = event.elements ? flattenElements(event.elements) : [];
+        highlighted.forEach((el) => el.classList?.add(HIGHLIGHT_CLASS));
+
+        // Report a line change so the parent can scroll the staff line
+        // into view. `event.line` is the abcjs line index; when it
+        // changes, find the y of the first highlighted SVG node
+        // relative to AbcView's container (which the parent then offsets
+        // into the outer ScrollView).
+        if (
+          typeof event.line === 'number' &&
+          event.line !== lastLine &&
+          highlighted.length > 0 &&
+          container
+        ) {
+          lastLine = event.line;
+          try {
+            const elRect = highlighted[0]!.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const yInsideAbcView = elRect.top - containerRect.top;
+            onStaffLineChangeRef.current?.(yInsideAbcView);
+          } catch {
+            // getBoundingClientRect can throw on detached nodes — ignore.
+          }
         }
       },
       beatCallback: (beatNumber: number, totalBeats: number) => {
