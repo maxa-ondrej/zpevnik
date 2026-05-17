@@ -224,7 +224,7 @@ export default function SongScreen() {
           ))}
         </View>
       )}
-      <SongView song={state.song} />
+      {!showStaves && <SongView song={state.song} />}
     </ScrollView>
   );
 }
