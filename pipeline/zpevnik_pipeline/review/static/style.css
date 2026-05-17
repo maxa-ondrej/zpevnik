@@ -10,6 +10,25 @@
   --warn-bg: #fff4dd;
   --danger: #a00;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e8e8e8;
+    --muted: #a0a0a0;
+    --border: #333;
+    --bg: #121212;
+    --bg-soft: #1c1c1c;
+    --accent: #3dd498;
+    --accent-bg: #14322a;
+    --warn: #d9a13a;
+    --warn-bg: #3a2a10;
+    --danger: #ff8b8b;
+  }
+  /* The notation SVG abcjs draws is black on transparent; flip it like
+     the app does so it reads white on the dark panel background. */
+  .notation-target svg { filter: invert(1) hue-rotate(180deg); }
 }
 
 * { box-sizing: border-box; }
@@ -60,7 +79,7 @@ ul#song-list .num { width: 32px; font-variant-numeric: tabular-nums; color: var(
 ul#song-list .title { flex: 1; font-size: 14px; }
 ul#song-list .status { font-size: 10px; text-transform: uppercase; padding: 2px 5px; border-radius: 3px; }
 
-.status[data-status="auto"]     { background: #f1f1f1; color: var(--muted); }
+.status[data-status="auto"]     { background: var(--bg-soft); color: var(--muted); border: 1px solid var(--border); }
 .status[data-status="flagged"]  { background: var(--warn-bg); color: var(--warn); }
 .status[data-status="approved"] { background: var(--accent-bg); color: var(--accent); }
 
