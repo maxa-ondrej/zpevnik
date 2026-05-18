@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useSettings } from '../store/settings';
 import { useTheme, type Theme } from '../store/theme';
+import { useAutoRepeat } from './useAutoRepeat';
 
 const FONT_MIN = 10;
 const FONT_MAX = 32;
@@ -240,9 +241,12 @@ function Step({
   disabled?: boolean;
   theme: Theme;
 }) {
+  const { start, stop } = useAutoRepeat({ onPress, disabled });
+
   return (
     <Pressable
-      onPress={onPress}
+      onPressIn={start}
+      onPressOut={stop}
       disabled={disabled}
       style={[
         styles.btn,
