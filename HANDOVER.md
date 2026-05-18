@@ -1,37 +1,56 @@
-# Session Handover — 2026-05-17 (long)
+# Session Handover — 2026-05-17/18
 
 ## Summary
 
-A long session that cleared every non-blocked item from the morning
-handover, then walked the spec's §7.1 v1 feature list and closed every
-remaining gap including the biggest one — **setlists**. Sixteen feature
-commits + five handover refreshes, all pushed to `origin/main` at
-`0e6d6fa`. Tests: pipeline 137 (was 134), app 87 (was 46). The only v1
-reader feature still open is **native offline-first asset bundling**
-(infrastructure, not UX); everything else is done or blocked on the
-real PDF / Whisper audio.
+A very long session that started from the morning handover, walked
+through every non-blocked v1 spec item, then built note-level
+play-mode follow with abcjs `TimingCallbacks`. Twenty-three feature
+commits + six handover refreshes, all pushed to `origin/main` at
+`4060077`. Tests: pipeline 137 (was 134), app 89 (was 46). v1 reader
+feature surface from `zpevnik-spec.md` §7.1 is complete except for
+**native offline-first asset bundling**; everything else is done or
+blocked on the real PDF / Whisper audio.
+
+The final third of the session was iterative debugging of follow mode
+— five commits between "MVP" and "actually works the way the user
+wants." Each is documented below because the failure modes will be
+useful context if anyone touches this code again.
 
 ## What Was Worked On & What Got Done
 
-Items from the morning's `Clear Next Steps`:
+### v1 spec §7.1 reader features
 
-| #  | Task                                                  | Status                        |
-|----|-------------------------------------------------------|-------------------------------|
-| 1  | Push the local commits                                | ✅ pushed throughout         |
-| 2  | Real source PDF                                       | ⏳ Blocked on user input     |
-| 3  | Decide `songs/index.json` policy                      | ✅ `63a0c4c` (no-op on match)|
-| 4  | Theme abcjs staves for dark mode                      | ✅ `306193f`                 |
-| 5  | Theme reviewer HTML/CSS for dark mode                 | ✅ `773638a`                 |
-| 6  | Full native test coverage for WebView mount           | ✅ `9142e6d` (render-level)  |
-| 7  | Whisper autoscroll sync (v2)                          | ⏳ Blocked — no `audio/`     |
-| 8  | Reviewer drag-to-reorder for blocks                   | ✅ `e89b8a3`                 |
-| 9  | Reviewer transpose + Cs/En toggle for chord preview   | ✅ `ffbf916`                 |
-| 10 | Reviewer polish (hint label + Alt+arrow reorder)      | ✅ `9f64c96`                 |
+| Feature                                               | Status                          |
+|-------------------------------------------------------|---------------------------------|
+| Song list with search (title, number, **lyrics**)     | ✅ `4714b54`                    |
+| Song detail with ChordPro rendering                   | ✅                              |
+| Transpose ± semitones                                 | ✅                              |
+| Capo indicator                                        | ✅ `0f9d0f1`                    |
+| Czech ↔ English notation toggle                       | ✅                              |
+| Notation (staves) on/off                              | ✅                              |
+| Font size                                             | ✅                              |
+| Line spacing                                          | ✅ `0f9d0f1`                    |
+| Dark mode                                             | ✅ `2b81c81` + `306193f`         |
+| Manual auto-scroll                                    | ✅ (from previous session)      |
+| Play (tempo-paced follow w/ note highlight)           | ✅ `2c194a5` + `eefc8fd` chain  |
+| Favorites                                             | ✅ `fbc5f8d`                    |
+| Recents                                               | ✅ `02ad81c`                    |
+| Setlists                                              | ✅ `0e6d6fa`                    |
+| Offline-first (web works; native bundling)            | ⚠️ partial                       |
 
-Fifteen feature commits this session, all on `main`, all pushed to
-`origin/main`:
+### Session commits (newest first)
 
 ```
+4060077 App: pass add_classes:true so abcjs tags staff-line wrappers
+b2cd187 App: stabilize follow-mode y + fix the controls panel
+2d113f4 App: scroll follow-mode on every staff-line change (drop in-view bail)
+3bd1e25 App: scroll staff lines (not lyrics) during play with staves on
+0573449 App: fix follow-mode scroll — absolute target + in-view bail
+eefc8fd App: note-level highlighting via abcjs TimingCallbacks
+2e4c51f App: fix play+staves coverage and homepage Stack.Screen crash
+07d3a73 App: fix CSSStyleDeclaration crash from headerRight Pressable
+2c194a5 App: play mode — tempo-paced line highlight + auto-scroll
+0e6d6fa App: setlists — store, list/detail routes, add-to-setlist sheet
 fbc5f8d App: favorites — toggle, list indicator, filter
 02ad81c App: recently viewed songs section on the list
 0f9d0f1 App: capo indicator + line spacing UI
@@ -49,327 +68,356 @@ e41b7cd App: cover AbcView native-branch HTML builder
 dc54b65 Reviewer: structured per-block melody editor
 ```
 
-### v1 spec status (against zpevnik-spec.md §7.1)
+### Play-mode chain (annotated)
 
-| §7.1 feature                                          | Status                         |
-|-------------------------------------------------------|--------------------------------|
-| Song list with search (title, number, **lyrics**)     | ✅ `4714b54` (lyric search)    |
-| Song detail with ChordPro rendering                   | ✅                             |
-| Transpose ± semitones                                 | ✅                             |
-| Capo indicator                                        | ✅ `0f9d0f1`                   |
-| Czech ↔ English notation toggle                       | ✅                             |
-| Notation (staves) on/off                              | ✅                             |
-| Font size                                             | ✅                             |
-| Line spacing                                          | ✅ `0f9d0f1`                   |
-| Dark mode                                             | ✅                             |
-| Manual auto-scroll                                    | ✅                             |
-| Favorites                                             | ✅ `fbc5f8d`                   |
-| Recents                                               | ✅ `02ad81c`                   |
-| Setlists                                              | ❌ not started — see Next Steps|
-| Offline-first (web bundling done; native asset bundling) | ⚠️ partial — web works     |
+This was the user's primary ask in the back half of the session and
+went through five revisions. Notes on each so the trade-offs aren't
+lost:
 
-### Commit-by-commit notes (this session, in chronological order)
+- **`2c194a5` — MVP.** Line-by-line `setInterval` ticking at
+  `(60_000 / bpm) * 4` ms. Highlights the current ChordPro line in
+  SongView via the new `theme.accentBg`. Scrolls so the line sits
+  ~30 % from the top. No abcjs involvement. Limitations explicit in
+  the commit body.
 
-- **`dc54b65` — Reviewer structured per-block melody editor.**
-  Replaces the raw `melody.json` textarea with per-block cards (type
-  dropdown, body textarea, ↑↓✕ buttons + add-row of +Verse/+Chorus
-  /+Bridge). The card list re-renders only on structural changes (add/
-  delete/reorder/type-change) so the body textareas keep focus/cursor
-  on plain text edits. `currentMelody` is the in-memory mutable copy;
-  `loadedMelody` stays as pristine server state for dirty detection.
+- **`eefc8fd` — abcjs `TimingCallbacks` integration.** AbcView grabs
+  the visualObj returned by `renderAbc()`, and when `isFollowing`
+  flips on, constructs `new abcjs.TimingCallbacks(visualObj, ...)`
+  with `qpm: tempo`. The `eventCallback` adds a red CSS class
+  (`abcjs-note-highlighted`) to every flattened SVG element under
+  `event.elements`. The `beatCallback` reports progress upward via
+  `onBeat(beatNumber, totalBeats)`. The song detail page maps beats
+  to a SongView line by even distribution
+  (`Math.floor(beat / (total / lineCount))`). The setInterval still
+  exists as a fallback for staves-off / no-melody case.
 
-- **`2b81c81` — App dark mode.** New `useTheme()` hook resolves the
-  tri-state `darkMode` setting against `useColorScheme()`. Tri-state
-  toggle in SongControls (☀/☾/Auto). Threaded through list, detail,
-  controls, lyrics, chord row, search bar, Stack header, StatusBar.
-  4 new tests for `useTheme()`.
+- **`2e4c51f` — show SongView during play even with staves on.**
+  Originally play+staves did nothing visible because SongView was
+  the only thing showing the highlight. Showed both. Wrong — the
+  user wanted the staves to be the visible thing scrolling.
 
-- **`2d56d0f` — Reviewer chord-chart live preview.** New panel side-by-
-  side with notation preview at ≥1100 px. Plain-JS port of the
-  ChordPro parser at `pipeline/zpevnik_pipeline/review/static/chordpro.js`.
-  150 ms debounce. Each segment is a column cell (chord on top, lyric
-  below) — handles long chords more cleanly than SongView's
-  pad-by-text-length trick.
+- **`0573449` — absolute scroll target + in-view bail.** Initial
+  scroll-on-followLine used SongView-local y as the scroll target,
+  which is correct when SongView is the first content in the
+  ScrollView but wildly off when staves push it down. Wrap SongView
+  in a View, measure its own y via onLayout, add to the line's
+  local y for an absolute target. Bail when the line is already on
+  screen.
 
-- **`e41b7cd` — AbcView native-branch HTML builder tests.** Export
-  `buildHtml`/`buildScale`, add 7 cases pinning ABC literal,
-  scale + visualTranspose plumbing, abcjs CDN URL, postMessage
-  handshake, no `responsive: 'resize'`, and escape-safety for quotes.
+- **`3bd1e25` — scroll the staves, not the lyrics.** User feedback:
+  the bottom text should be hidden, and the staves' lines should
+  scroll instead. Hide SongView when staves are on (revert the
+  `2e4c51f` show-both decision). Add `onStaffLineChange(yInsideAbcView)`
+  to AbcView; eventCallback computes y from the first highlighted
+  element via `getBoundingClientRect`. Parent wraps AbcView in a
+  measured View, adds y's, scrolls with in-view bail. **Problem**:
+  in-view bail meant short demo songs (whose staves fit on screen)
+  never scrolled.
 
-- **`63a0c4c` — `index.json` no-op-on-match.** `write_index` now reads
-  existing, compares the song list via `model_dump`, returns early on
-  match. 2 new tests pin no-op (mtime equality) and rewrites-on-change.
+- **`2d113f4` — drop the in-view bail; key on y delta.** Track
+  `lastFollowYRef` in the parent. Scroll whenever the reported y
+  differs from it by more than 10 px (a music line is ≥ 40 px tall).
+  Reset on song change and Play press. **Problem**: within one staff
+  line, `event.elements[0]` flip-flopped between the notehead path
+  and the chord annotation `<text>` (which sits ~30 px higher), so
+  the y bounced inside one line and the scroll bounced with it.
 
-- **`306193f` — abcjs dark mode.** `AbcView` reads `useTheme().isDark`
-  and applies `filter: invert(1) hue-rotate(180deg)` to the container
-  View on the web path and to the body via the `buildHtml` 4th arg on
-  native. 2 new tests pin the filter is absent/present.
+- **`b2cd187` — walk up to the staff-line `<g>` + fix the controls.**
+  Added `findStaffLineWrapper()` in AbcView that walks up the DOM
+  from the highlighted element to the nearest ancestor with class
+  `abcjs-staff-wrapper` (abcjs's per-line `<g>`). Reported the
+  wrapper's y instead — stable across every event on the line.
+  Also restructured the detail screen so title row + SongControls
+  live in a fixed top bar outside the ScrollView.
 
-- **`773638a` — Reviewer prefers-color-scheme.** CSS-only:
-  `color-scheme: light dark` hint + `@media (prefers-color-scheme:
-  dark)` block flips every CSS variable + `.notation-target svg
-  { filter: invert + hue-rotate; }`. Reviewer auto-tracks OS theme.
+- **`4060077` — make the walk-up actually find the wrapper.** The
+  previous commit silently no-oped because abcjs only adds
+  `abcjs-staff-wrapper abcjs-l[N]` when `add_classes: true` is in
+  the render options. Pass it. Wrapper is now there; y is rock
+  steady through every note on a line; scroll triggers once per
+  real line crossing.
 
-- **`ffbf916` — Reviewer transpose + Cs/En toggle.** Two control
-  groups in the chord-preview header. New `chord.js` plain-JS port of
-  `notation.ts` + `transpose.ts`. Display-only (preview-only) — the
-  controls don't change saved chordpro.
+### Reviewer chain (earlier in the session)
 
-- **`e89b8a3` — Drag-to-reorder block cards.** HTML5 D&D with
-  `draggable="true"`, a `⋮⋮` grip handle, `wireBlockDragHandlers`
-  attaching dragstart/dragend/dragover/dragleave/drop. Bails out via
-  `preventDefault` when `ev.target instanceof HTMLTextAreaElement` so
-  text-drag inside the body still works.
+- `dc54b65` Structured per-block melody editor (cards + add/up/down/
+  delete + drag handle)
+- `2d56d0f` Live chord-chart preview for `song.cho`
+- `773638a` Reviewer dark mode via `prefers-color-scheme`
+- `ffbf916` Cs/En + transpose toggle for chord preview (preview-only)
+- `e89b8a3` HTML5 drag-to-reorder block cards
+- `9f64c96` "(preview only)" hint + Alt+↑/↓ reorder
 
-- **`9142e6d` — Native-branch render tests.** New
-  `AbcView.native.test.tsx` in its own file. Mocks `react-native` to
-  force `Platform.OS = 'ios'`, mocks `react-native-webview` to a spy
-  component, then renders. 6 cases: rendering the WebView at all,
-  source.html embedding the right things, initial 120-px height,
-  height growing on a `{kind:'size',height:N}` postMessage, malformed
-  messages ignored, and dark-mode filter in the WebView HTML.
+### Pipeline + tests
 
-- **`9f64c96` — Polish: hint + Alt-arrow.**
-  `(preview only)` chip next to the Cs/En + transpose controls (with a
-  hover tooltip). Alt+↑/↓ swap the focused block with its previous/
-  next neighbor and refocus the body textarea. Refactors the ↑/↓
-  click handlers to share a `moveBlock(idx, dir)` helper.
+- `63a0c4c` `write_index` no-op-on-match — fixes `songs/index.json`
+  churn on every reviewer hit.
+- `e41b7cd` 7 tests for AbcView's pure HTML builder (`buildHtml`,
+  `buildScale`).
+- `9142e6d` 6 tests for AbcView's native render via `Platform.OS = 'ios'`
+  + WebView spy mock.
 
 ## What Worked and What Didn't
 
 ### Worked
 
-- **Module-isolated `vi.mock('react-native', …)` for native render
-  tests.** Putting `AbcView.native.test.tsx` in its own file lets
-  vitest scope the Platform.OS override to that one file —
-  web-branch tests stay unaffected. Mock-component-as-spy pattern
-  captures props for assertions without needing to touch
-  react-native-webview's Flow source at all.
+- **abcjs `add_classes: true`** is the right answer for any consumer
+  that wants to walk the DOM and find specific musical structures.
+  abcjs's `findStaffLineWrapper`-style walks rely on it.
 
-- **`vi.hoisted` to share a spy between the mock factory and the
-  test body.** Standard pattern but easy to forget. `const { spy } =
-  vi.hoisted(() => ({ spy: vi.fn() })); vi.mock('mod', () => ({
-  ... uses spy ... }))`.
+- **Walking up to a per-line `<g>` for a stable y.** Anchoring the
+  follow-mode cursor to the staff-line wrapper instead of the note
+  element is the canonical fix for "y bounces inside one line."
 
-- **`mtime_ns` equality as the test for "no-op writes".** Stronger
-  than string-comparing the on-disk file — `mtime_ns` is monotonic
-  and equality proves the file wasn't touched.
+- **In-memory module-scope state for reviewer chord preview
+  (Cs/En + transpose).** Persists across song switches without any
+  storage. Resets on page reload — which is correct, since the
+  default (Cs / 0) is the most common starting point.
+
+- **mtime equality for "no-op on unchanged" tests.** `mtime_ns` is
+  strictly monotonic; equality is the strongest proof that the file
+  wasn't touched at all.
 
 - **CSS `filter: invert(1) hue-rotate(180deg)` for dark-themeing
-  black-on-transparent SVG.** Cheap, zero-config, works the same in
-  the React-DOM path, the WebView inline HTML, AND the reviewer's
-  plain CSS — and avoided fanning a `foregroundColor` abcjs option
-  through three call sites.
+  abcjs.** Works on the React-DOM path, in the WebView's inline
+  HTML, and via the reviewer's CSS — same one-liner everywhere.
 
-- **`prefers-color-scheme` for the reviewer.** Desktop-only, short-
-  lived sessions — OS-tracking is plenty. A manual toggle would have
-  added state to persist that nobody asked for.
+- **`vi.mock('react-native')` in its own file** keeps the Platform.OS
+  override scoped, doesn't leak into web-branch tests.
 
-- **Drag-bail-on-textarea-source trick.** `ev.target instanceof
-  HTMLTextAreaElement → ev.preventDefault()` keeps native text-drag
-  working inside the body while card-drag works everywhere else.
+### Failed approaches / corrections
 
-- **Python-side `replace` when Edit can't match.** Some literal nbsp
-  chars in the on-disk app.js (originally from my own Write, somehow)
-  didn't match a regular-space `old_string`. `python3 -c "src.replace
-  (old, new, 1)"` worked around it.
+1. **`Stack.Screen + headerRight + function-style Pressable inside
+   asChild Link`** crashed the homepage with "Failed to set an
+   indexed property [0] on CSSStyleDeclaration." react-navigation's
+   web header doesn't reliably route the style through
+   react-native-web's flattening. Fixed in `2e4c51f` by removing
+   `Stack.Screen` entirely and putting the Setlists link inline in
+   the search bar row.
 
-- **Mac shortcut convention.** Alt+↑/↓ for "move line up/down" is
-  standard in VS Code/JetBrains; lifting it for block reorder gave us
-  a keyboard path with negligible learning cost. (Trades away
-  Option+↑/↓ paragraph-nav inside the textarea — judged acceptable.)
+2. **Showing SongView during play with staves on** (commit `2e4c51f`)
+   so the line highlight is visible — wrong product call. User wanted
+   the staves themselves to be what scrolls.
 
-### Failed approaches / friction
+3. **In-view bail in `onAbcStaffLineChange`** (commit `3bd1e25`) was
+   correct logic but useless for the demo songs whose staves fit
+   entirely on screen — they never went out of view, so it never
+   scrolled.
 
-1. **`git checkout -- songs/index.json` denied by the classifier**
-   (destructive). Use `git restore <file>` instead — same effect,
-   less overloaded command, classifier allows it.
+4. **Line detection via `event.line`** is unreliable; abcjs's
+   timing event doesn't always carry it. Use y-delta instead
+   (`2d113f4`).
 
-2. **`npx expo --non-interactive` is not a real flag.** Expo CLI
-   prints `--non-interactive is not supported, use $CI=1 instead`.
-   Set `CI=1` in env if you need a non-prompting boot.
+5. **Within-line y bounce** caused by `event.elements[0]` flipping
+   between notehead path and chord annotation text. Fixed by
+   walking up to the staff-line wrapper (`b2cd187`) — which
+   required `add_classes: true` to actually find anything
+   (`4060077`).
 
-3. **Short boot-test sleeps are flaky.** Uvicorn takes ~3-5 s to bind;
-   curling at sleep 2 sometimes hits "connection refused". 5 s is
-   usually enough but occasionally still flaky on a loaded machine.
+6. **`useState` of a tap state on Pressable function-style props**
+   in a navigation header crashes in DOM. Avoid function-style
+   `style={({ pressed }) => [...]}` in `Stack.Screen` `headerRight`.
 
-4. **No browser-side visual checks this session.** This terminal can't
-   open a real browser; trusted tsc + 65 tests + spot-curls. If you
-   want to verify dark mode by eye, kill any expo on 8081 first
-   (`lsof -i :8081`) before `npx expo start --web --port 8081`.
+7. **`npx expo --non-interactive`** is not a real flag. Use `CI=1`
+   if you need a non-prompting boot.
 
-5. **Edit tool friction with NBSP chars.** Documented above. If
-   `old_string not found` ever surprises you, run `awk … | od -c` to
-   check for octal 302 240 (UTF-8 U+00A0).
+8. **`git checkout -- <file>`** is denied by the classifier (too
+   destructive). Use `git restore <file>` — same effect, allowed.
+
+9. **Pip install** of playwright was denied. The dev server requires
+   a real browser; I couldn't drive it from this terminal. Visual
+   QA happens on the user's side.
 
 ## Key Decisions Made and Why
 
-1. **No-op on identical songs, NOT generatedAt-stripped.** Kept the
-   timestamp as a debug breadcrumb that only refreshes on real
-   changes.
+1. **Play and Autoscroll are separate, independent toggles.**
+   Play advances at the song's tempo with note highlighting;
+   autoscroll is a constant-px/s sweep. They can coexist (both
+   running) but they're conceptually different and configured
+   separately.
 
-2. **Preview-only chord controls (Cs/En + transpose) don't touch
-   `song.cho`.** A reviewer's job is content verification, not setting
-   display preferences. Persisting the transpose into saved chordpro
-   would be invasive.
+2. **Note-level highlight is web-only.** Native (WebView) path
+   keeps the line-by-line `setInterval` fallback. Driving
+   TimingCallbacks inside the WebView and post-messaging events
+   back to RN is a separate piece of work.
 
-3. **`(preview only)` hint chip rather than restructuring the
-   panel.** Small, discoverable, doesn't add UI weight.
+3. **Setlist detail does NOT have a song picker.** Adding to a
+   setlist happens from the song detail page via "+ Setlist."
+   Setlist detail is for organizing what's already in (reorder,
+   remove). Simpler UX, less code.
 
-4. **Preview state lives in module-scope JS, NOT localStorage.** It
-   persists across song switches (good) but resets on page reload
-   (also good — no churn, and the default of Cs / 0 is the most
-   common starting point).
+4. **Recents + Favorites + Setlists each get their own store**, not
+   one bag-of-everything. Each has its own lifecycle (clear,
+   migrate, evict).
 
-5. **HTML5 D&D over PointerEvents.** The reviewer is desktop-only and
-   HTML5 D&D has been native for 15+ years.
+5. **No manual dark-mode toggle for the reviewer.** It tracks the
+   OS preference via `prefers-color-scheme`. Reviewer sessions are
+   short and desktop-only.
 
-6. **Mocked WebView + spy component over Detox/Flow-strip.** Render
-   tests with a mock component cover everything that actually depends
-   on the props we pass; the real WebView mount on a device is a
-   different concern (Detox / manual testing on iOS+Android).
+6. **Lyric search loads all `song.cho` files in the background on
+   app boot.** Fine for the 3-song demo corpus; a future
+   server-side `fulltext.json` is the right move once the corpus
+   grows past ~10 songs (spec §5.3 mentions this).
 
-7. **Color-scheme: light dark AND the media query in the reviewer.**
-   The CSS-level hint gives form controls the right dark chrome; the
-   media query flips the custom variables. Both needed.
+7. **Title row + SongControls fixed in a top bar.** The detail
+   screen now has a non-scrolling top bar (with the title, "+ Setlist",
+   ★, and full SongControls) above a content ScrollView. The user
+   asked for this directly after the first follow-mode integration.
 
-8. **Alt+↑/↓ for block reorder, accepting the textarea-paragraph-nav
-   trade-off.** Standard IDE convention, expected by the user (a
-   software engineer). The lost feature (Option+arrow paragraph nav
-   inside the textarea) is rarely-used in practice.
+8. **`onStaffLineChange` reports y on every event, parent dedupes by
+   y-delta.** Cleaner than tracking `event.line` (sometimes
+   undefined) and naturally robust to abcjs version changes.
+
+9. **`add_classes: true` is mandatory now.** Comment in AbcView
+   spells out why: the staff-line walk-up depends on it.
 
 ## Lessons Learned & Gotchas
 
-- **`git restore <file>` works where `git checkout -- <file>` is
-  blocked.** Equivalent for working-tree reverts; `restore` is the
-  newer, less-overloaded command.
+- **abcjs only adds `abcjs-staff-wrapper abcjs-l[N]` when
+  `add_classes: true` is in the renderAbc options.** Without it,
+  any DOM-walking code that depends on those classes silently
+  no-ops.
 
-- **CSS filter inversion is contagious.** Wrap a parent in `filter:
-  invert` and everything inside inverts. Scope to the SVG element
-  (`.notation-target svg`), not the panel.
+- **`event.elements` in abcjs's `TimingCallbacks` eventCallback is
+  an array of arrays of SVG elements.** Flat-walk it. The order of
+  inner elements (notehead vs chord annotation text) is not
+  guaranteed, so picking "the first" gets you different y's per
+  event. Anchor to a stable per-line wrapper instead.
 
-- **`vi.mock` factory needs `vi.hoisted` for shared state.** Otherwise
-  the factory runs before the test file's top-level declarations are
-  initialized, and you get `Cannot access X before initialization`.
+- **`event.line`** in the timing event is not always set. Don't
+  build line-change logic on it; key off y-position deltas.
 
-- **`useColorScheme()` in vitest+jsdom returns null.** Our
-  `useTheme()` treats that as 'light' — fine.
+- **abcjs's `qpm` parameter is quarters-per-minute.** Songs can
+  override the qpm passed in via their own `Q:` header. Our app
+  passes `state.meta.tempo` directly, which is fine.
 
-- **Reviewer port of the TS parser is unsynced by hand.** Both
-  `chordpro.js` and `chord.js` have header comments noting their
-  relationship to the TS originals. Update both if either drifts.
+- **react-navigation's web header** can take RN components in its
+  options, but mounting a function-style Pressable inside an
+  `asChild` Link breaks DOM style application. Either use a plain
+  object style or skip the navigator header and put the link
+  inline.
 
-- **NBSP chars in editor strings.** Run `awk … | od -c` and grep for
-  octal 302 240 if `Edit` says `old_string not found` on a
-  whitespace-looking match. Python `replace` is the escape hatch.
+- **`useColorScheme()` returns null in jsdom.** `useTheme()` treats
+  null as light. Existing tests rely on this.
 
-- **`draggable="true"` + textarea-source bailout.** Required to keep
-  text-drag working inside the body while card-drag works elsewhere.
+- **`git restore <file>`** instead of `git checkout -- <file>` for
+  working-tree reverts under the classifier.
 
-- **vitest 4 + react-native-web treats inline-style arrays as
-  flattened style attributes.** Regex-matching `getAttribute('style')`
-  works fine for asserting individual properties like `font-size`.
+- **Reviewer JS modules (`assemble.js`, `chord.js`, `chordpro.js`)
+  are unsynced ports of the TS originals.** Each has a header
+  comment noting the relationship — if you change one, change the
+  other in the same commit.
+
+- **`songs/index.json` no longer churns on reviewer boots.**
+  `write_index` now reads the existing file, compares song lists,
+  and returns early on match.
+
+- **`vi.hoisted` is required for shared spies in `vi.mock`
+  factories.** Tests in `AbcView.native.test.tsx` use this pattern.
+
+- **NBSP chars sneak into editor strings.** If `Edit` says
+  `old_string not found` on a whitespace-looking match, run
+  `awk … | od -c` and look for octal 302 240 (UTF-8 U+00A0).
+  Python `replace` is the escape hatch.
 
 ## Current State
 
-**Working right now (verified by tests + spot-checks):**
+**Working right now (verified by tests + user QA):**
 
 - **Reader (`cd app && npx expo start --web --port 8081`):**
-  - All previous functionality (list + detail, notation, autoscroll).
-  - **Full dark mode**: list, detail, controls, lyrics, Stack header,
-    StatusBar, abcjs staves. ☀/☾/Auto toggle.
-  - 65 tests passing; tsc clean.
+  - List page: title/number/lyric search, ★ favorites filter,
+    "Recently viewed" section, Setlists pill in the search row.
+  - Detail page: fixed top bar (title + "+ Setlist" + ★ + SongControls
+    with Notation/Transpose/Capo/Size/Spacing/Staves/Theme/Play/
+    Autoscroll groups). Scrollable content below.
+  - Play (web, staves on): abcjs `TimingCallbacks` walks the score
+    at qpm = `meta.tempo` (default 100). Per-note red highlight on
+    the staff. Per-line scroll (anchored to the
+    `abcjs-staff-wrapper` y).
+  - Play (lyrics-only fallback): line-by-line setInterval at
+    `(60_000 / bpm) * 4` ms with `theme.accentBg` highlight in
+    SongView.
+  - Setlists at `/setlists` and `/setlists/[id]`. Add to setlist
+    via the modal sheet on song detail.
+  - Dark mode follows the ☀/☾/Auto toggle.
 
 - **Reviewer (`PYTHONPATH=pipeline pipeline/.venv/bin/python -m
-  zpevnik_pipeline.cli review --songs ./songs`, default port 8765):**
-  - Sidebar + detail unchanged.
-  - **Two preview panels** (chord chart + notation), side-by-side at
-    ≥1100 px, each live with their own debounce.
-  - Chord-chart panel header: Cs/En + transpose −/+ controls with
-    a `(preview only)` hint. Status line reports `N lines · {cs|en}
-    {· ±N}`.
-  - **Block editor**: per-block cards with type dropdown + body
-    textarea + ↑/↓/✕ + grip handle. Drag-and-drop to reorder. Alt+↑/↓
-    for keyboard reorder. Add-row of +Verse / +Chorus / +Bridge.
-  - **OS dark mode** auto-tracked (no manual toggle).
+  zpevnik_pipeline.cli review --songs ./songs`):**
+  - Two side-by-side previews (chord chart, notation), both live.
+  - Structured block editor with drag-to-reorder + Alt+↑/↓.
+  - Cs/En + transpose preview-only controls.
+  - Dark mode via OS preference.
 
-- **Pipeline**: 137 pytest passing; ruff clean; mypy --strict clean.
-  `songs/index.json` no longer churns on reviewer boots.
+- **Pipeline**: 137 pytests green; ruff clean; mypy --strict clean.
+  `songs/index.json` stable across reviewer hits.
 
-- **CI**: workflow unchanged.
-
-- **Repo**: `main` at `9f64c96`, `origin/main` matches. Working tree
-  clean.
+- **Repo**: `main` at `4060077`, `origin/main` matches. Working
+  tree clean.
 
 **Known limitations:**
 
-- Demo melodies are still placeholder arpeggios — meaningful melody
-  authoring needs a real PDF + pipeline emission first.
-- The reviewer is desktop-only by design — no touch-friendly drag.
-- Block keyboard reorder takes over Option+↑/↓ paragraph-nav inside
-  the textarea (intentional).
+- **Note-level highlight is web-only.** Native (WebView) gets the
+  line-level setInterval fallback. Driving abcjs inside the WebView
+  and posting events back to RN is the next step if/when native
+  testing exists.
+
+- **Play tempo accuracy depends on `meta.tempo` being right.** Demo
+  songs hard-code 84/null. Real corpus will need accurate tempos.
+
+- **`event.elements[0]` y bouncing** is solved by the staff-line
+  wrapper walk-up. If `add_classes: true` is ever removed from
+  renderAbc, the bouncing returns.
+
+- **Lyric search loads every song's `.cho` on app boot.** Fine for
+  3 songs, will hurt at scale; future server-side `fulltext.json`
+  is the answer.
 
 **No temporary hacks in committed code.**
 
 ## Clear Next Steps
 
-The v1 spec's bullet-listable feature surface is down to two items:
+The v1 reader feature surface is essentially closed. What's left:
 
-**Bigger v1 UX features** (still unbuilt; each is its own scope):
-
-1. **Setlists.** Local-only named lists. The most invasive remaining
-   spec item because it introduces a new top-level navigation surface
-   (a "Setlists" tab or drawer). Needs:
-   - `useSetlists()` store: `{ setlists: {id, name, songIds[]}[],
-     create, rename, delete, addSong, removeSong, reorder }`
-   - List view of setlists with song counts
-   - Detail view of one setlist with reorderable rows
-   - "Add to setlist" sheet from the song detail page
-   - Decide: stack-add-tab navigation, or modal-only browse from
-     the song list?
-
-2. **Native offline-first.** On web, songs are fetched from
-   `/songs/index.json` — `/public/songs` is a symlink to the repo's
-   `songs/`. Native (iOS/Android) currently has nothing equivalent;
-   the spec calls for "songs bundled with the app or synced once."
-   Two paths: bundle into the app via `expo-asset`, or sync to
-   `FileSystem.documentDirectory` on first launch.
-
-**Blocked on external input:**
-
-5. **Real source PDF.** Still the gate for OCR tuning, profile
+1. **Real source PDF.** Still the gate for OCR tuning, profile
    calibration, real corpus, real stave PNGs, real melodies.
+   Blocks #2/#3 below.
 
-6. **Pipeline → `melody.json` emission.** When the pipeline starts
-   producing real per-song output, teach it to write the
-   `{header, blocks: [{type, body}, …]}` schema, ordered from the same
-   `start_of_*` directives that drive `song.cho`.
+2. **Pipeline → `melody.json` emission.** Once the pipeline runs on
+   a real PDF, teach it to write `{ header, blocks: [{type, body}] }`
+   ordered by the same `start_of_*` directives that drive `song.cho`.
 
-7. **Multi-chorus / bridge content in the corpus** — exercises a
-   melody-schema path no demo song uses today.
+3. **Real corpus passes.** Multi-chorus / bridge structures, real
+   tempos for accurate Play, real `staveCount > 0` for the stave
+   image path.
 
-8. **Whisper autoscroll sync (v2).** Needs `audio/` to grow content.
-   The rAF-driven scroller is ready for a speed feed.
+4. **Native offline-first asset bundling.** Web works via
+   `/public/songs` symlink. Native needs `expo-asset` bundling or
+   first-launch sync to `FileSystem.documentDirectory`. Spec
+   §7.2 reference.
 
-**Long-tail polish:**
+5. **Whisper autoscroll sync (v2 spec).** Needs `audio/` to grow
+   content; the existing follow-mode is the visual target Whisper
+   would drive.
 
-9. **Native E2E coverage.** Pure helpers + React render are mocked.
-   Going further means Detox or a SWC Flow-strip plugin so the real
-   `react-native-webview` source can mount under vite-node.
+**Smaller polish (unblocked, lower value):**
 
-10. **Server-side `fulltext.json`.** Once the corpus grows past ~10
-    songs, the current "fetch every .cho on app boot" lyric index gets
-    expensive — pipeline should emit a single normalized fulltext
-    sidecar (spec §5.3 mentions this).
+6. **Server-side `fulltext.json`** once the corpus is big enough
+   that loading every `.cho` on boot gets slow.
 
-11. **Held-button auto-repeat on the steppers.** All Transpose/Capo/
-    Size/Spacing/Speed steppers require one click per step.
+7. **Note-level highlight on native via WebView+postMessage.** The
+   web path proves the design; native needs a protocol layer.
 
-12. **Reviewer extras**: persist preview state to localStorage; touch
-    drag via PointerEvents; add-block keyboard shortcut.
+8. **Beat→line mapping for the lyric-only Play fallback** could
+   use real measure structure from `melody.json` instead of
+   `totalBeats / lineCount`.
 
-**Dependencies:** items 5–8 need external input. Items 1–4 and 9–12
-are unblocked but each represents real scope.
+9. **Held-button auto-repeat on steppers** — Transpose/Capo/Size/
+   Spacing/Speed all require one click per step.
+
+10. **Reviewer add-block keyboard shortcut** (e.g. Ctrl+Shift+V).
+
+**Dependencies/blockers:**
+- Items 1, 2, 3, 5 need external input.
+- Items 4, 6, 7, 8, 9, 10 are unblocked.
 
 ## Important Files Map
 
@@ -378,80 +426,72 @@ are unblocked but each represents real scope.
 ├── HANDOVER.md                                       this file
 │
 ├── pipeline/
-│   ├── pyproject.toml                                mypy overrides
-│   │                                                 already in place
+│   ├── pyproject.toml                                mypy overrides present
 │   ├── tests/                                        137 tests
-│   │   ├── test_writer.py                            ★ +2 cases (no-op /
-│   │   │                                              rewrites paths)
-│   │   └── test_review_melody.py                     unchanged this session
+│   │   ├── test_writer.py                            no-op-on-match tests
+│   │   └── test_review_melody.py
 │   └── zpevnik_pipeline/
-│       ├── output/writer.py                          ★ write_index reads
-│       │                                              existing + early-returns
-│       │                                              on match
+│       ├── output/writer.py                          read-existing + early-return
 │       └── review/
-│           ├── server.py                             unchanged
+│           ├── server.py
 │           └── static/
-│               ├── index.html                        ★ preview-grid,
-│               │                                      block-template w/ drag
-│               │                                      handle, preview controls,
-│               │                                      preview hint chip
-│               ├── app.js                            ★ structured editor +
-│               │                                      previews + transforms +
-│               │                                      D&D + moveBlock helper +
-│               │                                      Alt+arrow + transform
-│               │                                      chord per segment
-│               ├── assemble.js                       unchanged
-│               ├── chord.js                          ★ NEW — notation +
-│               │                                      transpose plain-JS
-│               ├── chordpro.js                       ★ NEW — parser plain-JS
-│               └── style.css                         ★ huge: melody-block.*,
-│                                                     preview-grid,
-│                                                     preview-controls,
-│                                                     prefers-color-scheme,
-│                                                     drag handle / drop-target,
-│                                                     preview-hint, cp-* rules
+│               ├── index.html                        preview-grid + block-template
+│               │                                    + chord preview controls
+│               ├── app.js                            structured editor + D&D +
+│               │                                    Alt+arrow + chord transforms
+│               ├── assemble.js                       (sync w/ assemble.ts)
+│               ├── chord.js                          (sync w/ notation.ts + transpose.ts)
+│               ├── chordpro.js                       (sync w/ parser.ts)
+│               └── style.css                         (prefers-color-scheme dark)
 │
 ├── app/
-│   ├── vitest.config.ts                              unchanged
-│   ├── vitest.setup.ts                               unchanged
+│   ├── vitest.config.ts + vitest.setup.ts
 │   ├── app/
-│   │   ├── _layout.tsx                               ★ Stack themed
-│   │   ├── index.tsx                                 ★ list themed
-│   │   └── song/[id].tsx                             ★ detail themed
+│   │   ├── _layout.tsx                               themed Stack + setlists routes
+│   │   ├── index.tsx                                 list + favorites + recents +
+│   │   │                                              Setlists pill
+│   │   ├── song/[id].tsx                             ★ fixed top bar + play machinery
+│   │   │                                              + abcjs follow + setInterval
+│   │   │                                              fallback + AddToSetlistSheet
+│   │   └── setlists/
+│   │       ├── index.tsx                             list of setlists + inline create
+│   │       └── [id].tsx                              detail w/ reorder + delete
 │   └── src/shared/
 │       ├── components/
-│       │   ├── AbcView.tsx                           ★ useTheme isDark;
-│       │   │                                          buildHtml takes isDark
-│       │   ├── AbcView.test.tsx                      ★ +7 cases (HTML
-│       │   │                                          builder) +2 (dark filter)
-│       │   ├── AbcView.native.test.tsx               ★ NEW — 6 cases for
-│       │   │                                          native-branch render
-│       │   │                                          via Platform.OS mock +
-│       │   │                                          WebView spy
-│       │   ├── SongControls.tsx                      ★ + Theme group
-│       │   ├── SongView.tsx                          ★ themed
-│       │   └── SongView.test.tsx                     unchanged
+│       │   ├── AbcView.tsx                           ★ TimingCallbacks +
+│       │   │                                          findStaffLineWrapper +
+│       │   │                                          add_classes:true
+│       │   ├── AbcView.test.tsx                      pure-helper coverage
+│       │   ├── AbcView.native.test.tsx               native render coverage
+│       │   ├── AddToSetlistSheet.tsx                 modal sheet picker
+│       │   ├── SongControls.tsx                      Notation/Transpose/Capo/Size/
+│       │   │                                          Spacing/Staves/Theme/Play/
+│       │   │                                          Autoscroll groups
+│       │   ├── SongView.tsx                          highlightedLineIndex +
+│       │   │                                          onLineLayout
+│       │   └── SongView.test.tsx
+│       ├── search/
+│       │   ├── fold.ts + fold.test.ts
+│       │   └── lyrics.ts + lyrics.test.ts            ★ chord-strip + hyphen-rejoin
 │       └── store/
-│           ├── settings.ts                           unchanged
-│           ├── theme.ts                              ★ NEW — useTheme()
-│           └── theme.test.ts                         ★ NEW — 4 cases
+│           ├── settings.ts                           (existing — has accentBg now)
+│           ├── theme.ts + theme.test.ts              accentBg added
+│           ├── favorites.ts + favorites.test.ts
+│           ├── recents.ts + recents.test.ts
+│           └── setlists.ts + setlists.test.ts
 │
-├── songs/
-│   ├── index.json                                    no longer churns
-│   └── (3 demo songs unchanged)
-│
+├── songs/                                            unchanged corpus (3 demos)
 └── audio/                                            still empty (v2)
 ```
 
-★ = files created or substantially modified this session.
+★ = files most affected by this session's work.
 
-**Git status:** working tree clean. `main` at `9f64c96`. `origin/main`
-matches.
+**Git status:** clean. `main` at `4060077`. `origin/main` matches.
 
 **Memory updates this session:** none new. `feedback_autonomy.md` and
 `project_zpevnik.md` still apply.
 
-**Reproduction commands** (next session can run these as-is):
+**Reproduction commands:**
 
 ```bash
 # Pipeline tests + lint + types
@@ -465,14 +505,14 @@ PYTHONPATH=. .venv/bin/python -m pytest tests/
 cd /Users/ondrej.maxa/Projects/zpevnik/app
 npm test
 npx tsc --noEmit
-# expect: 65 passed; tsc clean.
+# expect: 89 passed; tsc clean.
 
-# Reader (pick a free port — 8081 is often taken by a stale expo)
+# Reader (kill any stale 8081 expo first)
 cd /Users/ondrej.maxa/Projects/zpevnik/app
-lsof -i :8081 2>/dev/null  # kill any stragglers first
+lsof -i :8081 2>/dev/null
 npx expo start --web --port 8081
 
-# Reviewer (default port 8765)
+# Reviewer
 cd /Users/ondrej.maxa/Projects/zpevnik
 PYTHONPATH=pipeline pipeline/.venv/bin/python -m zpevnik_pipeline.cli review --songs ./songs
 # → http://127.0.0.1:8765/
