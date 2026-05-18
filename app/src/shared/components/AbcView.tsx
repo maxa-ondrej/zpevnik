@@ -160,6 +160,23 @@ function clearHighlights(container: HTMLElement | null) {
     .forEach((el) => el.classList.remove(HIGHLIGHT_CLASS));
 }
 
+/**
+ * Walk up from a highlighted note/syllable element to its enclosing
+ * staff-line wrapper. abcjs assigns `abcjs-staff-wrapper abcjs-l[N]` to
+ * each line `<g>`. Using the wrapper's y gives a STABLE position for all
+ * events on the same musical line — using the note's own y bounces because
+ * chord annotations sit higher in the same event.
+ */
+function findStaffLineWrapper(el: Element | null): Element | null {
+  let cur: Element | null = el;
+  while (cur && cur.nodeType === 1) {
+    const cl = (cur as Element).classList;
+    if (cl && cl.contains('abcjs-staff-wrapper')) return cur;
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
 export function AbcView({
   abc,
   transpose = 0,
@@ -253,15 +270,17 @@ export function AbcView({
         const highlighted = event.elements ? flattenElements(event.elements) : [];
         highlighted.forEach((el) => el.classList?.add(HIGHLIGHT_CLASS));
 
-        // Always report the current note's y inside AbcView's container.
-        // The parent decides whether to actually scroll via an in-view
-        // check — that way the staff line stays put for all notes on it,
-        // and only the first note of a new line triggers a scroll.
+        // Report the current STAFF LINE's y inside AbcView's container.
+        // Walking up to `abcjs-staff-wrapper` gives a stable y for all
+        // events on the same line — otherwise chord annotations (which
+        // sit higher than the notehead in event.elements) make the y
+        // bounce within one line.
         if (highlighted.length > 0 && container) {
           try {
-            const first = highlighted[0];
-            if (first && typeof first.getBoundingClientRect === 'function') {
-              const elRect = first.getBoundingClientRect();
+            const wrapper = findStaffLineWrapper(highlighted[0] ?? null);
+            const refEl: Element | null = wrapper ?? highlighted[0] ?? null;
+            if (refEl && typeof (refEl as Element).getBoundingClientRect === 'function') {
+              const elRect = (refEl as Element).getBoundingClientRect();
               const containerRect = container.getBoundingClientRect();
               const yInsideAbcView = elRect.top - containerRect.top;
               onStaffLineChangeRef.current?.(yInsideAbcView);

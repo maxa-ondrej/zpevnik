@@ -374,42 +374,47 @@ export default function SongScreen() {
     : state.meta.title;
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={{ backgroundColor: theme.bg }}
-      contentContainerStyle={styles.container}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-    >
+    <View style={[styles.page, { backgroundColor: theme.bg }]}>
       <Stack.Screen options={{ title: headerTitle }} />
-      <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
-        <Pressable
-          onPress={() => setSetlistSheetOpen(true)}
-          style={({ pressed }) => [
-            styles.setlistBtn,
-            { borderColor: theme.border, backgroundColor: theme.inputBg },
-            pressed && { opacity: 0.6 },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Add to setlist"
-        >
-          <Text style={[styles.setlistBtnText, { color: theme.text }]}>+ Setlist</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            if (typeof id === 'string') toggleFavorite(id);
-          }}
-          style={({ pressed }) => [styles.favBtn, pressed && { opacity: 0.6 }]}
-          accessibilityRole="button"
-          accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          accessibilityState={{ selected: isFavorite }}
-        >
-          <Text style={[styles.favIcon, { color: isFavorite ? theme.accent : theme.textDim }]}>
-            {isFavorite ? '★' : '☆'}
-          </Text>
-        </Pressable>
+
+      {/* Fixed top bar — title row + controls. Doesn't scroll with content. */}
+      <View style={[styles.topBar, { borderBottomColor: theme.borderSoft, backgroundColor: theme.bg }]}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
+          <Pressable
+            onPress={() => setSetlistSheetOpen(true)}
+            style={({ pressed }) => [
+              styles.setlistBtn,
+              { borderColor: theme.border, backgroundColor: theme.inputBg },
+              pressed && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add to setlist"
+          >
+            <Text style={[styles.setlistBtnText, { color: theme.text }]}>+ Setlist</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (typeof id === 'string') toggleFavorite(id);
+            }}
+            style={({ pressed }) => [styles.favBtn, pressed && { opacity: 0.6 }]}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            accessibilityState={{ selected: isFavorite }}
+          >
+            <Text style={[styles.favIcon, { color: isFavorite ? theme.accent : theme.textDim }]}>
+              {isFavorite ? '★' : '☆'}
+            </Text>
+          </Pressable>
+        </View>
+        <SongControls
+          isPlaying={isPlaying}
+          onTogglePlay={togglePlay}
+          isFollowing={isFollowing}
+          onToggleFollow={toggleFollow}
+        />
       </View>
+
       {typeof id === 'string' && (
         <AddToSetlistSheet
           songId={id}
@@ -417,66 +422,79 @@ export default function SongScreen() {
           onClose={() => setSetlistSheetOpen(false)}
         />
       )}
-      <SongControls
-        isPlaying={isPlaying}
-        onTogglePlay={togglePlay}
-        isFollowing={isFollowing}
-        onToggleFollow={toggleFollow}
-      />
-      {showStaves && state.abc !== null && (
-        <View
-          onLayout={(ev) => {
-            abcViewYRef.current = ev.nativeEvent.layout.y;
-          }}
-        >
-          <AbcView
-            abc={state.abc}
-            transpose={transpose}
-            fontSize={fontSize}
-            isFollowing={isFollowing}
-            tempo={state.meta.tempo ?? undefined}
-            onBeat={onAbcBeat}
-            onFollowEnd={onAbcFollowEnd}
-            onStaffLineChange={onAbcStaffLineChange}
-          />
-        </View>
-      )}
-      {showStaves && state.staveUris.length > 0 && (
-        <View style={styles.staves}>
-          {state.staveUris.map((uri) => (
-            <Image
-              key={uri}
-              source={{ uri }}
-              style={[styles.stave, { backgroundColor: theme.bgAlt }]}
-              resizeMode="contain"
-              accessibilityLabel="Stave notation"
+
+      {/* Only the content scrolls. */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
+        {showStaves && state.abc !== null && (
+          <View
+            onLayout={(ev) => {
+              abcViewYRef.current = ev.nativeEvent.layout.y;
+            }}
+          >
+            <AbcView
+              abc={state.abc}
+              transpose={transpose}
+              fontSize={fontSize}
+              isFollowing={isFollowing}
+              tempo={state.meta.tempo ?? undefined}
+              onBeat={onAbcBeat}
+              onFollowEnd={onAbcFollowEnd}
+              onStaffLineChange={onAbcStaffLineChange}
             />
-          ))}
-        </View>
-      )}
-      {/* SongView (lyrics+chords) renders ONLY when staves are off — the
-           text doubles up with the staff's `w:` syllables, and during play
-           we already get the per-note highlight on the staff itself.
-           The wrapping View captures SongView's y inside the outer
-           ScrollView so the line-fallback scroll target is absolute. */}
-      {!showStaves && (
-        <View
-          onLayout={(ev) => {
-            songViewYRef.current = ev.nativeEvent.layout.y;
-          }}
-        >
-          <SongView
-            song={state.song}
-            highlightedLineIndex={isFollowing ? followLine : undefined}
-            onLineLayout={onLineLayout}
-          />
-        </View>
-      )}
-    </ScrollView>
+          </View>
+        )}
+        {showStaves && state.staveUris.length > 0 && (
+          <View style={styles.staves}>
+            {state.staveUris.map((uri) => (
+              <Image
+                key={uri}
+                source={{ uri }}
+                style={[styles.stave, { backgroundColor: theme.bgAlt }]}
+                resizeMode="contain"
+                accessibilityLabel="Stave notation"
+              />
+            ))}
+          </View>
+        )}
+        {/* SongView (lyrics+chords) renders ONLY when staves are off — the
+             text doubles up with the staff's `w:` syllables, and during play
+             we already get the per-note highlight on the staff itself.
+             The wrapping View captures SongView's y inside the outer
+             ScrollView so the line-fallback scroll target is absolute. */}
+        {!showStaves && (
+          <View
+            onLayout={(ev) => {
+              songViewYRef.current = ev.nativeEvent.layout.y;
+            }}
+          >
+            <SongView
+              song={state.song}
+              highlightedLineIndex={isFollowing ? followLine : undefined}
+              onLineLayout={onLineLayout}
+            />
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: { flex: 1 },
+  topBar: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+  },
+  scrollArea: { flex: 1 },
+  scrollContent: { padding: 16 },
   container: { padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   titleRow: {
