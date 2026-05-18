@@ -18,6 +18,7 @@ import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
+import { totalBeatsFromMelody } from '../../src/shared/melody/totalBeats';
 import { useFavorites } from '../../src/shared/store/favorites';
 import { useRecents } from '../../src/shared/store/recents';
 import { useSettings } from '../../src/shared/store/settings';
@@ -32,6 +33,8 @@ type State =
       song: ParsedSong;
       staveUris: string[];
       abc: string | null;
+      /** Total beat count derived from melody.json's bar count + meter. */
+      totalBeats: number | null;
     }
   | { kind: 'error'; message: string };
 
@@ -197,7 +200,13 @@ export default function SongScreen() {
     }
     const meta = state.kind === 'ready' ? state.meta : null;
     const bpm = meta?.tempo ?? 100;
-    const beatsPerLine = 4;
+    // Prefer the song-length-proportional cadence (totalBeats / lineCount)
+    // when melody.json gave us a real measure count. Falls back to the
+    // assume-4/4 default when no melody is available.
+    const totalBeats = state.kind === 'ready' ? state.totalBeats : null;
+    const totalLines = state.kind === 'ready' ? state.song.lines.length : 0;
+    const beatsPerLine =
+      totalBeats !== null && totalLines > 0 ? totalBeats / totalLines : 4;
     const intervalMs = (60_000 / bpm) * beatsPerLine;
 
     followIntervalRef.current = setInterval(() => {
@@ -340,8 +349,11 @@ export default function SongScreen() {
         const song = parseChordPro(cho);
         const staveUris = staveUrisFor(dir, meta.staveCount);
         const abc = melody ? assembleAbc(melody) : null;
+        const totalBeats = totalBeatsFromMelody(melody);
 
-        if (!cancelled) setState({ kind: 'ready', meta, song, staveUris, abc });
+        if (!cancelled) {
+          setState({ kind: 'ready', meta, song, staveUris, abc, totalBeats });
+        }
       } catch (err) {
         if (!cancelled) setState({ kind: 'error', message: String(err) });
       }
