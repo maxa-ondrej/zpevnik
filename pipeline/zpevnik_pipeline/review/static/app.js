@@ -155,13 +155,7 @@ function renderDetail() {
 
   const addRow = form.querySelector('#melody-add-row');
   addRow.querySelectorAll('button[data-add-type]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      currentMelody.blocks.push({ type: btn.dataset.addType, body: '' });
-      renderBlocks();
-      const cards = document.querySelectorAll('#melody-blocks .melody-block');
-      cards[cards.length - 1]?.querySelector('textarea')?.focus();
-      scheduleNotationRender();
-    });
+    btn.addEventListener('click', () => addBlock(btn.dataset.addType));
   });
 
   form.chordpro.addEventListener('input', () => scheduleChordproRender());
@@ -333,6 +327,33 @@ function wireBlockDragHandlers(card, idx) {
 function focusBlockAt(idx) {
   const cards = document.querySelectorAll('#melody-blocks .melody-block');
   cards[idx]?.querySelector('textarea')?.focus();
+}
+
+function addBlock(type) {
+  if (!BLOCK_TYPES.includes(type)) return;
+  currentMelody.blocks.push({ type, body: '' });
+  renderBlocks();
+  focusBlockAt(currentMelody.blocks.length - 1);
+  scheduleNotationRender();
+}
+
+/**
+ * Alt+Shift+V / C / B inserts a new verse / chorus / bridge regardless of
+ * which control currently has focus. Keyed off `ev.code` (physical key) so
+ * the binding survives keyboard layouts that map Option+Shift+letter to
+ * special characters (e.g. macOS US, where Option+Shift+V is `◊`).
+ */
+function onGlobalKeydown(ev) {
+  if (!ev.altKey || !ev.shiftKey || ev.ctrlKey || ev.metaKey) return;
+  if (!currentDetail) return;
+  let type = null;
+  if (ev.code === 'KeyV') type = 'verse';
+  else if (ev.code === 'KeyC') type = 'chorus';
+  else if (ev.code === 'KeyB') type = 'bridge';
+  if (!type) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  addBlock(type);
 }
 
 function moveBlock(idx, dir) {
@@ -549,6 +570,7 @@ async function onSave(ev) {
 }
 
 searchEl.addEventListener('input', renderList);
+document.addEventListener('keydown', onGlobalKeydown);
 
 loadList().catch((err) => {
   listEl.replaceChildren(

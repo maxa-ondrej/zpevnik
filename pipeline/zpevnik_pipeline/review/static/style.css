@@ -400,6 +400,12 @@ form#edit-form button#save:disabled { opacity: 0.5; cursor: default; }
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  align-items: center;
+}
+.melody-add-row .hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 4px;
 }
 .melody-add-row button {
   font: inherit;
