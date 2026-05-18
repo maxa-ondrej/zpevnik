@@ -86,6 +86,10 @@ export default function SongScreen() {
   /** AbcView's y inside the outer ScrollView, captured via onLayout on the
    *  wrapping View. Combined with abcjs's reported staff-line y. */
   const abcViewYRef = useRef(0);
+  /** Last staff-line y we already scrolled to — abcjs fires eventCallback
+   *  per note, but the y only meaningfully changes when the cursor crosses
+   *  to a new music line. We compare against this to skip same-line notes. */
+  const lastFollowYRef = useRef<number | null>(null);
   const followIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopFollow = useCallback(() => {
@@ -97,7 +101,11 @@ export default function SongScreen() {
 
   const toggleFollow = useCallback(() => {
     setIsFollowing((f) => {
-      if (!f) setFollowLine(0); // restart from the top on play press
+      if (!f) {
+        // Restart from the top on play press.
+        setFollowLine(0);
+        lastFollowYRef.current = null;
+      }
       return !f;
     });
   }, []);
@@ -229,17 +237,18 @@ export default function SongScreen() {
     setIsFollowing(false);
   }, []);
 
-  // Scroll the outer ScrollView so the new staff line is in view. AbcView
-  // reports a local y (relative to itself); we offset by abcViewYRef to
-  // get the absolute scroll target.
+  // Scroll the outer ScrollView when the staff line under the cursor
+  // changes. AbcView fires eventCallback per note; the y stays put while
+  // notes are on the same line, so we only act when the new y differs
+  // from `lastFollowYRef.current` by more than a small threshold (10 px
+  // is plenty since music lines are at least ~40 px tall).
   const onAbcStaffLineChange = useCallback((yInsideAbcView: number) => {
-    const absoluteY = abcViewYRef.current + yInsideAbcView;
-    const viewportTop = currentYRef.current;
-    const viewportBottom = viewportTop + layoutHeightRef.current;
-    const inView = absoluteY >= viewportTop + 20 && absoluteY <= viewportBottom - 80;
-    if (inView) return;
+    const last = lastFollowYRef.current;
+    if (last !== null && Math.abs(yInsideAbcView - last) < 10) return;
+    lastFollowYRef.current = yInsideAbcView;
 
-    const headOffset = Math.max(60, layoutHeightRef.current * 0.25);
+    const absoluteY = abcViewYRef.current + yInsideAbcView;
+    const headOffset = Math.max(80, layoutHeightRef.current * 0.25);
     const targetY = Math.max(0, absoluteY - headOffset);
     scrollRef.current?.scrollTo({ y: targetY, animated: true });
     currentYRef.current = targetY;
@@ -308,6 +317,7 @@ export default function SongScreen() {
     lineYsRef.current.clear();
     songViewYRef.current = 0;
     abcViewYRef.current = 0;
+    lastFollowYRef.current = null;
     currentYRef.current = 0;
     expectedYRef.current = 0;
     contentHeightRef.current = 0;

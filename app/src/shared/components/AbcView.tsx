@@ -241,12 +241,9 @@ export function AbcView({
         .TimingCallbacks;
     if (typeof TimingCallbacksCtor !== 'function') return;
 
-    let lastLine: number | null = null;
     const tc = new TimingCallbacksCtor(visualObj, {
       qpm: tempo ?? 100,
-      eventCallback: (
-        event: { elements?: AbcEventElement[]; line?: number } | null,
-      ) => {
+      eventCallback: (event: { elements?: AbcEventElement[] } | null) => {
         clearHighlights(container);
         if (event === null) {
           // End of song.
@@ -256,23 +253,19 @@ export function AbcView({
         const highlighted = event.elements ? flattenElements(event.elements) : [];
         highlighted.forEach((el) => el.classList?.add(HIGHLIGHT_CLASS));
 
-        // Report a line change so the parent can scroll the staff line
-        // into view. `event.line` is the abcjs line index; when it
-        // changes, find the y of the first highlighted SVG node
-        // relative to AbcView's container (which the parent then offsets
-        // into the outer ScrollView).
-        if (
-          typeof event.line === 'number' &&
-          event.line !== lastLine &&
-          highlighted.length > 0 &&
-          container
-        ) {
-          lastLine = event.line;
+        // Always report the current note's y inside AbcView's container.
+        // The parent decides whether to actually scroll via an in-view
+        // check — that way the staff line stays put for all notes on it,
+        // and only the first note of a new line triggers a scroll.
+        if (highlighted.length > 0 && container) {
           try {
-            const elRect = highlighted[0]!.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-            const yInsideAbcView = elRect.top - containerRect.top;
-            onStaffLineChangeRef.current?.(yInsideAbcView);
+            const first = highlighted[0];
+            if (first && typeof first.getBoundingClientRect === 'function') {
+              const elRect = first.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const yInsideAbcView = elRect.top - containerRect.top;
+              onStaffLineChangeRef.current?.(yInsideAbcView);
+            }
           } catch {
             // getBoundingClientRect can throw on detached nodes — ignore.
           }
