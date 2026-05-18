@@ -227,6 +227,12 @@ export function AbcView({
       paddingtop: 0,
       paddingbottom: 12,
       lineThickness: 0.2,
+      // Tag every staff-line `<g>` with `abcjs-staff-wrapper abcjs-l[N]`.
+      // findStaffLineWrapper() in the timing path relies on this so the
+      // reported y is stable for all events on the same musical line
+      // (otherwise the chord-annotation `<text>` and the notehead path
+      // sit at different y's and the cursor bounces inside one line).
+      add_classes: true,
     });
     // abcjs.renderAbc returns an array of "visualObj" parses, one per
     // tune. We use the first (our melody files all carry one tune).
