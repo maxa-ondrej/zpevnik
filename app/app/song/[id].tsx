@@ -535,7 +535,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   scrollArea: { flex: 1 },
-  scrollContent: { padding: 16 },
+  // Horizontal padding tightened so the staff can use almost the
+  // full viewport width on phone — abcjs's own paddingleft is 0 too.
+  scrollContent: { paddingHorizontal: 4, paddingVertical: 12 },
   container: { padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   titleRow: {

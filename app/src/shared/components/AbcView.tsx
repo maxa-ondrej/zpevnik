@@ -105,17 +105,37 @@ export function buildHtml(
         setTimeout(render, 30);
         return;
       }
-      // Fit the staff to the WebView's actual content width so the
-      // notation doesn't run off the right edge on a phone. Subtract
-      // a small padding so the rightmost barline isn't kissing the
-      // viewport edge.
-      var staffWidth = Math.max(280, document.body.clientWidth - 16);
-      ABCJS.renderAbc("paper", ${abcLiteral}, {
+      // Fit the staff to the WebView width AND override the source's
+      // engraver-set line breaks — the converter groups measures by
+      // <print new-system> (designed for an A4 page), which produces
+      // 6-8 measures per line. Squishes on phone.
+      //
+      // Measures-per-line is gated on EFFECTIVE width (clientWidth /
+      // scale) so bumping font size pushes us to fewer measures per
+      // line automatically; otherwise the larger notes overlap their
+      // lyrics at the same wrap target.
+      var clientWidth = document.body.clientWidth;
+      var scale = ${scale};
+      var staffWidth = Math.max(240, clientWidth - 4);
+      var effective = clientWidth / scale;
+      var opts = {
         staffwidth: staffWidth,
-        scale: ${scale},
+        scale: scale,
         visualTranspose: ${visualTranspose},
+        paddingleft: 0,
+        paddingright: 0,
         paddingbottom: 12
-      });
+      };
+      var preferred;
+      if      (effective < 280) preferred = 1;
+      else if (effective < 420) preferred = 2;
+      else if (effective < 600) preferred = 3;
+      else if (effective < 820) preferred = 4;
+      // wider → let abcjs use the source breaks (engraver's intent)
+      if (preferred) {
+        opts.wrap = { preferredMeasuresPerLine: preferred, lastLineLimit: 1 };
+      }
+      ABCJS.renderAbc("paper", ${abcLiteral}, opts);
       // Allow layout to settle, then report height.
       requestAnimationFrame(function () {
         postSize();
