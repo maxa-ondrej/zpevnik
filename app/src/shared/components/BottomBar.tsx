@@ -52,10 +52,21 @@ export function BottomBar({
   expanded,
   onExpandedChange,
 }: BottomBarProps) {
-  const showStaves = useSettings((s) => s.showStaves);
-  const setShowStaves = useSettings((s) => s.setShowStaves);
+  const viewMode = useSettings((s) => s.viewMode);
+  const setViewMode = useSettings((s) => s.setViewMode);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
+  // Cycle: karaoke → staves → lyrics → karaoke.
+  const cycleViewMode = () => {
+    if (viewMode === 'karaoke') setViewMode('staves');
+    else if (viewMode === 'staves') setViewMode('lyrics');
+    else setViewMode('karaoke');
+  };
+  const viewModeLabel =
+    viewMode === 'karaoke' ? '🎤  Karaoke' :
+    viewMode === 'staves'  ? '♪  Staves'  :
+                             '✎  Lyrics';
 
   // Animated height for the expandable panel — tracks the user's
   // finger during pan, snaps to OPEN_HEIGHT or 0 on release.
@@ -154,10 +165,14 @@ export function BottomBar({
         />
         <BarBtn
           theme={theme}
-          active={showStaves}
-          onPress={() => setShowStaves(!showStaves)}
-          label={showStaves ? '♪  Staves' : '✎  Lyrics'}
-          accessibilityLabel={showStaves ? 'Hide staves' : 'Show staves'}
+          // View toggle has no `active` color flip — the label
+          // change (Karaoke / Staves / Lyrics) already communicates
+          // the mode, and an always-green button reads as "selected
+          // = on" which doesn't match a tri-state cycle.
+          active={false}
+          onPress={cycleViewMode}
+          label={viewModeLabel}
+          accessibilityLabel={`View mode: ${viewMode}. Tap to cycle.`}
         />
       </View>
       {/* Animated panel — height tracks the pan in real time, snaps

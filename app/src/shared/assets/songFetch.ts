@@ -26,7 +26,11 @@
  * of `.ok`, `.text()`, `.json()` works unchanged.
  */
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system';
+// `expo-file-system@19` (Expo SDK 54) moved the directory constants
+// to a new `Paths` class. The legacy entry keeps the
+// `documentDirectory` / `makeDirectoryAsync` / `readAsStringAsync`
+// shape we use here. A larger refactor to the new API can come later.
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 const CACHE_SUBDIR = 'songs-cache';

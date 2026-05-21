@@ -52,7 +52,7 @@ function resetSettings() {
     fontSize: 16,
     lineSpacing: 1.4,
     darkMode: 'system',
-    showStaves: true,
+    viewMode: 'staves',
     autoScrollSpeed: 30,
   });
 }

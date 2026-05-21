@@ -15,6 +15,7 @@ import {
 import { AbcView } from '../../src/shared/components/AbcView';
 import { AddToSetlistSheet } from '../../src/shared/components/AddToSetlistSheet';
 import { BottomBar } from '../../src/shared/components/BottomBar';
+import { KaraokeView } from '../../src/shared/components/KaraokeView';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { songFetch } from '../../src/shared/assets/songFetch';
@@ -59,7 +60,8 @@ async function fetchOptionalMelody(dir: string): Promise<Melody | null> {
 export default function SongScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [state, setState] = useState<State>({ kind: 'loading' });
-  const showStaves = useSettings((s) => s.showStaves);
+  const viewMode = useSettings((s) => s.viewMode);
+  const showStaves = viewMode === 'staves';
   const transpose = useSettings((s) => s.transpose);
   const fontSize = useSettings((s) => s.fontSize);
   const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
@@ -477,7 +479,7 @@ export default function SongScreen() {
              we already get the per-note highlight on the staff itself.
              The wrapping View captures SongView's y inside the outer
              ScrollView so the line-fallback scroll target is absolute. */}
-        {!showStaves && (
+        {viewMode === 'lyrics' && (
           <View
             onLayout={(ev) => {
               songViewYRef.current = ev.nativeEvent.layout.y;
@@ -489,6 +491,12 @@ export default function SongScreen() {
               onLineLayout={onLineLayout}
             />
           </View>
+        )}
+        {viewMode === 'karaoke' && (
+          <KaraokeView
+            song={state.song}
+            currentLineIndex={isFollowing ? followLine : undefined}
+          />
         )}
       </ScrollView>
 

@@ -40,7 +40,7 @@ export function SongControls({
     capo,
     fontSize,
     lineSpacing,
-    showStaves,
+    viewMode,
     darkMode,
     autoScrollSpeed,
     setNotation,
@@ -48,7 +48,7 @@ export function SongControls({
     setCapo,
     setFontSize,
     setLineSpacing,
-    setShowStaves,
+    setViewMode,
     setDarkMode,
     setAutoScrollSpeed,
   } = useSettings();
@@ -136,13 +136,10 @@ export function SongControls({
           label="+"
         />
       </Group>
-      <Group label="Staves" theme={theme}>
-        <Toggle
-          theme={theme}
-          active={showStaves}
-          onPress={() => setShowStaves(!showStaves)}
-          label={showStaves ? 'On' : 'Off'}
-        />
+      <Group label="View" theme={theme}>
+        <Toggle theme={theme} active={viewMode === 'karaoke'} onPress={() => setViewMode('karaoke')} label="🎤" />
+        <Toggle theme={theme} active={viewMode === 'staves'}  onPress={() => setViewMode('staves')}  label="♪" />
+        <Toggle theme={theme} active={viewMode === 'lyrics'}  onPress={() => setViewMode('lyrics')}  label="✎" />
       </Group>
       <Group label="Theme" theme={theme}>
         <Toggle theme={theme} active={darkMode === 'light'} onPress={() => setDarkMode('light')} label="☀" />
