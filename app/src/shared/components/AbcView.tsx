@@ -41,6 +41,10 @@ interface Props {
    *  The parent uses it to scroll the outer ScrollView so the new staff
    *  line is in view. */
   onStaffLineChange?: (yInsideAbcView: number) => void;
+  /** Fires once per played event (one note onset). Lets a karaoke-style
+   *  view advance a per-syllable cursor in lockstep with the music
+   *  instead of approximating via fractional beat math. */
+  onNoteEvent?: () => void;
 }
 
 const BASE_FONT_SIZE = 16;
@@ -159,6 +163,10 @@ export function buildHtml(
               }
             } catch (e) {}
           }
+          // Per-note tick for the karaoke view's per-syllable cursor.
+          // Fired for every non-null event regardless of how many SVG
+          // elements it carries — one event = one logical note onset.
+          post({ kind: 'noteEvent' });
         },
         beatCallback: function (beat, total) {
           post({ kind: 'beat', beat: beat, total: total });
@@ -288,6 +296,7 @@ export function AbcView({
   onBeat,
   onFollowEnd,
   onStaffLineChange,
+  onNoteEvent,
 }: Props) {
   const ref = useRef<View>(null);
   const [height, setHeight] = useState<number>(120);
@@ -303,11 +312,13 @@ export function AbcView({
   const onBeatRef = useRef(onBeat);
   const onFollowEndRef = useRef(onFollowEnd);
   const onStaffLineChangeRef = useRef(onStaffLineChange);
+  const onNoteEventRef = useRef(onNoteEvent);
   useEffect(() => {
     onBeatRef.current = onBeat;
     onFollowEndRef.current = onFollowEnd;
     onStaffLineChangeRef.current = onStaffLineChange;
-  }, [onBeat, onFollowEnd, onStaffLineChange]);
+    onNoteEventRef.current = onNoteEvent;
+  }, [onBeat, onFollowEnd, onStaffLineChange, onNoteEvent]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -397,6 +408,8 @@ export function AbcView({
             // getBoundingClientRect can throw on detached nodes — ignore.
           }
         }
+        // Per-note tick for the karaoke per-syllable cursor.
+        onNoteEventRef.current?.();
       },
       beatCallback: (beatNumber: number, totalBeats: number) => {
         onBeatRef.current?.(beatNumber, totalBeats);
@@ -466,6 +479,10 @@ export function AbcView({
       }
       if (data.kind === 'followEnd') {
         onFollowEndRef.current?.();
+        return;
+      }
+      if (data.kind === 'noteEvent') {
+        onNoteEventRef.current?.();
         return;
       }
     } catch {

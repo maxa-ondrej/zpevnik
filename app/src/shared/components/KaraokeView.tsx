@@ -17,7 +17,7 @@
  * over the existing onBeat bridge.
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import type { ParsedSong, SongLine } from '../chordpro/parser';
@@ -83,16 +83,20 @@ export function KaraokeView({
     }).start();
   };
 
-  // Beat tracking for progressive in-line syllable fill. We re-render
-  // each time abcjs posts a beat (cheap — only the current line
-  // updates), compute `progressInLine ∈ [0, 1]`, and color text
-  // segments left-to-right based on that fraction.
-  const [beatState, setBeatState] = useState<{ beat: number; total: number }>({
-    beat: 0,
-    total: 0,
-  });
+  // Per-note tick for the progressive in-line syllable fill. The
+  // inline AbcView's `onNoteEvent` fires once per played event;
+  // we increment `noteInLine` and reset it whenever the active
+  // line changes (so a new line starts the cursor at zero).
+  const [noteInLine, setNoteInLine] = useState(0);
+  useEffect(() => {
+    setNoteInLine(0);
+  }, [currentLineIndex]);
+  const handleNoteEvent = () => setNoteInLine((n) => n + 1);
+
+  // We still accept onBeat so the parent's `followLine` advances
+  // (mapped from beats → line), but the karaoke cursor is driven
+  // off note events, not beat fractions.
   const handleBeat = (beat: number, total: number) => {
-    setBeatState({ beat, total });
     onBeat?.(beat, total);
   };
 
@@ -138,19 +142,17 @@ export function KaraokeView({
   const currLine = at(focusPosition);
   const nextLine = focusPosition < lyricCount - 1 ? at(focusPosition + 1) : null;
 
-  // Progress within the current line — fraction in [0, 1]. We use
-  // the SAME beat-to-line mapping as the parent's `onAbcBeat` so
-  // the per-syllable cursor stays in lockstep with the lyric line.
-  // For lines where the math overshoots (last line or rounding), we
-  // clamp; for Play-off, we pin to 0 so nothing is "pre-filled."
-  const progressInLine = useMemo(() => {
-    if (!isFollowing) return 0;
-    if (beatState.total <= 0 || lyricCount === 0) return 0;
-    const beatsPerLine = beatState.total / lyricCount;
-    if (beatsPerLine <= 0) return 0;
-    const beatInLine = beatState.beat - focusPosition * beatsPerLine;
-    return Math.max(0, Math.min(1, beatInLine / beatsPerLine));
-  }, [beatState, focusPosition, lyricCount, isFollowing]);
+  // Cursor on the current line — count of TEXT-bearing segments to
+  // fill. Drives the per-syllable highlight in KaraokeLine. The
+  // cursor advances by one on each onNoteEvent and resets to 0
+  // whenever currentLineIndex changes.
+  const currentSyllableCount = useMemo(
+    () => (currLine ? currLine.segments.filter((s) => s.text.trim().length > 0).length : 0),
+    [currLine],
+  );
+  const filledSyllables = !isFollowing
+    ? currentSyllableCount  // Play off → show the whole line in accent.
+    : Math.min(noteInLine, currentSyllableCount);
   if (!currLine) {
     return (
       <View style={styles.empty}>
@@ -184,6 +186,7 @@ export function KaraokeView({
               onBeat={handleBeat}
               onFollowEnd={onFollowEnd}
               onStaffLineChange={onStaffLineChange}
+              onNoteEvent={handleNoteEvent}
             />
           </Animated.View>
         </View>
@@ -213,7 +216,7 @@ export function KaraokeView({
           notation={notation}
           transpose={transpose}
           bold
-          progress={progressInLine}
+          filledTextSegments={filledSyllables}
           unfilledColor={theme.text}
         />
       </View>
@@ -248,7 +251,7 @@ function KaraokeLine({
   notation,
   transpose,
   bold = false,
-  progress,
+  filledTextSegments,
   unfilledColor,
 }: {
   line: SongLine;
@@ -259,12 +262,11 @@ function KaraokeLine({
   notation: 'cs' | 'en';
   transpose: number;
   bold?: boolean;
-  /** 0..1 fraction of line covered by Play. Per-syllable fill on the
-   *  current line is driven by this — segments to the left of the
-   *  cursor render in `color`, segments to the right in
-   *  `unfilledColor`. Undefined → no progressive fill (every
-   *  segment renders in `color`). */
-  progress?: number;
+  /** Number of text-bearing segments (syllables) already passed by
+   *  Play's cursor on this line. Segments to the left of this cursor
+   *  render in `color`; segments to the right render in `unfilledColor`.
+   *  `undefined` → no progressive fill (everything renders in `color`). */
+  filledTextSegments?: number;
   unfilledColor?: string;
 }) {
   const fs = Math.round(baseFontSize * scale);
@@ -277,7 +279,7 @@ function KaraokeLine({
     .filter((i) => i >= 0);
   const totalText = textSegIndices.length;
   const filledCount =
-    progress === undefined ? totalText : Math.floor(progress * totalText);
+    filledTextSegments === undefined ? totalText : Math.min(filledTextSegments, totalText);
   // Index of the LAST filled text segment in line.segments space (or
   // -1 if none yet). Anything ≤ that index renders in `color`.
   const lastFilledIdx =
@@ -287,7 +289,7 @@ function KaraokeLine({
     <View style={styles.lineWrap}>
       <View style={styles.segments}>
         {line.segments.map((seg, i) => {
-          const filled = progress === undefined || i <= lastFilledIdx;
+          const filled = filledTextSegments === undefined || i <= lastFilledIdx;
           const lyricColor = filled ? color : (unfilledColor ?? color);
           return (
             <View key={i} style={styles.segment}>
