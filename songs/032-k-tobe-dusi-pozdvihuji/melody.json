@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nG2 ^F E D G2 A B2 G2 z2 |\nw: K to- bě du- ši po- zdvi- hu- ji,\nB2 B2 c B G2 A2 G2 z2 :|\nw: Ho- spo- di- ne, v úz- ko- sti,"
+      "body": "\"^Verse 1\"\nG2 ^F E D G2 A B2 G2 z2 |\nw: K~to- bě du- ši po- zdvi- hu- ji,\nB2 B2 c B G2 A2 G2 z2 :|\nw: Ho- spo- di- ne, v~úz- ko- sti,"
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\nG2 A2 B G c c B2 z2 G2 E ^F2 D |\nw: Ty, Bo- že, ne- za- han- bíš žád- né- ho, kdo\nE G ^F2 G2 z2 B2 B2 G c |\nw: v te- be dou- fá, po- tu- pou však\nB A G2 z2 B2 d2 c B A G A2 G4 |\nw: od- pla- tíš kaž- dé- mu, kdo se ti rou- há."
+      "body": "\"^Verse 2\"\nG2 A2 B G c c B2 z2 G2 E ^F2 D |\nw: Ty, Bo- že, ne- za- han- bíš žád- né- ho, kdo\nE G ^F2 G2 z2 B2 B2 G c |\nw: v~te- be dou- fá, po- tu- pou však\nB A G2 z2 B2 d2 c B A G A2 G4 |\nw: od- pla- tíš kaž- dé- mu, kdo se ti rou- há."
     }
   ]
 }

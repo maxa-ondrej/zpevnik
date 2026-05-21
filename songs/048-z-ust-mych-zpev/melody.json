@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nA2 B2 A G2 E | ^F2 D E |\nw: Z úst mých zpěv, dík a chvá- la vždy\n^F A G G | ^F4 :|\nw: Pá- nu bu- dou znít."
+      "body": "\"^Verse 1\"\nA2 B2 A G2 E | ^F2 D E |\nw: Z~úst mých zpěv, dík a chvá- la vždy\n^F A G G | ^F4 :|\nw: Pá- nu bu- dou znít."
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\nd2 A2 B G2 A |\nw: Já- sat před tvá- ří\n^F2 ^F G G A A | B2 E E |\nw: tvou, chlu- bit se skut- ky tvý- mi chci\n^F ^F G G | A2 D G ^F E E ^D |\nw: spo- lu s po- kor- ný- mi, tvé jmé- no, Bo- že,\nE2 ^F2 G2 ^F2 | E D D ^C D4 |\nw: o- sla- vím, tvé jmé- no o- sla- vím."
+      "body": "\"^Verse 2\"\nd2 A2 B G2 A |\nw: Já- sat před tvá- ří\n^F2 ^F G G A A | B2 E E |\nw: tvou, chlu- bit se skut- ky tvý- mi chci\n^F ^F G G | A2 D G ^F E E ^D |\nw: spo- lu s~po- kor- ný- mi, tvé jmé- no, Bo- že,\nE2 ^F2 G2 ^F2 | E D D ^C D4 |\nw: o- sla- vím, tvé jmé- no o- sla- vím."
     }
   ]
 }

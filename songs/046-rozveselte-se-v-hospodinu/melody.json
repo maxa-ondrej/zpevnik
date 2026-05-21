@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nD2 A A c B A G F2 E2 z2 |\nw: Roz- ve- sel- te se v Ho- spo- di- nu,\nE2 F G A d c2 B2 A2 z2 :|\nw: spra- ved- li- ví a u- přím- ní!"
+      "body": "\"^Verse 1\"\nD2 A A c B A G F2 E2 z2 |\nw: Roz- ve- sel- te se v~Ho- spo- di- nu,\nE2 F G A d c2 B2 A2 z2 :|\nw: spra- ved- li- ví a u- přím- ní!"
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\nE E G G F2 E2 z2 E E G G F2 E2 z2 |\nw: No- vou pí- seň pěj- te, sla- dit všech- no chtěj- te\nc2 B A2 G A2 z2 d d e d c2 A2 z2 |\nw: k slá- vě pra- vé- mu jen slo- vu Bo- ží- mu,\nE2 G2 A B c2 A2 z2 A2 G F E2 D4 |\nw: dí- lu tr- va- lé- mu, nás tě- ší- cí- mu."
+      "body": "\"^Verse 2\"\nE E G G F2 E2 z2 E E G G F2 E2 z2 |\nw: No- vou pí- seň pěj- te, sla- dit všech- no chtěj- te\nc2 B A2 G A2 z2 d d e d c2 A2 z2 |\nw: k~slá- vě pra- vé- mu jen slo- vu Bo- ží- mu,\nE2 G2 A B c2 A2 z2 A2 G F E2 D4 |\nw: dí- lu tr- va- lé- mu, nás tě- ší- cí- mu."
     }
   ]
 }

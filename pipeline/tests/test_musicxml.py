@@ -335,6 +335,36 @@ class TestFirstPhraseTitle:
         assert first_phrase_title(s) == "Aleluja"
 
 
+class TestLyricSpacesInsideSyllable:
+    """A `<text>` element with an internal space is ONE syllable on ONE note.
+
+    ABC `w:` uses space as the syllable separator, so emitting the lyric
+    verbatim splits it across two notes — exactly the bug the user saw on
+    song 008's '„V Bo' lyric (rendered as '„V' under note 1 and 'Bo' under
+    note 2 instead of '„V Bo' under one note). The emitter must escape
+    internal spaces with `~`.
+    """
+
+    def test_space_in_lyric_text_becomes_tilde_in_w_line(self) -> None:
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>begin</syllabic>
+              <text>„V Bo</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>end</syllabic>
+              <text>hu</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        body = convert_song(s).melody["blocks"][0]["body"]
+        # The first syllable is `„V~Bo-` (~ keeps the space attached, - is
+        # the begin/middle hyphen). Verbatim "„V Bo-" would mis-align.
+        assert "w: „V~Bo- hu" in body
+        assert "„V Bo-" not in body
+
+
 class TestRepeats:
     REPEAT_XML = """<score-partwise><part-list><score-part id="P1"/></part-list>
     <part id="P1">

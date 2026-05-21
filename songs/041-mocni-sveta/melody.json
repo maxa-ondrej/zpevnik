@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nD D2 G G2 | G F D D E F |\nw: Moc- ní svě- ta, skloň- te se před Pá- nem\nG E D4 | F G A _B c A | G2 G |\nw: moc- něj- ším. Své- mu tvůr- ci vzdej- te čest, on\n_B A F | F G G4 | F F2 _B _B2 |\nw: vlád- * ne na- de vším. Je- ho jmé- nu\n_B A F F G A | _B G F4 | E F G A |\nw: sva- té- mu slá- vu při- zná- vej- te a v nád- he- ře\nG E | F2 D2 E F | E C D4 |\nw: sva- ty- ně jej v báz- ni vzý- vej- te."
+      "body": "\"^Verse\"\nD D2 G G2 | G F D D E F |\nw: Moc- ní svě- ta, skloň- te se před Pá- nem\nG E D4 | F G A _B c A | G2 G |\nw: moc- něj- ším. Své- mu tvůr- ci vzdej- te čest, on\n_B A F | F G G4 | F F2 _B _B2 |\nw: vlád- * ne na- de vším. Je- ho jmé- nu\n_B A F F G A | _B G F4 | E F G A |\nw: sva- té- mu slá- vu při- zná- vej- te a v~nád- he- ře\nG E | F2 D2 E F | E C D4 |\nw: sva- ty- ně jej v~báz- ni vzý- vej- te."
     }
   ]
 }

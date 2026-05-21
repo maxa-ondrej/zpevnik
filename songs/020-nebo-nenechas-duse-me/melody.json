@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nF/2 D/2 G/2 F/2 D2 | z/2 D/2 C/2 _B,/2 D/2 D/2 z |\nw: Ne- bo ne- ne- cháš du- še mé v pek le,\nF/2 D/2 G/2 F/2 D2 | z/2 F/2 G/2 _A/2 _A/2 G/2 G | z4 |\nw: zná mou u- či- níš mi ce- stu ži- vo- ta."
+      "body": "\"^Verse 1\"\nF/2 D/2 G/2 F/2 D2 | z/2 D/2 C/2 _B,/2 D/2 D/2 z |\nw: Ne- bo ne- ne- cháš du- še mé v~pek le,\nF/2 D/2 G/2 F/2 D2 | z/2 F/2 G/2 _A/2 _A/2 G/2 G | z4 |\nw: zná mou u- či- níš mi ce- stu ži- vo- ta."
     },
     {
       "type": "verse",

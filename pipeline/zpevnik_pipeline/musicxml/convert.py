@@ -382,10 +382,17 @@ def _syllable_for_w_line(text: str, syllabic: str | None) -> str:
     Conventions (matches the demo melody.json files in songs/):
       single | end → the syllable on its own (a following space delimits).
       begin | middle → suffix '-' to join to the next syllable.
+
+    A literal space inside one syllable token (e.g. proscholy.cz ships
+    `<text>„V Bo</text>` as a single lyric on a single note) MUST be
+    escaped to `~` for ABC, where space is the syllable separator. With
+    `~`, abcjs renders a visible space but keeps the whole token
+    aligned to one note.
     """
+    escaped = text.replace(" ", "~")
     if syllabic in ("begin", "middle"):
-        return text + "-"
-    return text
+        return escaped + "-"
+    return escaped
 
 
 # ── meta.json ─────────────────────────────────────────────────────────────

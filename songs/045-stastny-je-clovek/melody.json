@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nc A2 _B | c d A2 | c A G2 | A G D2 |\nw: Šťast- ný je člo- * věk, je- muž Bůh od- pus- til\nz F D G | F2 _B2 | A _B c2 | G2 z |\nw: a je- hož vi- na smí- ře- na jest.\nc A2 _B | c d A2 | c A G2 | A G D2 |\nw: Šťast- ný je člo- * věk, je- hož Bůh o- či- stil\nC2 D G | F G A2 | c F G2 | F2 z |\nw: a v je- hož du- ši se ne- skrý- vá lest."
+      "body": "\"^Verse\"\nc A2 _B | c d A2 | c A G2 | A G D2 |\nw: Šťast- ný je člo- * věk, je- muž Bůh od- pus- til\nz F D G | F2 _B2 | A _B c2 | G2 z |\nw: a je- hož vi- na smí- ře- na jest.\nc A2 _B | c d A2 | c A G2 | A G D2 |\nw: Šťast- ný je člo- * věk, je- hož Bůh o- či- stil\nC2 D G | F G A2 | c F G2 | F2 z |\nw: a v~je- hož du- ši se ne- skrý- vá lest."
     }
   ]
 }
