@@ -526,9 +526,10 @@ def musicxml_batch(
     songs_dir.mkdir(parents=True, exist_ok=True)
 
     # Pre-scan existing songs/ to (a) know the next-available id and
-    # (b) detect which remote ids we've already converted.
+    # (b) map already-converted sources to their existing local id so
+    # `--force` re-uses that id instead of allocating a duplicate.
     next_id = 1
-    existing_sources: dict[str, Path] = {}  # sourcePdf URL → song dir
+    existing_by_source: dict[str, str] = {}  # sourcePdf URL → local id
     for d in sorted(songs_dir.iterdir()) if songs_dir.is_dir() else []:
         m = _re.match(r"^(\d{3,})-", d.name)
         if m:
@@ -537,7 +538,7 @@ def musicxml_batch(
         if meta_file.is_file():
             meta = _read_existing_meta(meta_file)
             if meta is not None and meta.sourcePdf:
-                existing_sources[meta.sourcePdf] = d
+                existing_by_source[meta.sourcePdf] = meta.id
 
     new_metas: list[SongMeta] = []
     skipped: list[tuple[int, str]] = []
@@ -546,10 +547,11 @@ def musicxml_batch(
     for rid in remote_ids:
         source_url = f"{base_url}/{rid}.xml"
         cache_path = cache_dir / f"{rid}.xml"
+        existing_id = existing_by_source.get(source_url)
 
         # Skip if we already have this exact source (unless --force).
-        if not force and source_url in existing_sources:
-            skipped.append((rid, f"already converted → {existing_sources[source_url].name}"))
+        if not force and existing_id is not None:
+            skipped.append((rid, f"already converted → id {existing_id}"))
             continue
 
         # Download (cache hit avoids re-fetch).
@@ -573,9 +575,17 @@ def musicxml_batch(
 
         # Convert (re-parses inside, but reuses our title via override).
         result = convert_musicxml(cache_path, title=title)
-        local_id = f"{next_id:03d}"
-        next_id += 1
+        # On --force re-runs we reuse the existing local id so we don't
+        # allocate a duplicate folder alongside the original.
+        if existing_id is not None:
+            local_id = existing_id
+        else:
+            local_id = f"{next_id:03d}"
+            next_id += 1
         result.meta["id"] = local_id
+        # For proscholy.cz, the soubor id IS the canonical songbook number;
+        # surface it in the list as the visible number column.
+        result.meta["number"] = rid
         result.meta["sourcePdf"] = source_url
         if not result.meta.get("sourcePages"):
             result.meta["sourcePages"] = [1]
