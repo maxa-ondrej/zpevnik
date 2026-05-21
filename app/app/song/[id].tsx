@@ -68,6 +68,9 @@ export default function SongScreen() {
   const toggleFavorite = useFavorites((s) => s.toggle);
   const isFavorite = typeof id === 'string' && favorites.includes(id);
   const [setlistSheetOpen, setSetlistSheetOpen] = useState(false);
+  // Controls panel collapses by default — saves screen real estate on
+  // phones where the 9-group bar would otherwise eat half the viewport.
+  const [showControls, setShowControls] = useState(false);
   const theme = useTheme();
 
   // Record this song as recently viewed. Fires once per id change.
@@ -395,6 +398,29 @@ export default function SongScreen() {
         <View style={styles.titleRow}>
           <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
           <Pressable
+            onPress={() => setShowControls((v) => !v)}
+            style={({ pressed }) => [
+              styles.setlistBtn,
+              {
+                borderColor: showControls ? theme.accent : theme.border,
+                backgroundColor: showControls ? theme.accent : theme.inputBg,
+              },
+              pressed && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={showControls ? 'Hide controls' : 'Show controls'}
+            accessibilityState={{ expanded: showControls }}
+          >
+            <Text
+              style={[
+                styles.setlistBtnText,
+                { color: showControls ? theme.accentText : theme.text },
+              ]}
+            >
+              ⚙
+            </Text>
+          </Pressable>
+          <Pressable
             onPress={() => setSetlistSheetOpen(true)}
             style={({ pressed }) => [
               styles.setlistBtn,
@@ -420,12 +446,14 @@ export default function SongScreen() {
             </Text>
           </Pressable>
         </View>
-        <SongControls
-          isPlaying={isPlaying}
-          onTogglePlay={togglePlay}
-          isFollowing={isFollowing}
-          onToggleFollow={toggleFollow}
-        />
+        {showControls && (
+          <SongControls
+            isPlaying={isPlaying}
+            onTogglePlay={togglePlay}
+            isFollowing={isFollowing}
+            onToggleFollow={toggleFollow}
+          />
+        )}
       </View>
 
       {typeof id === 'string' && (

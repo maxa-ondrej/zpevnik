@@ -105,7 +105,13 @@ export function buildHtml(
         setTimeout(render, 30);
         return;
       }
+      // Fit the staff to the WebView's actual content width so the
+      // notation doesn't run off the right edge on a phone. Subtract
+      // a small padding so the rightmost barline isn't kissing the
+      // viewport edge.
+      var staffWidth = Math.max(280, document.body.clientWidth - 16);
       ABCJS.renderAbc("paper", ${abcLiteral}, {
+        staffwidth: staffWidth,
         scale: ${scale},
         visualTranspose: ${visualTranspose},
         paddingbottom: 12
