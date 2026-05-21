@@ -8,17 +8,10 @@
  * `react-native-webview` (its Flow source can't be parsed by vite-node).
  */
 
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { webviewSpy, getReceivedProps } = vi.hoisted(() => {
-  const propsByCall: Array<Record<string, unknown>> = [];
-  const spy = vi.fn();
-  return {
-    webviewSpy: spy,
-    getReceivedProps: () => propsByCall,
-  };
-});
+const { webviewSpy } = vi.hoisted(() => ({ webviewSpy: vi.fn() }));
 
 vi.mock('react-native', async () => {
   const actual = await vi.importActual<typeof import('react-native')>('react-native');
