@@ -142,12 +142,18 @@ export function KaraokeView({
   const currLine = at(focusPosition);
   const nextLine = focusPosition < lyricCount - 1 ? at(focusPosition + 1) : null;
 
-  // Cursor on the current line — count of TEXT-bearing segments to
-  // fill. Drives the per-syllable highlight in KaraokeLine. The
-  // cursor advances by one on each onNoteEvent and resets to 0
-  // whenever currentLineIndex changes.
+  // Syllable count across ALL segments of the current line, where
+  // syllables are split on whitespace AND hyphens (the converter
+  // emits 'Pá-na chvá-lit' → 4 syllables; one note ≈ one syllable
+  // for the hymn corpus). Drives the per-syllable highlight.
   const currentSyllableCount = useMemo(
-    () => (currLine ? currLine.segments.filter((s) => s.text.trim().length > 0).length : 0),
+    () =>
+      currLine
+        ? currLine.segments.reduce(
+            (acc, s) => acc + countSyllables(s.text),
+            0,
+          )
+        : 0,
     [currLine],
   );
   const filledSyllables = !isFollowing
@@ -262,35 +268,27 @@ function KaraokeLine({
   notation: 'cs' | 'en';
   transpose: number;
   bold?: boolean;
-  /** Number of text-bearing segments (syllables) already passed by
-   *  Play's cursor on this line. Segments to the left of this cursor
-   *  render in `color`; segments to the right render in `unfilledColor`.
-   *  `undefined` → no progressive fill (everything renders in `color`). */
+  /** Number of SYLLABLES already passed by Play's cursor on this line
+   *  (across ALL segments). Syllables = tokens between whitespace
+   *  AND hyphens in the segment text. `undefined` → no progressive
+   *  fill (everything renders in `color`). */
   filledTextSegments?: number;
   unfilledColor?: string;
 }) {
   const fs = Math.round(baseFontSize * scale);
   const chordFs = Math.round(fs * 0.6);
 
-  // Only TEXT-bearing segments count toward the fill cursor —
-  // chord-only segments don't represent a syllable.
-  const textSegIndices = line.segments
-    .map((s, i) => (s.text.trim().length > 0 ? i : -1))
-    .filter((i) => i >= 0);
-  const totalText = textSegIndices.length;
-  const filledCount =
-    filledTextSegments === undefined ? totalText : Math.min(filledTextSegments, totalText);
-  // Index of the LAST filled text segment in line.segments space (or
-  // -1 if none yet). Anything ≤ that index renders in `color`.
-  const lastFilledIdx =
-    filledCount > 0 ? (textSegIndices[filledCount - 1] ?? -1) : -1;
+  // Walk segments and split each one's text into [syllable, sep,
+  // syllable, sep, …] tokens. Maintain a global syllable index so the
+  // fill cursor knows where it is across segment boundaries.
+  let syllableCursor = 0;
+  const showAll = filledTextSegments === undefined;
 
   return (
     <View style={styles.lineWrap}>
       <View style={styles.segments}>
         {line.segments.map((seg, i) => {
-          const filled = filledTextSegments === undefined || i <= lastFilledIdx;
-          const lyricColor = filled ? color : (unfilledColor ?? color);
+          const tokens = tokenize(seg.text);
           return (
             <View key={i} style={styles.segment}>
               {seg.chord ? (
@@ -304,13 +302,34 @@ function KaraokeLine({
                 style={[
                   styles.lyric,
                   {
-                    color: lyricColor,
                     fontSize: fs,
                     fontWeight: bold ? '700' : '500',
                   },
                 ]}
               >
-                {seg.text || ' '}
+                {tokens.map((tok, j) => {
+                  if (tok.kind === 'syllable') {
+                    const filled = showAll || syllableCursor < (filledTextSegments ?? 0);
+                    syllableCursor += 1;
+                    return (
+                      <Text
+                        key={j}
+                        style={{
+                          color: filled ? color : (unfilledColor ?? color),
+                        }}
+                      >
+                        {tok.text}
+                      </Text>
+                    );
+                  }
+                  // Separators (whitespace / hyphen) stay muted so the
+                  // active syllable visually pops vs the structure.
+                  return (
+                    <Text key={j} style={{ color: unfilledColor ?? color }}>
+                      {tok.text}
+                    </Text>
+                  );
+                })}
               </Text>
             </View>
           );
@@ -318,6 +337,32 @@ function KaraokeLine({
       </View>
     </View>
   );
+}
+
+type Token = { kind: 'syllable' | 'sep'; text: string };
+
+const SYL_SEP_RE = /(\s+|-)/g;
+
+function tokenize(text: string): Token[] {
+  if (!text) return [];
+  const out: Token[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = SYL_SEP_RE.exec(text)) !== null) {
+    if (m.index > last) {
+      out.push({ kind: 'syllable', text: text.slice(last, m.index) });
+    }
+    out.push({ kind: 'sep', text: m[0] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) {
+    out.push({ kind: 'syllable', text: text.slice(last) });
+  }
+  return out;
+}
+
+function countSyllables(text: string): number {
+  return tokenize(text).filter((t) => t.kind === 'syllable').length;
 }
 
 function lineHasText(line: SongLine): boolean {

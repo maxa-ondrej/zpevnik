@@ -209,6 +209,12 @@ def _section_to_chordpro_lines(measures: list[Measure]) -> str:
             word_in_progress = not ends_word
             if ends_word:
                 buf.append(" ")
+            else:
+                # Mid-word syllable — emit a hyphen so consumers
+                # (KaraokeView's per-syllable cursor, traditional
+                # hymn lyric view) can split on `-` to get syllable
+                # tokens. Standard songbook convention: 'Pá-na chvá-lit'.
+                buf.append("-")
 
     flush_line()
     return "\n".join(out_lines)
