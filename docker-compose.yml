@@ -1,0 +1,35 @@
+# Local development stack — reader + reviewer.
+#
+# Usage:
+#   docker compose up --build           # foreground, both services
+#   docker compose up -d --build        # background
+#   docker compose up reviewer          # reviewer only
+#   docker compose down                 # stop + remove containers
+#
+# Reader   → http://localhost:8080/
+# Reviewer → http://localhost:8765/
+#
+# Both Dockerfiles use the REPO ROOT as build context (see comments in
+# pipeline/Dockerfile and app/Dockerfile). compose handles that for you.
+
+services:
+  reader:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: zpevnik-reader
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  reviewer:
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    image: zpevnik-review
+    ports:
+      - "8765:8765"
+    # Read-write — the reviewer edits song.cho / melody.json in place.
+    volumes:
+      - ./songs:/data/songs
+    restart: unless-stopped

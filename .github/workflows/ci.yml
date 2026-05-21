@@ -63,3 +63,33 @@ jobs:
 
       - name: Type-check (tsc)
         run: npx tsc --noEmit
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build reviewer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: pipeline/Dockerfile
+          push: false
+          tags: zpevnik-review:ci
+          cache-from: type=gha,scope=reviewer
+          cache-to: type=gha,scope=reviewer,mode=max
+
+      - name: Build reader image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: app/Dockerfile
+          push: false
+          tags: zpevnik-reader:ci
+          cache-from: type=gha,scope=reader
+          cache-to: type=gha,scope=reader,mode=max

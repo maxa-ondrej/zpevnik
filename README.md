@@ -17,7 +17,15 @@ zpevnik/
 
 ## Status
 
-Phase 0 — Foundations. Pipeline and app scaffolds are being laid down.
+Phase 3 — App v1 reader feature-complete on the demo corpus. List
+with full-text search, ChordPro viewer, transpose/capo, Cs↔En
+notation toggle, stave notation via abcjs, dark mode, favorites,
+recents, setlists, tempo-paced Play with note-level highlight (web)
+and line-level fallback (everything else). Reviewer UI for editing
+`song.cho` + structured `melody.json`. Pipeline scaffold runs on
+synthetic input; remaining v1 gaps are native offline asset bundling
+and the cascade of items blocked on a real source PDF — see
+[`HANDOVER.md`](./HANDOVER.md) for the current next-steps list.
 
 ## Roadmap
 
@@ -46,4 +54,12 @@ App:
 cd app
 npm install
 npx expo start
+```
+
+Both services via Docker:
+
+```bash
+docker compose up --build
+# Reader   → http://localhost:8080/
+# Reviewer → http://localhost:8765/  (edits ./songs/ in place)
 ```
