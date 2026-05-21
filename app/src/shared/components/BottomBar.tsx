@@ -12,13 +12,24 @@
  * is laid out above it via flex column, so content never overlaps.
  */
 
-import { useMemo } from 'react';
-import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import {
+  Animated,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '../store/settings';
 import { useTheme, type Theme } from '../store/theme';
 import { SongControls } from './SongControls';
+
+// Snap target for the fully-expanded panel. Roughly fits 3 rows of
+// SongControls groups on a phone-width viewport.
+const OPEN_HEIGHT = 240;
 
 interface BottomBarProps {
   /** True while abcjs / setInterval follow is running. */
@@ -41,32 +52,69 @@ export function BottomBar({
   expanded,
   onExpandedChange,
 }: BottomBarProps) {
-  // Local alias for ergonomics inside the gesture handler.
-  const setExpanded = onExpandedChange;
   const showStaves = useSettings((s) => s.showStaves);
   const setShowStaves = useSettings((s) => s.setShowStaves);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Pan responder for swipe-up to expand / swipe-down to collapse.
-  // Threshold is small (24px) so a casual flick works, but we
-  // require some movement so a normal button tap on a child still
-  // routes to the Pressable's press handler.
+  // Animated height for the expandable panel — tracks the user's
+  // finger during pan, snaps to OPEN_HEIGHT or 0 on release.
+  const panelHeight = useRef(
+    new Animated.Value(expanded ? OPEN_HEIGHT : 0),
+  ).current;
+  const baseHeightRef = useRef(0);
+
+  // Keep the animated height in sync with the prop (e.g. tap-outside
+  // backdrop sets expanded=false from the parent — animate down).
+  useEffect(() => {
+    Animated.timing(panelHeight, {
+      toValue: expanded ? OPEN_HEIGHT : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [expanded, panelHeight]);
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 8,
-        onPanResponderRelease: (_, g) => {
-          if (g.dy < -24) setExpanded(true);
-          else if (g.dy > 24) setExpanded(false);
+        // Only claim the gesture once the finger actually moves — keeps
+        // taps routing to the underlying Pressable children.
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6,
+        onPanResponderGrant: () => {
+          baseHeightRef.current =
+            (panelHeight as unknown as { _value: number })._value;
+        },
+        onPanResponderMove: (_, g) => {
+          const next = Math.max(
+            0,
+            Math.min(OPEN_HEIGHT, baseHeightRef.current - g.dy),
+          );
+          panelHeight.setValue(next);
+        },
+        onPanResponderRelease: () => {
+          const finalH =
+            (panelHeight as unknown as { _value: number })._value;
+          const open = finalH > OPEN_HEIGHT / 2;
+          Animated.timing(panelHeight, {
+            toValue: open ? OPEN_HEIGHT : 0,
+            duration: 160,
+            useNativeDriver: false,
+          }).start();
+          onExpandedChange(open);
         },
       }),
-    [],
+    [panelHeight, onExpandedChange],
   );
 
   return (
     <View
+      // Pan lives on the WHOLE bar so the user can drag from any
+      // touch — including a Pressable child. PanResponder's
+      // `onMoveShouldSetPanResponder` only claims the gesture once
+      // the finger moves >8px on the Y axis, so a normal tap still
+      // routes to the Pressable's onPress.
+      {...panResponder.panHandlers}
       style={[
         styles.container,
         {
@@ -79,37 +127,23 @@ export function BottomBar({
         },
       ]}
     >
-      {/* Drag handle. The PanResponder lives on the outer View (so it
-          can claim the gesture from any touch on the bar) and a
-          Pressable inside provides the tap-to-toggle fallback +
-          accessibility role. */}
-      <View {...panResponder.panHandlers} style={styles.handleHit}>
-        <Pressable
-          onPress={() => setExpanded(!expanded)}
-          accessibilityRole="button"
-          accessibilityLabel={expanded ? 'Hide more controls' : 'Show more controls'}
-          accessibilityHint="Swipe up to expand, down to collapse"
-          accessibilityState={{ expanded }}
-        >
-          <View style={[styles.handle, { backgroundColor: theme.borderSoft }]} />
-        </Pressable>
-      </View>
+      {/* Drag handle — pill graphic + tap fallback. */}
+      <Pressable
+        onPress={() => onExpandedChange(!expanded)}
+        style={styles.handleHit}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Hide more controls' : 'Show more controls'}
+        accessibilityHint="Swipe up to expand, down to collapse"
+        accessibilityState={{ expanded }}
+      >
+        <View style={[styles.handle, { backgroundColor: theme.borderSoft }]} />
+      </Pressable>
 
-      {expanded && (
-        <View
-          style={[
-            styles.expandedPanel,
-            { borderBottomColor: theme.borderSoft, backgroundColor: theme.bgAlt },
-          ]}
-        >
-          <SongControls
-            isPlaying={isPlaying}
-            onTogglePlay={onTogglePlay}
-            isFollowing={isFollowing}
-            onToggleFollow={onToggleFollow}
-          />
-        </View>
-      )}
+      {/* Always-visible row sits ABOVE the expanding panel, so the
+          row's position relative to the bar's top is fixed. The
+          whole bar (handle + row + panel) translates together as
+          panelHeight changes — gives a "sheet sliding up" feel
+          rather than "panel revealing above a static row." */}
       <View style={styles.alwaysRow}>
         <BarBtn
           theme={theme}
@@ -126,6 +160,26 @@ export function BottomBar({
           accessibilityLabel={showStaves ? 'Hide staves' : 'Show staves'}
         />
       </View>
+      {/* Animated panel — height tracks the pan in real time, snaps
+          to OPEN_HEIGHT or 0 on release. Always rendered so the
+          height transition can interpolate smoothly. */}
+      <Animated.View
+        style={[
+          styles.expandedPanel,
+          {
+            height: panelHeight,
+            borderTopColor: theme.borderSoft,
+            backgroundColor: theme.bgAlt,
+          },
+        ]}
+      >
+        <SongControls
+          isPlaying={isPlaying}
+          onTogglePlay={onTogglePlay}
+          isFollowing={isFollowing}
+          onToggleFollow={onToggleFollow}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -137,7 +191,6 @@ function BarBtn({
   label,
   accessibilityLabel,
   accessibilityRole = 'button',
-  flex = 1,
 }: {
   theme: Theme;
   active: boolean;
@@ -145,14 +198,13 @@ function BarBtn({
   label: string;
   accessibilityLabel: string;
   accessibilityRole?: 'button' | 'link';
-  flex?: number;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.btn,
-        { flex, borderColor: theme.border, backgroundColor: theme.inputBg },
+        { borderColor: theme.border, backgroundColor: theme.inputBg },
         active && { backgroundColor: theme.accent, borderColor: theme.accent },
         pressed && { opacity: 0.7 },
       ]}
@@ -191,19 +243,20 @@ const styles = StyleSheet.create({
   expandedPanel: {
     paddingHorizontal: 8,
     paddingTop: 4,
-    borderBottomWidth: 1,
-    maxHeight: 320,
+    borderTopWidth: 1,
+    overflow: 'hidden',
   },
   alwaysRow: {
     flexDirection: 'row',
     paddingHorizontal: 8,
     paddingVertical: 8,
-    gap: 8,
-    alignItems: 'stretch',
+    gap: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   btn: {
+    width: 120,
     paddingVertical: 10,
-    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
