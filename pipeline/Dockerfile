@@ -1,42 +1,50 @@
-# Reviewer HTTP service (FastAPI + uvicorn).
+# Reviewer HTTP service (FastAPI + uvicorn) — slim image.
 #
 # Build context MUST be the repo root, not pipeline/:
 #   docker build -f pipeline/Dockerfile -t zpevnik-review .
 #
-# Run with the corpus mounted as a volume:
+# Run with the corpus mounted as a volume (read-write — reviewer edits):
 #   docker run --rm -p 8765:8765 -v "$(pwd)/songs:/data/songs" zpevnik-review
 #
-# The reviewer reads AND writes song.cho / melody.json under /data/songs, so
-# the volume mount must be read-write. Bind-mount the repo's `songs/` while
-# editing locally; mount a copy for a sandboxed review session.
+# Skips the full pipeline install (opencv-python, pytesseract,
+# pdfplumber, pymupdf, numpy, Pillow) because the reviewer only
+# transitively imports:
+#   zpevnik_pipeline.review.server  (fastapi + pydantic, no others)
+#   zpevnik_pipeline.models         (pure stdlib + pydantic)
+#   zpevnik_pipeline.output.writer  (pure stdlib + ..models)
+#
+# Result: image ~150 MB instead of ~700 MB. If the reviewer ever grows
+# a dependency on a pipeline module that loads cv2/PIL/etc. at import
+# time, this build will break and you'll need to either copy that
+# module in or move back to the full `pip install .[review]` model.
 
 FROM python:3.11-slim AS runtime
 
-# System deps required by the pipeline package (which the reviewer imports
-# transitively via the CLI entry point):
-#   tesseract-ocr     — pytesseract runtime binary
-#   libgl1            — opencv-python (non-headless) shared lib
-#   libglib2.0-0      — opencv-python dep
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-        tesseract-ocr \
-        libgl1 \
-        libglib2.0-0 \
- && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Bring in just the pipeline package so the build cache survives unrelated
-# repo edits (app/, songs/, schema/, …).
-COPY pipeline/pyproject.toml pipeline/README.md ./
-COPY pipeline/zpevnik_pipeline ./zpevnik_pipeline
+# Just the reviewer's actual runtime deps.
+RUN pip install --no-cache-dir \
+        "fastapi>=0.110" \
+        "uvicorn[standard]>=0.30" \
+        "pydantic>=2.7"
 
-# `.[review]` adds fastapi + uvicorn on top of the core pipeline deps.
-RUN pip install --no-cache-dir ".[review]"
+# Copy only the package modules the reviewer transitively touches.
+# Leaving sister modules (chordpro.py, staves.py, slug.py, sections.py)
+# out of the image is what keeps cv2/PIL out — those modules import
+# heavy deps at module load.
+COPY pipeline/zpevnik_pipeline/__init__.py        ./zpevnik_pipeline/__init__.py
+COPY pipeline/zpevnik_pipeline/models.py          ./zpevnik_pipeline/models.py
+COPY pipeline/zpevnik_pipeline/output/__init__.py ./zpevnik_pipeline/output/__init__.py
+COPY pipeline/zpevnik_pipeline/output/writer.py   ./zpevnik_pipeline/output/writer.py
+COPY pipeline/zpevnik_pipeline/review             ./zpevnik_pipeline/review
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 EXPOSE 8765
 VOLUME ["/data/songs"]
 
-# `zpevnik` console script is registered by pyproject.toml.
-CMD ["zpevnik", "review", "--songs", "/data/songs", "--host", "0.0.0.0", "--port", "8765"]
+# Bypasses cli.py (which would force-import numpy/cv2/pytesseract).
+CMD ["python", "-m", "zpevnik_pipeline.review", \
+     "--songs", "/data/songs", \
+     "--host", "0.0.0.0", \
+     "--port", "8765"]
