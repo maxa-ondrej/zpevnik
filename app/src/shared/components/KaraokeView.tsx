@@ -48,10 +48,10 @@ interface KaraokeViewProps {
   onFollowEnd?: () => void;
 }
 
-// Visible vertical extent of the inline staff. Roughly two staff
-// lines tall at the converter's default scale; the active line is
-// kept centered via translateY.
-const STAFF_VIEWPORT_HEIGHT = 140;
+// Visible vertical extent of the staff cut-out. Sized to fit ~2
+// staff lines so the user sees the active phrase plus a peek of
+// what's next; the scrollView auto-scrolls to keep it centered.
+const STAFF_VIEWPORT_HEIGHT = 280;
 
 export function KaraokeView({
   song,
@@ -207,9 +207,15 @@ export function KaraokeView({
     );
   }
 
-  return (
-    <View style={styles.container}>
-      {abc ? (
+  // With a staff present, the lyrics under the notes (abcjs's `w:`
+  // directive) ARE the karaoke text — no separate lyric strip
+  // needed. The staff cut-out shows ~2 lines at a time, abcjs
+  // highlights the active note red, and ScrollView keeps the
+  // active phrase centered. When the song has NO melody.json
+  // (lyric-only), fall back to the prev/current/next text strip.
+  if (abc) {
+    return (
+      <View style={styles.container}>
         <ScrollView
           ref={staffScrollRef}
           style={styles.staffViewport}
@@ -219,7 +225,7 @@ export function KaraokeView({
           <AbcView
             abc={abc}
             transpose={transpose}
-            fontSize={fontSize * 0.8}
+            fontSize={fontSize}
             isFollowing={isFollowing}
             tempo={tempo}
             onBeat={handleBeat}
@@ -228,7 +234,14 @@ export function KaraokeView({
             onNoteEvent={handleNoteEvent}
           />
         </ScrollView>
-      ) : null}
+      </View>
+    );
+  }
+
+  // Fallback for melody-less songs: prev / current / next lyric
+  // strip with per-syllable cursor on the current line.
+  return (
+    <View style={styles.container}>
       <View style={styles.row}>
         {prevLine ? (
           <KaraokeLine
@@ -273,9 +286,6 @@ export function KaraokeView({
           <View style={styles.spacerLine} />
         )}
       </View>
-      <Text style={[styles.progress, { color: theme.textMuted }]}>
-        {focusPosition + 1} / {lyricCount}
-      </Text>
     </View>
   );
 }
