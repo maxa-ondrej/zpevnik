@@ -18,7 +18,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { ParsedSong, SongLine } from '../chordpro/parser';
 import { transposeChord } from '../chordpro/transpose';
@@ -67,35 +67,44 @@ export function KaraokeView({
   const transpose = useSettings((s) => s.transpose);
   const theme = useTheme();
 
-  // Inline staff: when Play advances onto a new line, abcjs posts
-  // the line's y inside the AbcView's WebView. We translate the
-  // inner wrapper so that y is centred inside STAFF_VIEWPORT_HEIGHT.
-  const staffTranslate = useRef(new Animated.Value(0)).current;
+  // Inline staff cut-out: keep just the active line visible inside
+  // STAFF_VIEWPORT_HEIGHT. The AbcView renders the WHOLE staff into
+  // its WebView; we wrap it in a ScrollView pinned to that height and
+  // call `scrollTo` whenever abcjs posts a new staff-line y. Pure
+  // RN scrolling — no Animated.Value transform (which mysteriously
+  // left a gray rectangle on iOS).
+  const staffScrollRef = useRef<ScrollView>(null);
   const onStaffLineChange = (yInsideAbcView: number) => {
     const target = Math.max(
       0,
       yInsideAbcView - STAFF_VIEWPORT_HEIGHT * 0.3,
     );
-    Animated.timing(staffTranslate, {
-      toValue: -target,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
+    staffScrollRef.current?.scrollTo({ y: target, animated: true });
   };
 
-  // Per-note tick for the progressive in-line syllable fill. The
-  // inline AbcView's `onNoteEvent` fires once per played event;
-  // we increment `noteInLine` and reset it whenever the active
-  // line changes (so a new line starts the cursor at zero).
-  const [noteInLine, setNoteInLine] = useState(0);
-  useEffect(() => {
-    setNoteInLine(0);
-  }, [currentLineIndex]);
-  const handleNoteEvent = () => setNoteInLine((n) => n + 1);
+  // GLOBAL note counter across the whole song. The inline AbcView's
+  // `onNoteEvent` fires once per played event. We bucket the running
+  // count against `cumSyllables` to derive which line is active and
+  // how far into that line the cursor sits — no dependency on the
+  // parent's coarser beat-based `followLine` for line transitions.
+  const [noteIndex, setNoteIndex] = useState(0);
 
-  // We still accept onBeat so the parent's `followLine` advances
-  // (mapped from beats → line), but the karaoke cursor is driven
-  // off note events, not beat fractions.
+  // Reset the cursor whenever a new Play session starts (off → on).
+  // Without this, restarting Play mid-song would resume from
+  // wherever the previous run left off.
+  const wasFollowing = useRef(isFollowing);
+  useEffect(() => {
+    if (isFollowing && !wasFollowing.current) {
+      setNoteIndex(0);
+    }
+    wasFollowing.current = isFollowing;
+  }, [isFollowing]);
+
+  const handleNoteEvent = () => setNoteIndex((n) => n + 1);
+
+  // Forward beats to parent so anything else that depends on
+  // `followLine` (e.g. the staves view's line highlight in a
+  // future "show both" mode) still works.
   const handleBeat = (beat: number, total: number) => {
     onBeat?.(beat, total);
   };
@@ -108,21 +117,22 @@ export function KaraokeView({
   );
   const lyricCount = lyricIndices.length;
 
-  // Pick the focused index: if Play has set one, find its position in
-  // lyricIndices (it may point at a blank line; snap to nearest). Else
-  // start at the first lyric line.
-  const focusPosition = useMemo(() => {
-    if (lyricCount === 0) return 0;
-    if (currentLineIndex === undefined) return 0;
-    // Find the largest lyric-line index ≤ currentLineIndex.
-    let pos = 0;
-    for (let i = 0; i < lyricIndices.length; i += 1) {
-      const idx = lyricIndices[i];
-      if (idx !== undefined && idx <= currentLineIndex) pos = i;
-      else break;
+  // Cumulative syllable count up to and including each lyric line.
+  // Drives the line-and-syllable cursor below: a global noteIndex is
+  // bucketed against this to find which line we're on and where
+  // inside it.
+  const cumSyllables = useMemo(() => {
+    const out: number[] = [];
+    let acc = 0;
+    for (const i of lyricIndices) {
+      const line = song.lines[i];
+      if (line) {
+        for (const seg of line.segments) acc += countSyllables(seg.text);
+      }
+      out.push(acc);
     }
-    return pos;
-  }, [currentLineIndex, lyricIndices, lyricCount]);
+    return out;
+  }, [lyricIndices, song.lines]);
 
   if (lyricCount === 0) {
     return (
@@ -134,6 +144,33 @@ export function KaraokeView({
     );
   }
 
+  // Resolve focusPosition + per-line offset from the global noteIndex.
+  // `cumSyllables[i]` is the total syllables through line i; the
+  // active line is the smallest i where noteIndex < cumSyllables[i].
+  // When Play is off (or noteIndex is 0), default to line 0 / first
+  // lyric line via parent prop.
+  const focusPosition = useMemo(() => {
+    if (lyricCount === 0) return 0;
+    if (!isFollowing) {
+      // Parent's coarse `followLine` still drives the passive
+      // landing state when Play isn't running — e.g. clicking
+      // forward via some future "next phrase" affordance.
+      if (currentLineIndex === undefined) return 0;
+      let pos = 0;
+      for (let i = 0; i < lyricIndices.length; i += 1) {
+        const idx = lyricIndices[i];
+        if (idx !== undefined && idx <= currentLineIndex) pos = i;
+        else break;
+      }
+      return pos;
+    }
+    for (let i = 0; i < cumSyllables.length; i += 1) {
+      const c = cumSyllables[i];
+      if (c !== undefined && noteIndex < c) return i;
+    }
+    return lyricCount - 1;
+  }, [isFollowing, noteIndex, cumSyllables, currentLineIndex, lyricIndices, lyricCount]);
+
   const at = (pos: number): SongLine | null => {
     const idx = lyricIndices[pos];
     return idx !== undefined ? (song.lines[idx] ?? null) : null;
@@ -142,10 +179,8 @@ export function KaraokeView({
   const currLine = at(focusPosition);
   const nextLine = focusPosition < lyricCount - 1 ? at(focusPosition + 1) : null;
 
-  // Syllable count across ALL segments of the current line, where
-  // syllables are split on whitespace AND hyphens (the converter
-  // emits 'Pá-na chvá-lit' → 4 syllables; one note ≈ one syllable
-  // for the hymn corpus). Drives the per-syllable highlight.
+  // Syllable count for the current line — sum across all its
+  // segments. Drives the in-line per-syllable cursor.
   const currentSyllableCount = useMemo(
     () =>
       currLine
@@ -156,6 +191,9 @@ export function KaraokeView({
         : 0,
     [currLine],
   );
+  // Offset within the current line = noteIndex - cumSyllables[focusPosition-1].
+  const lineStart = focusPosition > 0 ? (cumSyllables[focusPosition - 1] ?? 0) : 0;
+  const noteInLine = Math.max(0, noteIndex - lineStart);
   const filledSyllables = !isFollowing
     ? currentSyllableCount  // Play off → show the whole line in accent.
     : Math.min(noteInLine, currentSyllableCount);
@@ -172,30 +210,24 @@ export function KaraokeView({
   return (
     <View style={styles.container}>
       {abc ? (
-        <View
-          style={[
-            styles.staffViewport,
-            { borderColor: theme.borderSoft, backgroundColor: theme.bgAlt },
-          ]}
+        <ScrollView
+          ref={staffScrollRef}
+          style={styles.staffViewport}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
         >
-          <Animated.View
-            style={{
-              transform: [{ translateY: staffTranslate }],
-            }}
-          >
-            <AbcView
-              abc={abc}
-              transpose={transpose}
-              fontSize={fontSize * 0.8}
-              isFollowing={isFollowing}
-              tempo={tempo}
-              onBeat={handleBeat}
-              onFollowEnd={onFollowEnd}
-              onStaffLineChange={onStaffLineChange}
-              onNoteEvent={handleNoteEvent}
-            />
-          </Animated.View>
-        </View>
+          <AbcView
+            abc={abc}
+            transpose={transpose}
+            fontSize={fontSize * 0.8}
+            isFollowing={isFollowing}
+            tempo={tempo}
+            onBeat={handleBeat}
+            onFollowEnd={onFollowEnd}
+            onStaffLineChange={onStaffLineChange}
+            onNoteEvent={handleNoteEvent}
+          />
+        </ScrollView>
       ) : null}
       <View style={styles.row}>
         {prevLine ? (
@@ -380,9 +412,6 @@ const styles = StyleSheet.create({
   staffViewport: {
     width: '100%',
     height: STAFF_VIEWPORT_HEIGHT,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderRadius: 8,
     marginBottom: 16,
   },
   row: {
