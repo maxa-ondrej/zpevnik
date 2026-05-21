@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\n_E2 _B2 c _d2 c _B _B _A2 _B,2 _E2 _E F2 _E F _E _E2 |\nw: Bůh je mou skrý- * bez- peč- nou, * * * * * * * *\nc2 _B2 _A _B2 c _A2 G2 _E2 _E2 C _E2 _E C2 C2 |\nw: stráž- cem od mé- ho mlá- dí. * * * * * * *"
+      "body": "\"^Verse 1\"\n_E2 _B2 c _d2 c _B _B _A2 _B,2 _E2 _E F2 _E F _E _E2 |\nw: Bůh je mou skrý- * bez- peč- nou, * * * * * * * *\nc2 _B2 _A _B2 c _A2 G2 _E2 _E2 C _E2 _E C2 C2 :|\nw: stráž- cem od mé- ho mlá- dí. * * * * * * *"
     },
     {
       "type": "verse",

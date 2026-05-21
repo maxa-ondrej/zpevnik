@@ -335,6 +335,41 @@ class TestFirstPhraseTitle:
         assert first_phrase_title(s) == "Aleluja"
 
 
+class TestRepeats:
+    REPEAT_XML = """<score-partwise><part-list><score-part id="P1"/></part-list>
+    <part id="P1">
+      <measure number="1">
+        <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+          <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+        <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+        <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
+      </measure>
+      <measure number="2">
+        <barline location="left"><bar-style>heavy-light</bar-style><repeat direction="forward"/></barline>
+        <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration><type>quarter</type></note>
+        <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>
+      </measure>
+    </part></score-partwise>"""
+
+    def test_parser_sets_starts_and_ends_repeat_flags(self) -> None:
+        s = parse_musicxml_root(ET.fromstring(self.REPEAT_XML))
+        assert s.measures[0].starts_repeat is False
+        assert s.measures[0].ends_repeat is True
+        assert s.measures[1].starts_repeat is True
+        assert s.measures[1].ends_repeat is True
+
+    def test_abc_emits_pipe_colon_for_repeats(self) -> None:
+        s = parse_musicxml_root(ET.fromstring(self.REPEAT_XML))
+        # The light-heavy on m1 also flips section boundary → two sections.
+        bodies = [b["body"] for b in convert_song(s).melody["blocks"]]
+        joined = "\n".join(bodies)
+        assert ":|" in joined          # backward repeat barline
+        assert "|:" in joined          # forward repeat at m2's left
+        # The forward+backward together should NOT produce `| |:`
+        # (the prior trailing | gets replaced by |:).
+        assert " | |: " not in joined
+
+
 class TestExtraVerses:
     def test_chordpro_appends_extra_verses_with_chorus_repeat(self) -> None:
         s = _parse()

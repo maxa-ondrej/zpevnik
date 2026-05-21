@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nA2 B2 A G2 E | ^F2 D E |\nw: Z úst mých zpěv, dík a chvá- la vždy\n^F A G G | ^F4 |\nw: Pá- nu bu- dou znít."
+      "body": "\"^Verse 1\"\nA2 B2 A G2 E | ^F2 D E |\nw: Z úst mých zpěv, dík a chvá- la vždy\n^F A G G | ^F4 :|\nw: Pá- nu bu- dou znít."
     },
     {
       "type": "verse",

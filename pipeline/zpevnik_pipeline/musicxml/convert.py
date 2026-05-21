@@ -292,6 +292,13 @@ def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
         syllables: list[str] = []
         any_lyric_in_line = False
         for m in system:
+            if m.starts_repeat:
+                # Replace the previously-appended trailing `|` (if any)
+                # with `|:` so we get a clean `|: …` join, not `| |:`.
+                if tokens and tokens[-1] == "|":
+                    tokens[-1] = "|:"
+                else:
+                    tokens.append("|:")
             for note in m.notes:
                 if note.chord_above:
                     tokens.append(f'"{note.chord_above}"')
@@ -301,7 +308,7 @@ def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
                     any_lyric_in_line = True
                 elif not note.rest:
                     syllables.append("*")
-            tokens.append("|")
+            tokens.append(":|" if m.ends_repeat else "|")
         parts.append(" ".join(tokens))
         if any_lyric_in_line:
             parts.append("w: " + " ".join(syllables))

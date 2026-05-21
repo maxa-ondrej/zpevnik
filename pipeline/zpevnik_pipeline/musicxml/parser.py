@@ -69,6 +69,13 @@ class Measure:
     starts_section: bool = False           # boundary lands *before* this measure
     section_type_hint: str | None = None   # 'verse' | 'chorus' set by <direction>
     starts_new_system: bool = False        # engraver's line-break marker
+    # Repeat markers from <repeat direction=…> on the surrounding barlines.
+    # `starts_repeat`: a forward repeat barline `|:` sits at this measure's
+    # left edge. `ends_repeat`: a backward repeat barline `:|` sits at the
+    # right. Lets the ABC emitter render the repeat structure faithfully
+    # so abcjs draws the dots and TimingCallbacks plays the repeat through.
+    starts_repeat: bool = False
+    ends_repeat: bool = False
 
 
 @dataclass
@@ -246,15 +253,22 @@ def parse_musicxml_root(root: ET.Element) -> Song:
                     pending_chord = None
                 m.notes.append(note)
 
-        # Right-side barlines fire AFTER this measure → boundary lands on
-        # the next measure. Only `light-heavy` is a section break;
-        # `light-light` is a phrase double-bar (mid-section).
+        # Walk every barline to pick up section boundaries (right-side
+        # only) AND repeat markers (forward on left, backward on right).
+        # `light-light` is a phrase double-bar, NOT a section break.
         for b in m_el.iter("barline"):
-            if b.attrib.get("location", "right") != "right":
-                continue
+            loc = b.attrib.get("location", "right")
             bs = b.find("bar-style")
-            if bs is not None and bs.text == "light-heavy":
-                pending_section_boundary = True
+            rep = b.find("repeat")
+            rep_dir = rep.attrib.get("direction") if rep is not None else None
+
+            if loc == "right":
+                if bs is not None and bs.text == "light-heavy":
+                    pending_section_boundary = True
+                if rep_dir == "backward":
+                    m.ends_repeat = True
+            elif loc == "left" and rep_dir == "forward":
+                m.starts_repeat = True
 
         measures.append(m)
 

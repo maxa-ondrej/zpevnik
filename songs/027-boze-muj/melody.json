@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nE/2 D/2 ^F G/2 D/2 ^F | z/2 ^F/2 A/2 G/2 ^F/2 D/2 B, |\nw: Bo- že můj, Bo- že můj, proč jsi mě o- pu- stil?\n^C/2 B,/2 ^C/2 D/2 ^C/2 D/2 E/2 D/2 E/2 | ^F/2 ^F z |\nw: Proč už mě ne- sly- šíš? Na te- be če- kám."
+      "body": "\"^Verse\"\nE/2 D/2 ^F G/2 D/2 ^F | z/2 ^F/2 A/2 G/2 ^F/2 D/2 B, |\nw: Bo- že můj, Bo- že můj, proč jsi mě o- pu- stil?\n^C/2 B,/2 ^C/2 D/2 ^C/2 D/2 E/2 D/2 E/2 | ^F/2 ^F z :|\nw: Proč už mě ne- sly- šíš? Na te- be če- kám."
     },
     {
       "type": "chorus",

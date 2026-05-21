@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nG G A B c2 c2 B2 G c2 B |\nw: Bla- ze ne- hod- né- mu, hřích svou vlá- du\nA2 G2 z2 |\nw: ztrá- cí,"
+      "body": "\"^Verse 1\"\nG G A B c2 c2 B2 G c2 B |\nw: Bla- ze ne- hod- né- mu, hřích svou vlá- du\nA2 G2 z2 :|\nw: ztrá- cí,"
     },
     {
       "type": "verse",
