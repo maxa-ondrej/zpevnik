@@ -1,0 +1,33 @@
+# Trim the Docker build context — both Dockerfiles use the repo root as
+# context, so anything not needed by either image should be excluded.
+
+# VCS
+.git
+.github
+
+# Python dev caches
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+pipeline/.venv
+
+# Node / Expo
+**/node_modules
+app/.expo
+app/dist
+app/web-build
+
+# Editor / OS junk
+.DS_Store
+.vscode
+.idea
+
+# Local docs that don't belong in any image
+HANDOVER.md
+
+# Dockerfiles + ignore themselves (Docker handles this implicitly but
+# listing keeps the intent explicit).
+**/Dockerfile
+.dockerignore
