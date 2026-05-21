@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nB D |\nw: 1. Dnes\nG2 A B2 c D2 D D2 G |\nw: tvůj lid vstříc ti\nd2 A2 d ^F2 ^F2 G |\nw: já- sá, můj\nc2 B A A2 C2 D E D2 |\nw: Krá- li, i já\nG2 G2 D D2 D2 B, |\nw: s ním, vždyť\nE2 ^F G2 A B,2 B, B,2 E |\nw: ví- ra má a\nB2 ^F2 B ^D2 ^D2 E |\nw: spá- sa jsou\nA2 G ^F ^F2 A,2 B, C B,2 |\nw: vzác- ným da- rem\nE2 E2 B B,2 B,2 B, |\nw: tvým. Mou\nA2 G A2 B D2 B, D2 D |\nw: tou- hu znáš, má\nc2 A2 A E2 D2 D |\nw: přá- ní, teď\nG2 ^F G2 A B,2 B, B,2 D |\nw: smím si brát\nB2 G2 d D2 D2 G |\nw: dla- ní tvou\ne2 d c A2 G2 G E D2 |\nw: lá- sku s žeh- ná-\nG2 G2 D2 D2 |\nw: ním."
+      "body": "\"^Verse\"\nB D |\nw: Dnes *\nG2 A B2 c D2 D D2 G |\nw: tvůj lid vstříc ti * * * *\nd2 A2 d ^F2 ^F2 G |\nw: já- sá, můj * * *\nc2 B A A2 C2 D E D2 |\nw: Krá- li, i já * * * *\nG2 G2 D D2 D2 B, |\nw: s ním, * vždyť * * *\nE2 ^F G2 A B,2 B, B,2 E |\nw: ví- ra má a * * * *\nB2 ^F2 B ^D2 ^D2 E |\nw: spá- sa jsou * * *\nA2 G ^F ^F2 A,2 B, C B,2 |\nw: vzác- ným da- rem * * * *\nE2 E2 B B,2 B,2 B, |\nw: tvým. * Mou * * *\nA2 G A2 B D2 B, D2 D |\nw: tou- hu znáš, má * * * *\nc2 A2 A E2 D2 D |\nw: přá- ní, teď * * *\nG2 ^F G2 A B,2 B, B,2 D |\nw: smím si brát * * * * *\nB2 G2 d D2 D2 G |\nw: dla- ní tvou * * *\ne2 d c A2 G2 G E D2 |\nw: lá- sku s žeh- ná- * * * *\nG2 G2 D2 D2 |\nw: ním. * * *"
     }
   ]
 }

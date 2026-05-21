@@ -5,6 +5,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from zpevnik_pipeline.musicxml.convert import convert_song, first_phrase_title
+from zpevnik_pipeline.musicxml.extra_verses import ExtraVerse
 from zpevnik_pipeline.musicxml.parser import Song, parse_musicxml_root
 
 # A minimal partwise score: 4 measures in 4/4, key C, divisions=4.
@@ -149,6 +150,37 @@ class TestConvert:
         # Lyric line preserves syllabic joining.
         assert "Pá- na chvá- lit" in verse_body or "Pá-na chvá-lit" in verse_body
 
+    def test_parser_strips_verse_marker_from_first_lyric(self) -> None:
+        # `<text>1. Kdo</text>` should arrive in the IR as just 'Kdo'.
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>1. Kdo</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        assert s.measures[0].notes[0].lyric == "Kdo"
+
+    def test_parser_drops_bare_verse_marker_lyric(self) -> None:
+        # `<text>1.</text>` on its own note → lyric becomes None.
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>1.</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>Kdo</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        notes = s.measures[0].notes
+        assert notes[0].lyric is None
+        # And the w: line places `*` so the surviving syllable lines up
+        # under the SECOND note, not the first.
+        body = convert_song(s).melody["blocks"][0]["body"]
+        assert "w: * Kdo" in body
+
     def test_abc_body_emits_w_line_per_measure(self) -> None:
         """Each music line gets its OWN w: directly below it.
 
@@ -287,6 +319,44 @@ class TestFirstPhraseTitle:
         </measure></part></score-partwise>"""
         s = parse_musicxml_root(ET.fromstring(xml))
         assert first_phrase_title(s) == "Aleluja"
+
+
+class TestExtraVerses:
+    def test_chordpro_appends_extra_verses_with_chorus_repeat(self) -> None:
+        s = _parse()
+        extras = [
+            ExtraVerse(number=2, lines=["Druhá první", "Druhá druhá."], chorus_after=True),
+            ExtraVerse(number=3, lines=["Třetí prv", "Třetí druh."], chorus_after=False),
+        ]
+        cho = convert_song(s, extra_verses=extras).song_cho
+        # Verse 2 + a SECOND chorus block (expanded from chorus_after) +
+        # Verse 3 in that order. The XML itself has one chorus block
+        # (the canonical one from the minimal-XML fixture), so finding
+        # a *second* {start_of_chorus} after verse 2 proves the expand.
+        v2 = cho.index("{start_of_verse: 2}")
+        first_chorus = cho.index("{start_of_chorus}")
+        second_chorus = cho.index("{start_of_chorus}", v2)
+        v3 = cho.index("{start_of_verse: 3}", second_chorus)
+        assert first_chorus < v2 < second_chorus < v3
+        # The expanded chorus carries the SAME lyrics as the original.
+        original_body = cho[
+            cho.index("{start_of_chorus}") + len("{start_of_chorus}\n"):
+            cho.index("{end_of_chorus}")
+        ].strip()
+        expanded_body = cho[
+            second_chorus + len("{start_of_chorus}\n"):
+            cho.index("{end_of_chorus}", second_chorus)
+        ].strip()
+        assert original_body == expanded_body
+        # Bodies preserved verbatim.
+        assert "Druhá první" in cho
+        assert "Třetí prv" in cho
+
+    def test_no_extra_verses_means_no_extra_blocks(self) -> None:
+        s = _parse()
+        cho = convert_song(s).song_cho
+        assert "{start_of_verse: 2}" not in cho
+        assert "{chorus}" not in cho
 
 
 class TestChordRendering:

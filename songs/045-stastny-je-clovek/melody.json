@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nc A2 _B |\nw: 1. Šťast- ný je\nc d A2 |\nw: člo- věk,\nc A G2 |\nw: je- muž Bůh\nA G D2 |\nw: od- pus- til\nz F D G |\nw: a je- hož\nF2 _B2 |\nw: vi- na\nA _B c2 |\nw: smí- ře- na\nG2 z |\nw: jest.\nc A2 _B |\nw: Šťast- ný je\nc d A2 |\nw: člo- věk,\nc A G2 |\nw: je- hož Bůh\nA G D2 |\nw: o- či- stil\nC2 D G |\nw: a v je- hož\nF G A2 |\nw: du- ši se\nc F G2 |\nw: ne- skrý- vá\nF2 z |\nw: lest."
+      "body": "\"^Verse\"\nc A2 _B |\nw: Šťast- ný je\nc d A2 |\nw: člo- * věk,\nc A G2 |\nw: je- muž Bůh\nA G D2 |\nw: od- pus- til\nz F D G |\nw: a je- hož\nF2 _B2 |\nw: vi- na\nA _B c2 |\nw: smí- ře- na\nG2 z |\nw: jest.\nc A2 _B |\nw: Šťast- ný je\nc d A2 |\nw: člo- * věk,\nc A G2 |\nw: je- hož Bůh\nA G D2 |\nw: o- či- stil\nC2 D G |\nw: a v je- hož\nF G A2 |\nw: du- ši se\nc F G2 |\nw: ne- skrý- vá\nF2 z |\nw: lest."
     }
   ]
 }

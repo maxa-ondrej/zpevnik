@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nE/2 D/2 ^F G/2 D/2 ^F |\nw: 1. Bo- že můj, Bo- že můj,\nz/2 ^F/2 A/2 G/2 ^F/2 D/2 B, |\nw: proč jsi mě o- pu- stil?\n^C/2 B,/2 ^C/2 D/2 ^C/2 D/2 E/2 D/2 E/2 |\nw: Proč už mě ne- sly- šíš? Na te- be\n^F/2 ^F z |\nw: če- kám."
+      "body": "\"^Verse\"\nE/2 D/2 ^F G/2 D/2 ^F |\nw: Bo- že můj, Bo- že můj,\nz/2 ^F/2 A/2 G/2 ^F/2 D/2 B, |\nw: proč jsi mě o- pu- stil?\n^C/2 B,/2 ^C/2 D/2 ^C/2 D/2 E/2 D/2 E/2 |\nw: Proč už mě ne- sly- šíš? Na te- be\n^F/2 ^F z |\nw: če- kám."
     },
     {
       "type": "chorus",
-      "body": "\"^Chorus\"\n^F/2 E/2 ^F/2 G/2 ^F/2 E/2 ^F/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 |\nw: Sva- tý jsi Ho- spo- din, ve- leb- ný,\nE/2 E/4 ^F2 D/2 ^C/4 D2 |\nw: dů- stoj- ný,\n^F/2 E/2 ^F/2 G/2 ^F/2 E/2 ^F/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 B,/2 B,/2 |\nw: k to- bě lid při- chá- zí vzdá- vat ti\nE ^F2 ^C D2 |\nw: chvá- lu.\nG/2 ^F/2 G/2 A/2 G/2 A/2 B/2 A/2 G/2 E/2 E/2 E/2 D/2 D/2 D/2 D/2 D/2 D/2 |\nw: V te- be vždy dou- fa- li, v stí- nu tvém\n^F/2 D/2 E2 D/2 B,/2 ^C2 |\nw: skry- li se,\nD/2 D/4 D/2 E/2 E/2 E/2 ^F/2 D/2 D/2 B,/2 B,/4 B,/2 ^C/2 ^C/2 ^C/2 A,/2 A,/2 A,/2 |\nw: ty jsi jim do- přá- val u- nik- nout\nE ^F2 B, ^C2 |\nw: zma- ru."
+      "body": "\"^Chorus\"\n^F/2 E/2 ^F/2 G/2 ^F/2 E/2 ^F/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 |\nw: Sva- tý jsi Ho- spo- din, ve- leb- ný, * * * * * * * * *\nE/2 E/4 ^F2 D/2 ^C/4 D2 |\nw: dů- stoj- ný, * * *\n^F/2 E/2 ^F/2 G/2 ^F/2 E/2 ^F/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 D/2 B,/2 B,/2 |\nw: k to- bě lid při- chá- zí vzdá- vat ti * * * * * * * * *\nE ^F2 ^C D2 |\nw: chvá- lu. * *\nG/2 ^F/2 G/2 A/2 G/2 A/2 B/2 A/2 G/2 E/2 E/2 E/2 D/2 D/2 D/2 D/2 D/2 D/2 |\nw: V te- be vždy dou- fa- li, v stí- nu tvém * * * * * * * * *\n^F/2 D/2 E2 D/2 B,/2 ^C2 |\nw: skry- li se, * * *\nD/2 D/4 D/2 E/2 E/2 E/2 ^F/2 D/2 D/2 B,/2 B,/4 B,/2 ^C/2 ^C/2 ^C/2 A,/2 A,/2 A,/2 |\nw: ty jsi jim do- přá- val u- nik- nout * * * * * * * * *\nE ^F2 B, ^C2 |\nw: zma- ru. * *"
     }
   ]
 }

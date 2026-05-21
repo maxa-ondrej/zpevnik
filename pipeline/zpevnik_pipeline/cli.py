@@ -410,11 +410,41 @@ def musicxml(
     """
     import json as _json
     import re as _re
+    import urllib.request as _urllib
 
     from .musicxml import convert_musicxml
+    from .musicxml.extra_verses import ExtraVerse, extract_extra_verses
     from .output.writer import _read_existing_meta, write_index, write_song
 
-    result = convert_musicxml(input_path, title=title or None)
+    # If --source is a proscholy.cz /soubor/{N}.xml URL, auto-fetch the
+    # matching kytara PDF to pick up verses 2/3+ (which the XML lacks).
+    extra_verses: list[ExtraVerse] = []
+    m_src = _re.match(
+        r"^https?://zpevnik\.proscholy\.cz/soubor/(\d+)\.xml$", source,
+    )
+    if m_src:
+        rid = m_src.group(1)
+        kytara_url = f"https://zpevnik.proscholy.cz/soubor/ez/pdf/kytara/{rid}.pdf"
+        cache_path = Path("/tmp/zpevnik-musicxml-cache") / f"kytara-{rid}.pdf"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        if not cache_path.exists():
+            try:
+                req = _urllib.Request(
+                    kytara_url, headers={"User-Agent": "zpevnik-pipeline/0.1"}
+                )
+                with _urllib.urlopen(req, timeout=30) as resp:
+                    cache_path.write_bytes(resp.read())
+            except Exception:
+                cache_path = None  # type: ignore[assignment]
+        if cache_path is not None and cache_path.exists():
+            try:
+                extra_verses = extract_extra_verses(cache_path)
+            except Exception:
+                extra_verses = []
+
+    result = convert_musicxml(
+        input_path, title=title or None, extra_verses=extra_verses,
+    )
 
     # Resolve id: explicit > auto-incremented from existing songs/.
     if id_:
@@ -567,6 +597,29 @@ def musicxml_batch(
                 skipped.append((rid, f"download failed: {e}"))
                 continue
 
+        # Also pull the kytara (guitar) PDF — it carries verses 2/3+
+        # as bare text under the staff. Best-effort: a missing or
+        # non-parseable PDF just means no extra verses for this song.
+        kytara_path = cache_dir / f"kytara-{rid}.pdf"
+        kytara_url = f"https://zpevnik.proscholy.cz/soubor/ez/pdf/kytara/{rid}.pdf"
+        if not kytara_path.exists():
+            try:
+                req = _urllib.Request(kytara_url, headers={"User-Agent": "zpevnik-pipeline/0.1"})
+                with _urllib.urlopen(req, timeout=30) as resp:
+                    kytara_path.write_bytes(resp.read())
+            except Exception:
+                # Many soubor ids don't have a kytara PDF — silent skip.
+                kytara_path = None  # type: ignore[assignment]
+
+        from .musicxml.extra_verses import ExtraVerse, extract_extra_verses
+
+        extra_verses: list[ExtraVerse] = []
+        if kytara_path is not None and kytara_path.exists():
+            try:
+                extra_verses = extract_extra_verses(kytara_path)
+            except Exception:
+                extra_verses = []
+
         # Parse + derive title from first lyrics.
         try:
             song = parse_musicxml(cache_path)
@@ -576,7 +629,7 @@ def musicxml_batch(
         title = first_phrase_title(song)
 
         # Convert (re-parses inside, but reuses our title via override).
-        result = convert_musicxml(cache_path, title=title)
+        result = convert_musicxml(cache_path, title=title, extra_verses=extra_verses)
         # On --force re-runs we reuse the existing local id so we don't
         # allocate a duplicate folder alongside the original.
         if existing_id is not None:

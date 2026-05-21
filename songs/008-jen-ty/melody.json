@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "chorus",
-      "body": "\"^Chorus\"\nA/2 |\nw: Jen\n\"Am\" c c/2 c/2 \"G\" B B/2 |\nw: ty, Pa- ne můj, jen\n\"Am\" c/2 B A/2 A |\nw: tys můj štít,\nA/2 |\nw: má\n\"F\" c/2 c/2 d/2 c/2 \"G\" B/2 B/2 A/2 G/2 |\nw: slá- va, ty mou hla- vu po- zve-\n\"Am\" A2 z/2 |\nw: dáš."
+      "body": "\"^Chorus\"\nA/2 |\nw: Jen\n\"Am\" c c/2 c/2 \"G\" B B/2 |\nw: ty, Pa- ne můj, jen\n\"Am\" c/2 B A/2 A |\nw: tys můj štít, *\nA/2 |\nw: má\n\"F\" c/2 c/2 d/2 c/2 \"G\" B/2 B/2 A/2 G/2 |\nw: slá- va, ty mou hla- vu po- zve-\n\"Am\" A2 z/2 |\nw: dáš."
     },
     {
       "type": "chorus",
-      "body": "\"^Chorus 2\"\nz/2 |\n\"Am\" E/2 E/2 E/2 E/2 \"G\" D/2 D/2 C/2 D/2 |\nw: 1. Mno- ho je těch, kte- ří ko- lem\n\"Am\" E/2 E/2 E z/2 |\nw: vo- la- jí:\nE/2 E/2 |\nw: „V Bo- hu\n\"F\" A A \"G\" B/2 B/2 A/2 G/2 |\nw: žád- nou po- moc ne- na-\n\"Am\" A2 z z/2 |\nw: jdeš!“"
+      "body": "\"^Chorus 2\"\nz/2 |\n\"Am\" E/2 E/2 E/2 E/2 \"G\" D/2 D/2 C/2 D/2 |\nw: Mno- ho je těch, kte- ří ko- lem\n\"Am\" E/2 E/2 E z/2 |\nw: vo- la- jí:\nE/2 E/2 |\nw: „V Bo- hu\n\"F\" A A \"G\" B/2 B/2 A/2 G/2 |\nw: žád- nou po- moc ne- na-\n\"Am\" A2 z z/2 |\nw: jdeš!“"
     }
   ]
 }

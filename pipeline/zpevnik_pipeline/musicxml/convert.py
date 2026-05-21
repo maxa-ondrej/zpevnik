@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .extra_verses import ExtraVerse
 from .parser import Measure, Note, Song, parse_musicxml
 
 __all__ = [
@@ -33,25 +34,37 @@ class ConvertResult:
 
 
 def convert_musicxml(
-    xml_path: Path | str, *, title: str | None = None
+    xml_path: Path | str,
+    *,
+    title: str | None = None,
+    extra_verses: list[ExtraVerse] | None = None,
 ) -> ConvertResult:
     """Read a MusicXML file and produce {meta, song.cho, melody.json}.
 
     `title` overrides whatever the XML declared (often nothing —
     proscholy.cz exports lack <work-title>).
+
+    `extra_verses` lets the caller append verses 2/3+ (typically
+    extracted from the kytara PDF by `extract_extra_verses`) onto
+    the ChordPro output. melody.json is unaffected — the additional
+    verses ride the verse-1 melody at display time.
     """
     song = parse_musicxml(xml_path)
     if title:
         song.title = title
-    return convert_song(song)
+    return convert_song(song, extra_verses=extra_verses)
 
 
-def convert_song(song: Song) -> ConvertResult:
+def convert_song(
+    song: Song,
+    *,
+    extra_verses: list[ExtraVerse] | None = None,
+) -> ConvertResult:
     sections = _split_into_sections(song.measures)
     section_types = _label_sections(sections)
     return ConvertResult(
         meta=_build_meta(song),
-        song_cho=_build_chordpro(song, sections, section_types),
+        song_cho=_build_chordpro(song, sections, section_types, extra_verses or []),
         melody=_build_melody(song, sections, section_types),
     )
 
@@ -94,12 +107,18 @@ def _build_chordpro(
     song: Song,
     sections: list[list[Measure]],
     types: list[str],
+    extra_verses: list[ExtraVerse],
 ) -> str:
     lines: list[str] = []
     if song.title:
         lines.append(f"{{title: {song.title}}}")
     lines.append(f"{{key: {song.key}}}")
     lines.append("")
+
+    # Track the most recent chorus's lyric lines so that `chorus_after`
+    # on an extra verse can inline a full copy. (Our ChordPro parser
+    # doesn't expand the `{chorus}` shorthand, so we expand it here.)
+    last_chorus_lyrics: str | None = None
 
     verse_n = 0
     for sec, typ in zip(sections, types, strict=True):
@@ -113,7 +132,10 @@ def _build_chordpro(
         else:
             lines.append("{start_of_verse}")
 
-        lines.append(_section_to_chordpro_lines(sec))
+        body = _section_to_chordpro_lines(sec)
+        lines.append(body)
+        if typ == "chorus":
+            last_chorus_lyrics = body
 
         if typ == "chorus":
             lines.append("{end_of_chorus}")
@@ -122,6 +144,22 @@ def _build_chordpro(
         else:
             lines.append("{end_of_verse}")
         lines.append("")
+
+    # Append verses 2/3+ pulled from the kytara PDF. They render as
+    # prose without chord markers — the PDF only carries lyric text.
+    # `chorus_after` flags a "Ref." marker in the kytara text; expand
+    # it into a literal copy of the chorus block so the renderer
+    # doesn't need to support the `{chorus}` shorthand.
+    for ev in extra_verses:
+        lines.append(f"{{start_of_verse: {ev.number}}}")
+        lines.extend(ev.lines)
+        lines.append("{end_of_verse}")
+        lines.append("")
+        if ev.chorus_after and last_chorus_lyrics:
+            lines.append("{start_of_chorus}")
+            lines.append(last_chorus_lyrics)
+            lines.append("{end_of_chorus}")
+            lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -233,15 +271,25 @@ def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
     for m in measures:
         tokens: list[str] = []
         syllables: list[str] = []
+        # `any_lyric_in_line` tracks whether this measure carries any
+        # syllable at all — controls whether we emit a w: line below it.
+        any_lyric_in_line = False
+        # Per-note `*` placeholders keep the w: aligned with the notes
+        # above when a non-rest note has no syllable (e.g. the engraver
+        # put the verse number on a note and that lyric was stripped at
+        # parse time).
         for note in m.notes:
             if note.chord_above:
                 tokens.append(f'"{note.chord_above}"')
             tokens.append(_note_to_abc(note, divisions))
             if note.lyric:
                 syllables.append(_syllable_for_w_line(note.lyric, note.syllabic))
+                any_lyric_in_line = True
+            elif not note.rest:
+                syllables.append("*")
         tokens.append("|")
         parts.append(" ".join(tokens))
-        if syllables:
+        if any_lyric_in_line:
             parts.append("w: " + " ".join(syllables))
     return "\n".join(parts)
 

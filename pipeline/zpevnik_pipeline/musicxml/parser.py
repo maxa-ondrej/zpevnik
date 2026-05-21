@@ -8,9 +8,26 @@ to the emitters stays out.
 from __future__ import annotations
 
 import contextlib
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Verse-number markers the engraver sometimes prefixes the first lyric
+# with ("1.", "1)", "V1.", "R."). Two shapes appear in proscholy.cz
+# exports — bare ("1.") and glued ("1. Kdo"). Strip at parse time so
+# they don't leak into the ABC w: line (where a literal space inside
+# a syllable token misaligns the next syllable with the wrong note).
+_LYRIC_VERSE_MARKER_PREFIX_RE = re.compile(r"^[VR]?\d+[.)]\s*", re.IGNORECASE)
+_LYRIC_BARE_VERSE_MARKER_RE = re.compile(r"^[VR]?\d+[.)]$", re.IGNORECASE)
+
+
+def _strip_verse_marker(text: str) -> str:
+    """Return the lyric text with any leading verse-number marker removed."""
+    if _LYRIC_BARE_VERSE_MARKER_RE.match(text):
+        return ""
+    return _LYRIC_VERSE_MARKER_PREFIX_RE.sub("", text)
+
 
 # fifths → tonic. -7..+7. Matches MusicXML <key><fifths> + <mode>major.
 _FIFTHS_TO_MAJOR = {
@@ -294,6 +311,11 @@ def _parse_note(note_el: ET.Element) -> Note:
             # Concatenate adjacent <text> siblings (some scores split words).
             parts = [t.text for t in lyr.findall("text") if t.text]
             lyric = "".join(parts)
+            # Strip leading "1.", "2)", "V1." etc — verse-number markers
+            # that the engraver glued onto (or wrote as) the first lyric.
+            if lyric is not None:
+                stripped = _strip_verse_marker(lyric)
+                lyric = stripped or None
         if syl_el is not None and syl_el.text:
             syllabic = syl_el.text
         break
