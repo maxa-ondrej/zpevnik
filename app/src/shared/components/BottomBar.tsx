@@ -169,6 +169,9 @@ export function BottomBar({
           {
             height: panelHeight,
             borderTopColor: theme.borderSoft,
+            // Hide the divider when collapsed — at height 0 a 1px
+            // top border would still draw a visible hairline.
+            borderTopWidth: expanded ? 1 : 0,
             backgroundColor: theme.bgAlt,
           },
         ]}
@@ -243,7 +246,6 @@ const styles = StyleSheet.create({
   expandedPanel: {
     paddingHorizontal: 8,
     paddingTop: 4,
-    borderTopWidth: 1,
     overflow: 'hidden',
   },
   alwaysRow: {
