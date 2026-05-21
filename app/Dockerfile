@@ -36,5 +36,7 @@ RUN cd app && npm run build:web
 # ---------------------------------------------------------------- runtime ---
 FROM nginx:alpine AS runtime
 COPY --from=builder /build/app/dist /usr/share/nginx/html
+# SPA fallback so dynamic routes like /song/[id] don't 404 against nginx.
+COPY app/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 # nginx:alpine's default CMD already serves /usr/share/nginx/html.
