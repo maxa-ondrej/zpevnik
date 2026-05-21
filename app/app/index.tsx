@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -210,36 +210,48 @@ export default function SongListScreen() {
                   Recently viewed
                 </Text>
                 {recentSongs.map((s) => (
-                  <Link
+                  // Same workaround as the main FlatList row: plain
+                  // Pressable + router.push instead of Link asChild.
+                  <Pressable
                     key={`r-${s.id}`}
-                    href={{ pathname: '/song/[id]', params: { id: s.id } }}
-                    asChild
+                    onPress={() => router.push({ pathname: '/song/[id]', params: { id: s.id } })}
+                    style={[styles.row, { borderColor: theme.borderSoft }]}
+                    accessibilityRole="link"
+                    accessibilityLabel={`Open ${s.title}`}
                   >
-                    <Pressable style={[styles.row, { borderColor: theme.borderSoft }]}>
-                      <Text style={[styles.rowNumber, { color: theme.textMuted }]}>
-                        {s.number ?? ''}
-                      </Text>
-                      <Text style={[styles.rowTitle, { color: theme.text }]}>{s.title}</Text>
-                      {isFavorite(s.id) && (
-                        <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
-                      )}
-                    </Pressable>
-                  </Link>
+                    <Text style={[styles.rowNumber, { color: theme.textMuted }]}>
+                      {s.number ?? ''}
+                    </Text>
+                    <Text style={[styles.rowTitle, { color: theme.text }]}>{s.title}</Text>
+                    {isFavorite(s.id) && (
+                      <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
+                    )}
+                  </Pressable>
                 ))}
                 <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>All songs</Text>
               </View>
             ) : null
           }
           renderItem={({ item }) => (
-            <Link href={{ pathname: '/song/[id]', params: { id: item.id } }} asChild>
-              <Pressable style={[styles.row, { borderColor: theme.borderSoft }]}>
-                <Text style={[styles.rowNumber, { color: theme.textMuted }]}>{item.number ?? ''}</Text>
-                <Text style={[styles.rowTitle, { color: theme.text }]}>{item.title}</Text>
-                {isFavorite(item.id) && (
-                  <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
-                )}
-              </Pressable>
-            </Link>
+            // Plain Pressable + router.push instead of `<Link asChild><Pressable>`:
+            // the asChild slot doesn't reliably flatten the Pressable's style
+            // array as it passes it through to the underlying <a>, which
+            // crashes react-dom with "Failed to set an indexed property [0]
+            // on CSSStyleDeclaration" on initial commit of the cell. Same
+            // workaround as commit 07d3a73 for the header link, applied
+            // here too once the corpus grew past a handful of songs.
+            <Pressable
+              onPress={() => router.push({ pathname: '/song/[id]', params: { id: item.id } })}
+              style={[styles.row, { borderColor: theme.borderSoft }]}
+              accessibilityRole="link"
+              accessibilityLabel={`Open ${item.title}`}
+            >
+              <Text style={[styles.rowNumber, { color: theme.textMuted }]}>{item.number ?? ''}</Text>
+              <Text style={[styles.rowTitle, { color: theme.text }]}>{item.title}</Text>
+              {isFavorite(item.id) && (
+                <Text style={[styles.rowFav, { color: theme.accent }]}>★</Text>
+              )}
+            </Pressable>
           )}
         />
       )}
