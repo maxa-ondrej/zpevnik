@@ -168,11 +168,16 @@ export function BottomBar({
           styles.expandedPanel,
           {
             height: panelHeight,
-            borderTopColor: theme.borderSoft,
-            // Hide the divider when collapsed — at height 0 a 1px
-            // top border would still draw a visible hairline.
-            borderTopWidth: expanded ? 1 : 0,
             backgroundColor: theme.bgAlt,
+            // Fade the panel (incl. its bg) in/out with the height so
+            // a 0-pixel panel doesn't leave a bg sliver behind. The
+            // bg-color difference alone is enough to mark the panel —
+            // no top border needed.
+            opacity: panelHeight.interpolate({
+              inputRange: [0, 4],
+              outputRange: [0, 1],
+              extrapolate: 'clamp',
+            }),
           },
         ]}
       >
