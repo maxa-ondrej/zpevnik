@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:V úzkosti čas kéž tvůj\nM:2/2\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nz G ^F D |\nE2 B A |\nG A ^F ^F |\nE2 |\nD |\nC2 E D |\nB, E ^F G |\nA2 A2 |\n^F2 z |\nG2 ^F ^F |\nE2 E ^F |\nG2 ^F D |\nE D E |\n^F |\nG2 A2 |\nc2 B E |\nA G ^F2 |\nE4 |\nw: 1. V úz- ko- sti čas kéž tvůj Bůh tě vy- sly- ší, ať je- ho jmé- no tě o- chrá- ní. Z chrá- mu ať zní: „Jsem tvou spá- sou i skrý- ší, tvou o- po- rou ve dnech strá- dá- ní.“"
+    }
+  ]
+}

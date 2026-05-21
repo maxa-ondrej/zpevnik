@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Bože náš\nM:2/2\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nD2 A A B2 A2 G2 z2 G2 A B |\nc2 B2 A2 z2 E2 G G ^F2 E2 D2 z2 |\nw: 1. Bo- že náš, slá- vu tvou ne- be- sa s ob- lo- hou moc- ně vy- pra- vu- ‑jí"
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nd2 d d c2 B2 A2 z2 G2 A B c2 |\nB2 A2 B2 A G ^F G E2 D2 z2 |\nd2 G A c2 B2 A2 z2 G2 ^F E ^F2 |\nG2 A2 A2 B A G ^F E2 D4 |\nw: Den po dni vy- prá- ví po- sel- ství tvé slá- vy, noc no- ci je zvě- stu- je. Bez ře- čí, bez hla- su za kaž- dé- ho ča- su moud- rost tvou do- ka- zu- je."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Na tebe spoléhám\nM:3/2\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nB B/2 B/2 c G B2 |\nA A/2 A/2 B G E2 |\nw: Na te- be spo- lé- hám, kéž ne- jsem za- han- ben."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nG/2 ^F/2 E4 |\nA/2 ^F/2 D4 E/2 E/2 ^F |\nw: 1. V úz- ko- stechsrdcemiulev a z mých nesnázímě vy- pro- sti."
+    }
+  ]
+}

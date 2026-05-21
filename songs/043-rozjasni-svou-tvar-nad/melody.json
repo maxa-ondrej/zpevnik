@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Rozjasni svou tvář nad\nM:4/4\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nC/2 F/2 G/2 A/2 A A/2 |\nA/2 G/2 _B/2 A/2 F z |\nA/2 G/2 _B/2 A/2 F/2 F/2 F/2 F/2 |\nz/2 F/2 G/2 A/2 G F |\nC/2 F/2 G/2 A/2 A2 |\nA/2 G/2 _B/2 A/2 F z |\nA/2 G/2 _B/2 A/2 F F |\nz/2 F/2 G/2 A/2 G F |\nw: Roz- jas- ni svou tvář nad slu- žeb- ní- kem svým, han by kéž se ne- do- ži- ji, když te- be vzý- vám. Ty jsi můj Bůh, ty jsi můj Pán, ve svém sli- to- vá- ní buď mou spá- sou."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n_B/2 F/2 G4 |\nc/2 A/2 G/2 F4 G/2 G/2 A |\nw: 1. K to- bě, Hospodine,seutíkám, ať ne- jsem zahanben na vě- ky,"
+    }
+  ]
+}

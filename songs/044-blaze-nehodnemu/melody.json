@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Blaze nehodnému\nM:2/2\nL:1/4\nQ:1/4=120\nK:C",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nG G A B c2 c2 B2 G c2 B |\nA2 G2 z2 |\nw: 1. Bla- ze ne- hod- né- mu, hřích svou vlá- du ztrá- cí,"
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nc A B G E2 C2 |\nG2 G G2 B A2 G2 z2 c A |\nB G E2 C2 G2 A G2 E D2 C4 |\nw: Bla- ze hle- da- jí- cím, Bůh před pá- dem chrá- ní, k li- dem vo- la- jí- cím s lí- to- stí se sklá- ní."
+    }
+  ]
+}

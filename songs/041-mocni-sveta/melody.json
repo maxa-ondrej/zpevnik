@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Mocní světa\nM:6/4\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nD D2 G G2 |\nG F D D E F |\nG E D4 |\nF G A _B c A |\nG2 G |\n_B A F |\nF G G4 |\nF F2 _B _B2 |\n_B A F F G A |\n_B G F4 |\nE F G A |\nG E |\nF2 D2 E F |\nE C D4 |\nw: 1. Moc- ní svě- ta, skloň- te se před Pá- nem moc- něj- ším. Své- mu tvůr- ci vzdej- te čest, on vlád- ne na- de vším. Je- ho jmé- nu sva- té- mu slá- vu při- zná- vej- te a v nád- he- ře sva- ty- ně jej v báz- ni vzý- vej- te."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Z úst mých zpěv\nM:2/2\nL:1/4\nQ:1/4=120\nK:D",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nA2 B2 A G2 E |\n^F2 D E |\n^F A G G |\n^F4 |\nw: 1. Z úst mých zpěv, dík a chvá- la vždy Pá- nu bu- dou znít."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nd2 A2 B G2 A |\n^F2 ^F G G A A |\nB2 E E |\n^F ^F G G |\nA2 D G ^F E E ^D |\nE2 ^F2 G2 ^F2 |\nE D D ^C D4 |\nw: Já- sat před tvá- ří tvou, chlu- bit se skut- ky tvý- mi chci spo- lu s po- kor- ný- mi, tvé jmé- no, Bo- že, o- sla- vím, tvé jmé- no o- sla- vím."
+    }
+  ]
+}

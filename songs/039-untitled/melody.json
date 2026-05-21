@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Untitled\nM:4/4\nL:1/4\nQ:1/4=120\nK:A",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n^G/2 ^G/2 E/2 E/2 |\nA A/2 A/2 A A/2 E E/2 E/2 ^F ^F/2 |\nB/2 B/2 ^F/2 ^F/2 |\nA/2 A/2 ^G ^F/2 ^F/2 E |\n^F/2 ^G/2 E/2 E/2 |\nA ^c/2 ^c/2 E E/2 E/2 |\nB B2 E E2 |\nd ^c/2 B/2 A A ^F ^F/2 ^F/2 ^F ^F |\nB/2 B/2 ^F/2 ^F/2 ^G ^F/2 ^F/2 D/2 D/2 E |\n^G E |\nA2 A ^F/2 A/2 ^F2 ^F D/2 ^F/2 |\nB2 E2 |"
+    }
+  ]
+}

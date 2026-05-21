@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Bůh náš\nM:4/4\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nD E D/2 G/2 A |\nD/2 D E/2 |\nD/2 G/2 A |\nc/2 G/2 A A2 |\nw: Bůh náš, Ho- spo- din, svět- lem je, spa- se- ním, proč se víc bát?"
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nB4 G/2 c/2 B |\nG4 E/2 A/2 G |\nw: 1. Hospodinjemésvětloa má spá- sa, koho bych se bál?"
+    }
+  ]
+}

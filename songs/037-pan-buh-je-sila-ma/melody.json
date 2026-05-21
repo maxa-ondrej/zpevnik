@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Pán Bůh je síla má\nM:3/4\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nE |\nB2 B |\nA2 G |\n^F2 E |\nB2 B |\nA2 G |\n^F2 |\nG ^F G |\nA B A |\nG ^F G |\nA B A |\nG2 ^F2 |\nE2 |\nE2 |\nw: 1. Pán Bůh je sí- la má, vše- cka o- bra- na má! Bez- peč- ně má stá- ti, a- niž se le- ka- ti du- še má."
+    }
+  ]
+}
