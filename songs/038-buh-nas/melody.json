@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nD E D/2 G/2 A |\nw: Bůh náš, Ho- spo- din,\nD/2 D E/2 |\nw: svět- lem je,\nD/2 G/2 A |\nw: spa- se- ním,\nc/2 G/2 A A2 |\nw: proč se víc bát?"
+      "body": "\"^Verse 1\"\nD E D/2 G/2 A | D/2 D E/2 |\nw: Bůh náš, Ho- spo- din, svět- lem je,\nD/2 G/2 A | c/2 G/2 A A2 |\nw: spa- se- ním, proč se víc bát?"
     },
     {
       "type": "verse",

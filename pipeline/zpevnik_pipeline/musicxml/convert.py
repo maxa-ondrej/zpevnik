@@ -256,38 +256,52 @@ def _build_melody(
 def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
     """Emit an ABC body for one section.
 
-    Layout: one music line per source measure, followed IMMEDIATELY by
-    that measure's `w:` syllable line (when it has any). Annotation
-    `"^Label"` sits at the top.
+    Layout: group consecutive measures into one music line per
+    **engraved system** (boundaries from `<print new-system="yes"/>`),
+    followed IMMEDIATELY by that line's `w:` syllable line when any
+    measure in the group carries lyrics. Annotation `"^Label"` sits at
+    the top.
 
-    The per-measure `w:` is load-bearing: abcjs aligns a `w:` directive
-    only to the music line directly above it. Emitting one giant `w:`
-    at the end of a 16-measure block leaves the first 15 measures
-    without lyrics in the rendered staff — exactly the bug the user
-    saw on song 004. The hand-curated demo melodies (songs/001-003)
-    follow the same per-line pattern.
+    Two correctness anchors:
+      - Per-line `w:` — abcjs aligns a w: directive only with the music
+        line directly above; a single end-of-section w: leaves all but
+        the last line without lyrics in the rendered staff.
+      - Per-SYSTEM grouping — every `\\n` in an ABC body forces a
+        staff-line break in abcjs. Emitting one music line per measure
+        produces the ugly "one note, one staff" layout the user
+        screenshotted on song 008 (single-note pickup measure rendered
+        as a full-width empty staff). The engraver's new-system marker
+        is the canonical "break here" signal.
     """
-    parts = [f'"^{label}"']
+    # Group measures by system: each `starts_new_system=True` measure
+    # opens a fresh group (the first measure is implicitly a group
+    # start, so we don't need to special-case it).
+    systems: list[list[Measure]] = []
+    current: list[Measure] = []
     for m in measures:
+        if m.starts_new_system and current:
+            systems.append(current)
+            current = []
+        current.append(m)
+    if current:
+        systems.append(current)
+
+    parts = [f'"^{label}"']
+    for system in systems:
         tokens: list[str] = []
         syllables: list[str] = []
-        # `any_lyric_in_line` tracks whether this measure carries any
-        # syllable at all — controls whether we emit a w: line below it.
         any_lyric_in_line = False
-        # Per-note `*` placeholders keep the w: aligned with the notes
-        # above when a non-rest note has no syllable (e.g. the engraver
-        # put the verse number on a note and that lyric was stripped at
-        # parse time).
-        for note in m.notes:
-            if note.chord_above:
-                tokens.append(f'"{note.chord_above}"')
-            tokens.append(_note_to_abc(note, divisions))
-            if note.lyric:
-                syllables.append(_syllable_for_w_line(note.lyric, note.syllabic))
-                any_lyric_in_line = True
-            elif not note.rest:
-                syllables.append("*")
-        tokens.append("|")
+        for m in system:
+            for note in m.notes:
+                if note.chord_above:
+                    tokens.append(f'"{note.chord_above}"')
+                tokens.append(_note_to_abc(note, divisions))
+                if note.lyric:
+                    syllables.append(_syllable_for_w_line(note.lyric, note.syllabic))
+                    any_lyric_in_line = True
+                elif not note.rest:
+                    syllables.append("*")
+            tokens.append("|")
         parts.append(" ".join(tokens))
         if any_lyric_in_line:
             parts.append("w: " + " ".join(syllables))

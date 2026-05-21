@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nz/2 G/2 F/2 G/2 _A2 |\nw: Ty za- ji- sté\nF/2 _E/2 F/2 _E/2 F/2 G/2 _E2 |\nw: roz- svě- cu- ješ sví- ci mou.\nz/2 _E/2 D/2 _E/2 F F2 |\nw: Hos- po- din, Bůh můj,\n_B/2 _B/2 _A/2 G/2 F/2 _E/2 F/2 _E/2 |\nw: o- svě- cu- je tem- nos- ti mé.\n_E4 |"
+      "body": "\"^Verse 1\"\nz/2 G/2 F/2 G/2 _A2 | F/2 _E/2 F/2 _E/2 F/2 G/2 _E2 |\nw: Ty za- ji- sté roz- svě- cu- ješ sví- ci mou.\nz/2 _E/2 D/2 _E/2 F F2 | _B/2 _B/2 _A/2 G/2 F/2 _E/2 F/2 _E/2 | _E4 |\nw: Hos- po- din, Bůh můj, o- svě- cu- je tem- nos- ti mé. *"
     },
     {
       "type": "verse",

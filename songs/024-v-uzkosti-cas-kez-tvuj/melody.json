@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nz G ^F D |\nw: V úz- ko- sti\nE2 B A |\nw: čas kéž tvůj\nG A ^F ^F |\nw: Bůh tě vy- sly-\nE2 |\nw: ší,\nD |\nw: ať\nC2 E D |\nw: je- ho *\nB, E ^F G |\nw: jmé- * no tě\nA2 A2 |\nw: o- chrá-\n^F2 z |\nw: ní.\nG2 ^F ^F |\nw: Z chrá- mu ať\nE2 E ^F |\nw: zní: „Jsem tvou\nG2 ^F D |\nw: spá- sou i\nE D E |\nw: skrý- * ší,\n^F |\nw: tvou\nG2 A2 |\nw: o- po-\nc2 B E |\nw: rou ve dnech\nA G ^F2 |\nw: strá- * dá-\nE4 |\nw: ní.“"
+      "body": "\"^Verse\"\nz G ^F D | E2 B A | G A ^F ^F | E2 |\nw: V úz- ko- sti čas kéž tvůj Bůh tě vy- sly- ší,\nD | C2 E D | B, E ^F G | A2 A2 | ^F2 z |\nw: ať je- ho * jmé- * no tě o- chrá- ní.\nG2 ^F ^F | E2 E ^F | G2 ^F D | E D E |\nw: Z chrá- mu ať zní: „Jsem tvou spá- sou i skrý- * ší,\n^F | G2 A2 | c2 B E | A G ^F2 | E4 |\nw: tvou o- po- rou ve dnech strá- * dá- ní.“"
     }
   ]
 }

@@ -181,25 +181,39 @@ class TestConvert:
         body = convert_song(s).melody["blocks"][0]["body"]
         assert "w: * Kdo" in body
 
-    def test_abc_body_emits_w_line_per_measure(self) -> None:
-        """Each music line gets its OWN w: directly below it.
+    def test_abc_body_groups_measures_by_system(self) -> None:
+        """Measures share a music line until <print new-system> breaks.
 
-        abcjs only aligns a w: with the music line above it; a single
-        w: at the end of a multi-measure block leaves all but the last
-        measure unlyricked. This test pins the per-measure interleave.
+        Two correctness anchors:
+          - Each `\\n` in an ABC body becomes a staff-line break in
+            abcjs, so per-measure newlines create the one-note-per-
+            staff bug the user saw on song 008.
+          - The w: directive only attaches to the music line directly
+            above; one w: per system aligns syllables across all the
+            measures inside that system.
+
+        Minimal-XML's verse:
+          m1 (starts_new_system=True) + m2          → system 1
+          m3 (starts_new_system=True)               → system 2
+        → expect TWO music lines in the verse body, each followed by
+          its own w:, with m1's chord+note tokens and m2's appearing
+          on the SAME line separated by `|`.
         """
         s = _parse()
         body = convert_song(s).melody["blocks"][0]["body"]
         lines = body.splitlines()
-        # The minimal XML has m1+m2+m3 in the verse section, each with
-        # lyrics → expect exactly 3 w: lines in the verse body.
         w_lines = [ln for ln in lines if ln.startswith("w:")]
-        assert len(w_lines) == 3
-        # m1's w: must precede m2's first chord annotation, not follow it.
-        first_w_idx = lines.index(w_lines[0])
-        # Music line for m2 starts with `"G" G` — find its index.
-        m2_idx = next(i for i, ln in enumerate(lines) if ln.startswith('"G" G'))
-        assert first_w_idx < m2_idx
+        assert len(w_lines) == 2
+        # First music line carries BOTH m1 and m2 — chord tokens for
+        # "C" (m1) and "G" (m2) sit on the same line, separated by `|`.
+        # Label is bare "Verse" when the section is the only verse in
+        # the song; "Verse N" when there are multiple. The minimal-XML
+        # fixture has one verse → bare label.
+        first_music_idx = lines.index('"^Verse"') + 1
+        first_music = lines[first_music_idx]
+        assert '"C" C' in first_music
+        assert '"G" G' in first_music
+        assert first_music.count("|") == 2  # m1's barline + m2's barline
 
     def test_abc_header_includes_tempo_and_key(self) -> None:
         s = _parse()

@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nG B, |\nw: Chci *\nB2 A G2 E D2 C B,2 C |\nw: zpí- vat Pá- nu, * * * *\nD2 E G2 G,2 G, B,2 |\nw: zná můj hlas, * * *\nG B, |\nw: on *\nB2 A D2 D |\nw: spá- sou * *\nB d B D2 D |\nw: sám * se * *\nA2 A2 D2 D2 |\nw: stal, * * *\nG B, |\nw: jak *\nB2 A G2 E D2 C B,2 C |\nw: zá- ře vtmách, jak * * * *\nD2 B, G,2 G, |\nw: slun- ce * *\nD2 A,2 |\nw: jas, *\nG D |\nw: vsvé *\nB d B A B A D2 D E D C |\nw: lás- * ce při * mně * * * * *\nG2 G2 B,2 B,2 |\nw: stál. * * *\nG2 G2 C2 B,2 |\nw: * * A- men."
+      "body": "\"^Verse\"\nG B, | B2 A G2 E D2 C B,2 C | D2 E G2 G,2 G, B,2 |\nw: Chci * zpí- vat Pá- nu, * * * * zná můj hlas, * * *\nG B, | B2 A D2 D | B d B D2 D | A2 A2 D2 D2 |\nw: on * spá- sou * * sám * se * * stal, * * *\nG B, | B2 A G2 E D2 C B,2 C | D2 B, G,2 G, | D2 A,2 |\nw: jak * zá- ře vtmách, jak * * * * slun- ce * * jas, *\nG D | B d B A B A D2 D E D C | G2 G2 B,2 B,2 |\nw: vsvé * lás- * ce při * mně * * * * * stál. * * *\nG2 G2 C2 B,2 |\nw: * * A- men."
     }
   ]
 }

@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nD/2 G/2 A/2 _B |\nw: Ať za- já- sá\nA/2 G/2 F/2 G |\nw: spra- ve- dli- vý,\nG/2 A/2 _B/2 |\nw: vzdá- vat svou\nc A/2 |\nw: chvá- lu\nA/2 _B/2 c/2 d/2 c |\nw: Bo- hu vždy ma- jí\n_B/2 A G |\nw: u- přím- ní."
+      "body": "\"^Verse 1\"\nD/2 G/2 A/2 _B | A/2 G/2 F/2 G | G/2 A/2 _B/2 |\nw: Ať za- já- sá spra- ve- dli- vý, vzdá- vat svou\nc A/2 | A/2 _B/2 c/2 d/2 c | _B/2 A G |\nw: chvá- lu Bo- hu vždy ma- jí u- přím- ní."
     },
     {
       "type": "verse",

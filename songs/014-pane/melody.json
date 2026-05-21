@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nG A _B c _B A |\nw: Pa- ne, jak dů- stoj- né\nG G F/2 G2 |\nw: je jmé- no tvé!\nD E F G F E |\nw: Ze- mě i ne- be jsou\nD D C/2 D D z |\nw: tvé slá- vy pl- ny.\nd c _B A _B c |\nw: I v ú- stech ne- mluv- ňat\nG2 _B2 c2 G2 G2 _B2 _E2 G2 |\nw: tvá chvá- la * * * * *\nd4 D4 ^F4 A4 |\nw: * * * zní."
+      "body": "\"^Verse\"\nG A _B c _B A | G G F/2 G2 |\nw: Pa- ne, jak dů- stoj- né je jmé- no tvé!\nD E F G F E | D D C/2 D D z |\nw: Ze- mě i ne- be jsou tvé slá- vy pl- ny.\nd c _B A _B c | G2 _B2 c2 G2 G2 _B2 _E2 G2 | d4 D4 ^F4 A4 |\nw: I v ú- stech ne- mluv- ňat tvá chvá- la * * * * * * * * zní."
     }
   ]
 }

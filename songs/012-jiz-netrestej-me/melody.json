@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nE2 E E D2 D2 E G2 ^F G2 z2 |\nw: Již ne- tre- stej mě, Pa- * * ne\nB2 B d |\nw: a ne- hně-\nc B A2 G2 z2 |\nw: vej se na mne.\nD2 E G ^F E B2 z2 |\nw: Smi- luj se na- de mnou.\nd2 d c B A G2 E2 z2 |\nw: Hle, kle- sám zba- ven sí- ly,\nA2 A G |\nw: můj den se\n^F E G2 D2 z2 |\nw: k no- ci chý- lí,\nE2 B B A2 ^F2 E4 |\nw: mou u- zdrav ne- moc zlou."
+      "body": "\"^Verse\"\nE2 E E D2 D2 E G2 ^F G2 z2 | B2 B d |\nw: Již ne- tre- stej mě, Pa- * * ne a ne- hně-\nc B A2 G2 z2 | D2 E G ^F E B2 z2 |\nw: vej se na mne. Smi- luj se na- de mnou.\nd2 d c B A G2 E2 z2 | A2 A G |\nw: Hle, kle- sám zba- ven sí- ly, můj den se\n^F E G2 D2 z2 | E2 B B A2 ^F2 E4 |\nw: k no- ci chý- lí, mou u- zdrav ne- moc zlou."
     }
   ]
 }
