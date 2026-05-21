@@ -17,6 +17,7 @@ import { AddToSetlistSheet } from '../../src/shared/components/AddToSetlistSheet
 import { SongControls } from '../../src/shared/components/SongControls';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
+import { songFetch } from '../../src/shared/assets/songFetch';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
 import { totalBeatsFromMelody } from '../../src/shared/melody/totalBeats';
 import { useFavorites } from '../../src/shared/store/favorites';
@@ -47,7 +48,7 @@ function staveUrisFor(dir: string, count: number): string[] {
 
 async function fetchOptionalMelody(dir: string): Promise<Melody | null> {
   try {
-    const r = await fetch(`${dir}/melody.json`);
+    const r = await songFetch(`${dir}/melody.json`);
     if (!r.ok) return null;
     return (await r.json()) as Melody;
   } catch {
@@ -333,7 +334,7 @@ export default function SongScreen() {
     layoutHeightRef.current = 0;
     (async () => {
       try {
-        const indexRes = await fetch('/songs/index.json');
+        const indexRes = await songFetch('/songs/index.json');
         if (!indexRes.ok) throw new Error(`index HTTP ${indexRes.status}`);
         const index = (await indexRes.json()) as SongIndex;
         const meta = index.songs.find((s) => s.id === id);
@@ -341,7 +342,7 @@ export default function SongScreen() {
 
         const dir = `/songs/${meta.id}-${meta.slug}`;
         const [choRes, melody] = await Promise.all([
-          fetch(`${dir}/song.cho`),
+          songFetch(`${dir}/song.cho`),
           fetchOptionalMelody(dir),
         ]);
         if (!choRes.ok) throw new Error(`song.cho HTTP ${choRes.status}`);

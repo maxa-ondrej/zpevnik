@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 
+import { songFetch } from '../../src/shared/assets/songFetch';
 import { useSetlists } from '../../src/shared/store/setlists';
 import { useTheme } from '../../src/shared/store/theme';
 import type { SongIndex, SongMeta } from '../../src/shared/types/song';
@@ -37,7 +38,7 @@ export default function SetlistDetailScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch('/songs/index.json');
+        const r = await songFetch('/songs/index.json');
         if (!r.ok) return;
         const idx = (await r.json()) as SongIndex;
         if (!cancelled) {

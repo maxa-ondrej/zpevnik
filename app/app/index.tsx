@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { songFetch } from '../src/shared/assets/songFetch';
 import { parseChordPro } from '../src/shared/chordpro/parser';
 import { fold, matches } from '../src/shared/search/fold';
 import { extractLyrics } from '../src/shared/search/lyrics';
@@ -50,7 +51,7 @@ export default function SongListScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/songs/index.json');
+        const res = await songFetch('/songs/index.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const index = (await res.json()) as SongIndex;
         if (!cancelled) setState({ kind: 'ready', songs: index.songs });
@@ -63,7 +64,7 @@ export default function SongListScreen() {
           const entries = await Promise.all(
             index.songs.map(async (s): Promise<[string, string] | null> => {
               try {
-                const r = await fetch(`/songs/${s.id}-${s.slug}/song.cho`);
+                const r = await songFetch(`/songs/${s.id}-${s.slug}/song.cho`);
                 if (!r.ok) return null;
                 const cho = await r.text();
                 return [s.id, extractLyrics(parseChordPro(cho))];
