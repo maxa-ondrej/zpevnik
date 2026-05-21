@@ -1,9 +1,0 @@
-{
-  "header": "X:1\nT:Sám Hospodin můj pa\nM:2/2\nL:1/4\nQ:1/4=120\nK:D",
-  "blocks": [
-    {
-      "type": "verse",
-      "body": "\"^Verse\"\nE2 E B, E ^F G/2 A/2 ^F E |\nz/2 E/2 G A B A G ^F E2 |\nE2 E B, E ^F G/2 A/2 ^F E |\nz/2 E/2 G A B A G ^F E |\nz/2 E/2 B A d ^c B A B |\nz/2 B/2 B G ^F G E ^F B, |\nz/2 B,/2 D E ^F B G/2 E/2 ^F E2 |\nw: 1. Sám Ho- spo- din můj pa- stýř je a ten mě před zlým chrá- ní. Vím, že mi všech- no da- ru- je dnes ze svých do- brých dla- ní. On spo- leh- li- vě ve- de mne tam, kde jsou past- vy ze- le- né věč- né- ho slo- va spá- sy."
-    }
-  ]
-}

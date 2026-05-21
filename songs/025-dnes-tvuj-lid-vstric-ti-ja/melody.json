@@ -1,9 +1,0 @@
-{
-  "header": "X:1\nT:Dnes tvůj lid vstříc ti já\nM:6/4\nL:1/4\nQ:1/4=120\nK:G",
-  "blocks": [
-    {
-      "type": "verse",
-      "body": "\"^Verse\"\nB D |\nG2 A B2 c D2 D D2 G |\nd2 A2 d ^F2 ^F2 G |\nc2 B A A2 C2 D E D2 |\nG2 G2 D D2 D2 B, |\nE2 ^F G2 A B,2 B, B,2 E |\nB2 ^F2 B ^D2 ^D2 E |\nA2 G ^F ^F2 A,2 B, C B,2 |\nE2 E2 B B,2 B,2 B, |\nA2 G A2 B D2 B, D2 D |\nc2 A2 A E2 D2 D |\nG2 ^F G2 A B,2 B, B,2 D |\nB2 G2 d D2 D2 G |\ne2 d c A2 G2 G E D2 |\nG2 G2 D2 D2 |\nw: 1. Dnes tvůj lid vstříc ti já- sá, můj Krá- li, i já s ním, vždyť ví- ra má a spá- sa jsou vzác- ným da- rem tvým. Mou tou- hu znáš, má přá- ní, teď smím si brát dla- ní tvou lá- sku s žeh- ná- ním."
-    }
-  ]
-}

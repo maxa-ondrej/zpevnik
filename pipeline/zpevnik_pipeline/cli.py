@@ -525,9 +525,11 @@ def musicxml_batch(
     cache_dir.mkdir(parents=True, exist_ok=True)
     songs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Pre-scan existing songs/ to (a) know the next-available id and
-    # (b) map already-converted sources to their existing local id so
-    # `--force` re-uses that id instead of allocating a duplicate.
+    # Pre-scan existing songs/ to know the next-available id and to
+    # map already-converted source URLs to their existing local id —
+    # `--force` re-uses that id rather than allocating a duplicate.
+    # Stale-folder cleanup (when --force changes the slug) happens at
+    # write time below, not here, so we catch all `{id}-*` siblings.
     next_id = 1
     existing_by_source: dict[str, str] = {}  # sourcePdf URL → local id
     for d in sorted(songs_dir.iterdir()) if songs_dir.is_dir() else []:
@@ -595,6 +597,19 @@ def musicxml_batch(
         except Exception as e:
             skipped.append((rid, f"meta validation failed: {e}"))
             continue
+
+        # If --force changes the slug for an already-converted id,
+        # blow away every OTHER `{local_id}-*` folder so we don't end
+        # up with duplicates for the same logical song. Scan at write
+        # time (not pre-scan) so we catch existing stale folders too,
+        # not just the one we mapped first.
+        if force:
+            import shutil as _shutil
+
+            target_name = f"{local_id}-{meta_model.slug}"
+            for d in songs_dir.iterdir():
+                if d.is_dir() and d.name.startswith(f"{local_id}-") and d.name != target_name:
+                    _shutil.rmtree(d, ignore_errors=True)
 
         song_dir, written = write_song(
             songs_dir, meta=meta_model, chordpro=result.song_cho, force=force,
