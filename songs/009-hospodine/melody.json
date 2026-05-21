@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Hospodine\nM:3/4\nL:1/4\nQ:1/4=120\nK:Ab",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nC/2 _B,/2 C C |\n_D _E F C |\n_D _A G _E |\nF C z |\n_B,/2 _D/2 _D F |\nG _A _B G |\n_A/2 F/2 _E G |\nF F z |\nc/2 c _B c |\n_B _A _B2 |\n_A G _E _D |\nG G F2 |\nw: 1. Ho- spo- di- ne, jak jsou mno- zí ne- přá- te- lé mo- ji. Po- hleď, Bo- že, jak mi hro- zí vstá- va- jí- ce k bo- ji. O mé du- ši mno- zí lžou, že již ne- má po- moc tvou."
+    }
+  ]
+}

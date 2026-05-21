@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Bůh je mou skrýbezpeč\nM:2/2\nL:1/4\nQ:1/4=120\nK:Eb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\n_E2 _B2 c _d2 c _B _B _A2 _B,2 _E2 _E F2 _E F _E _E2 |\nc2 _B2 _A _B2 c _A2 G2 _E2 _E2 C _E2 _E C2 C2 |\nw: 1. Bůh je mou skrý- bez- peč- nou, stráž- cem od mé- ho mlá- dí."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n_e2 d2 c _B2 G _A _B c2 G2 G2 _E _E2 _E C F E2 |\n_A2 G2 F _E2 C D E F2 C2 C2 _A, C2 C _B, _B, A,2 |\nG2 _A2 G F2 _E F4 C2 C2 _B, _B,2 G, _B,4 |\n_E4 _B,4 |"
+    }
+  ]
+}

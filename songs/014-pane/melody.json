@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Pane\nM:6/4\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nG A _B c _B A |\nG G F/2 G2 |\nD E F G F E |\nD D C/2 D D z |\nd c _B A _B c |\nG2 _B2 c2 G2 G2 _B2 _E2 G2 |\nd4 D4 ^F4 A4 |\nw: 1. Pa- ne, jak dů- stoj- né je jmé- no tvé! Ze- mě i ne- be jsou tvé slá- vy pl- ny. I v ú- stech ne- mluv- ňat tvá chvá- la zní."
+    }
+  ]
+}

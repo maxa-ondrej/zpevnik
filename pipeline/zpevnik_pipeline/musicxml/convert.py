@@ -15,6 +15,13 @@ from typing import Any
 
 from .parser import Measure, Note, Song, parse_musicxml
 
+__all__ = [
+    "ConvertResult",
+    "convert_musicxml",
+    "convert_song",
+    "first_phrase_title",
+]
+
 
 @dataclass
 class ConvertResult:
@@ -329,6 +336,59 @@ def _build_meta(song: Song) -> dict[str, Any]:
         "staveCount": 0,
         "reviewStatus": "auto",
     }
+
+
+# Verse-number prefixes the engraver sometimes shows on the first lyric:
+#   '1. ', '1) ', 'V1.', and the bare-syllable variants of each.
+_VERSE_MARKER_RE = re.compile(r"^[VR]?\d+[.)]\s*", re.IGNORECASE)
+_BARE_VERSE_MARKER_RE = re.compile(r"^[VR]?\d+[.)]$", re.IGNORECASE)
+
+
+def first_phrase_title(song: Song, max_syllables: int = 6) -> str:
+    """Build a placeholder title from the first few lyric syllables.
+
+    Used by the batch converter when the source XML carries no title
+    (proscholy.cz exports are like this). Joins begin/middle syllables
+    into whole words and stops at the syllable cap or the first
+    sentence-ending punctuation.
+
+    Verse-number markers can appear in two shapes on the first lyric:
+      - As their own syllable: <text>1.</text>  — skip the whole syllable.
+      - Glued onto the first word: <text>1. Kdo</text> — strip the prefix.
+    """
+    words: list[str] = []
+    current: list[str] = []
+    syllable_count = 0
+    stop = False
+    first_word = True
+    for m in song.measures:
+        for n in m.notes:
+            if not n.lyric:
+                continue
+            text = n.lyric
+            if _BARE_VERSE_MARKER_RE.match(text):
+                continue
+            if first_word:
+                text = _VERSE_MARKER_RE.sub("", text)
+                if not text:
+                    continue
+                first_word = False
+            current.append(text)
+            syllable_count += 1
+            if n.syllabic in (None, "single", "end"):
+                words.append("".join(current))
+                current = []
+                if re.search(r"[.,;!?]$", words[-1]):
+                    stop = True
+                    break
+            if syllable_count >= max_syllables:
+                stop = True
+                break
+        if stop:
+            break
+    if current:
+        words.append("".join(current))
+    return " ".join(words).rstrip(".,;:!?") or "Untitled"
 
 
 # Tiny slug helper — matches the existing pipeline.output.slug behaviour

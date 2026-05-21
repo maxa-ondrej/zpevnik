@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Jak vznešené tvé jmé\nM:2/2\nL:1/4\nQ:1/4=120\nK:Bb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nC2 _E2 F2 G2 c2 _B A G _B A2 G2 z2 |\nc2 c c _B2 d2 c G _A G F2 _E2 z2 |\n_E2 D D C2 G2 _B _B F2 _A2 G2 |\nz G _B2 c2 G2 _B2 G F _E2 D2 C4 |\nw: 1. Jak vzne- še- né tvé jmé- no po vší ze- mi, svou ve- leb- no- stí nad vším vy- vý- še- ný jsi, Ho- spo- di- ne, moc- ný Pa- ne náš, vše, co jsi stvo- řil, stá- le v pé- či máš."
+    }
+  ]
+}

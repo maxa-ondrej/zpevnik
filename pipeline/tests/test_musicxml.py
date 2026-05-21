@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from zpevnik_pipeline.musicxml.convert import convert_song
+from zpevnik_pipeline.musicxml.convert import convert_song, first_phrase_title
 from zpevnik_pipeline.musicxml.parser import Song, parse_musicxml_root
 
 # A minimal partwise score: 4 measures in 4/4, key C, divisions=4.
@@ -167,6 +167,62 @@ class TestConvert:
         assert meta["tempo"] == 100
         assert meta["language"] == "cs"
         assert meta["reviewStatus"] == "auto"
+
+
+class TestFirstPhraseTitle:
+    def test_basic_phrase(self) -> None:
+        # Minimal-XML's first 6 syllables: Pá-na | chvá-lit | bu-du →
+        # three whole words joined.
+        assert first_phrase_title(_parse()) == "Pána chválit budu"
+
+    def test_strips_bare_verse_marker_syllable(self) -> None:
+        # Engraver sometimes writes the verse number as its own syllable.
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>1.</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>Pán</text></lyric></note>
+          <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>náš</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        assert first_phrase_title(s) == "Pán náš"
+
+    def test_strips_verse_marker_glued_to_first_word(self) -> None:
+        # proscholy.cz exports often have '1. Kdo' as a single <text>.
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>1. Kdo</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>se</text></lyric></note>
+          <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>begin</syllabic><text>vzdá</text></lyric></note>
+          <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>end</syllabic><text>vá</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        assert first_phrase_title(s) == "Kdo se vzdává"
+
+    def test_stops_at_sentence_punctuation(self) -> None:
+        # First word with trailing comma → title is just that word + any
+        # full words already collected (the comma cuts before more).
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>Aleluja,</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>chvála</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        assert first_phrase_title(s) == "Aleluja"
 
 
 class TestChordRendering:

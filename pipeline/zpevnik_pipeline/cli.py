@@ -479,5 +479,161 @@ def musicxml(
     console.print(f"  meta.json    (id={new_id}, slug={meta_model.slug})")
 
 
+@app.command("musicxml-batch")
+def musicxml_batch(
+    ids: str = typer.Option(
+        ..., "--ids",
+        help="Comma-separated list and/or ranges, e.g. '1,3,5-10,17'.",
+    ),
+    base_url: str = typer.Option(
+        "https://zpevnik.proscholy.cz/soubor",
+        "--base-url",
+        help="Base URL — '{base}/{id}.xml' is fetched per id.",
+    ),
+    songs_dir: Path = typer.Option(Path("../songs"), "--songs"),
+    cache_dir: Path = typer.Option(
+        Path("/tmp/zpevnik-musicxml-cache"),
+        "--cache",
+        help="Local cache for downloaded XMLs (avoids re-fetching).",
+    ),
+    force: bool = typer.Option(
+        False, "--force",
+        help="Re-convert even when an existing song matches the source URL.",
+    ),
+) -> None:
+    """Batch-convert MusicXML files from a remote source.
+
+    Per-id flow: download `{base_url}/{id}.xml` (cached), convert,
+    derive a placeholder title from the first lyric syllables, allocate
+    the next available local id, write the song folder. Skips ids that
+    were already converted from the same source URL (use --force to
+    re-do them). Songs/index.json is rebuilt once at the end.
+    """
+    import json as _json
+    import re as _re
+    import urllib.request as _urllib
+
+    from .musicxml import convert_musicxml
+    from .musicxml.convert import first_phrase_title
+    from .musicxml.parser import parse_musicxml
+    from .output.writer import _read_existing_meta, write_index, write_song
+
+    remote_ids = _parse_id_spec(ids)
+    if not remote_ids:
+        console.print("[red]No ids parsed from --ids[/red]")
+        raise typer.Exit(code=1)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    songs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Pre-scan existing songs/ to (a) know the next-available id and
+    # (b) detect which remote ids we've already converted.
+    next_id = 1
+    existing_sources: dict[str, Path] = {}  # sourcePdf URL → song dir
+    for d in sorted(songs_dir.iterdir()) if songs_dir.is_dir() else []:
+        m = _re.match(r"^(\d{3,})-", d.name)
+        if m:
+            next_id = max(next_id, int(m.group(1)) + 1)
+        meta_file = d / "meta.json"
+        if meta_file.is_file():
+            meta = _read_existing_meta(meta_file)
+            if meta is not None and meta.sourcePdf:
+                existing_sources[meta.sourcePdf] = d
+
+    new_metas: list[SongMeta] = []
+    skipped: list[tuple[int, str]] = []
+    wrote: list[tuple[int, str, str]] = []  # (remote_id, local_id, title)
+
+    for rid in remote_ids:
+        source_url = f"{base_url}/{rid}.xml"
+        cache_path = cache_dir / f"{rid}.xml"
+
+        # Skip if we already have this exact source (unless --force).
+        if not force and source_url in existing_sources:
+            skipped.append((rid, f"already converted → {existing_sources[source_url].name}"))
+            continue
+
+        # Download (cache hit avoids re-fetch).
+        if not cache_path.exists():
+            try:
+                req = _urllib.Request(source_url, headers={"User-Agent": "zpevnik-pipeline/0.1"})
+                with _urllib.urlopen(req, timeout=30) as resp:
+                    body = resp.read()
+                cache_path.write_bytes(body)
+            except Exception as e:
+                skipped.append((rid, f"download failed: {e}"))
+                continue
+
+        # Parse + derive title from first lyrics.
+        try:
+            song = parse_musicxml(cache_path)
+        except Exception as e:
+            skipped.append((rid, f"parse failed: {e}"))
+            continue
+        title = first_phrase_title(song)
+
+        # Convert (re-parses inside, but reuses our title via override).
+        result = convert_musicxml(cache_path, title=title)
+        local_id = f"{next_id:03d}"
+        next_id += 1
+        result.meta["id"] = local_id
+        result.meta["sourcePdf"] = source_url
+        if not result.meta.get("sourcePages"):
+            result.meta["sourcePages"] = [1]
+
+        try:
+            meta_model = SongMeta.model_validate(result.meta)
+        except Exception as e:
+            skipped.append((rid, f"meta validation failed: {e}"))
+            continue
+
+        song_dir, written = write_song(
+            songs_dir, meta=meta_model, chordpro=result.song_cho, force=force,
+        )
+        if not written:
+            skipped.append((rid, f"skipped (existing approved): {song_dir.name}"))
+            continue
+        (song_dir / "melody.json").write_text(
+            _json.dumps(result.melody, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        new_metas.append(meta_model)
+        wrote.append((rid, local_id, title))
+
+    # Rebuild index from all on-disk metas (new + pre-existing).
+    all_metas: list[SongMeta] = []
+    for d in sorted(songs_dir.iterdir()):
+        meta_file = d / "meta.json"
+        if meta_file.is_file():
+            existing = _read_existing_meta(meta_file)
+            if existing is not None:
+                all_metas.append(existing)
+    write_index(songs_dir, all_metas)
+
+    console.print()
+    console.print(f"[green]Converted[/green] {len(wrote)} song(s):")
+    for rid, lid, title in wrote:
+        console.print(f"  /soubor/{rid}.xml → {lid}  [bold]{title}[/bold]")
+    if skipped:
+        console.print(f"\n[yellow]Skipped[/yellow] {len(skipped)}:")
+        for rid, reason in skipped:
+            console.print(f"  /soubor/{rid}.xml — {reason}")
+
+
+def _parse_id_spec(spec: str) -> list[int]:
+    """Expand a spec like '1,3,5-10,17' into a deduped sorted id list."""
+    out: set[int] = set()
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            lo_s, hi_s = part.split("-", 1)
+            lo, hi = int(lo_s), int(hi_s)
+            out.update(range(min(lo, hi), max(lo, hi) + 1))
+        else:
+            out.add(int(part))
+    return sorted(out)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

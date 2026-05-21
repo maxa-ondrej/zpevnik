@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Hospodine\nM:4/4\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n\"G\" z G/2 A/2 G/2 D/2 z |\n\"D\" z ^F/2 G/2 ^F/2 D/2 E/2 ^F/2 |\n\"C\" G/2 G/2 \"G\" G/2 G/2 \"Am\" G/2 C/2 D/2 C/2 |\n\"G\" B,/2 D/2 z z2 |\nw: Ho- spo- di- ne, Pa- ne náš, jak vzne- še- né je tvo- je jmé- no po vší ze- mi."
+    }
+  ]
+}

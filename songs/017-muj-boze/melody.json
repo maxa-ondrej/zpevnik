@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Můj Bože\nM:2/2\nL:1/4\nQ:1/4=120\nK:D",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n^F2 G ^F E B B G ^F |\nz/2 ^F/2 G ^F E A G ^F E2 |\n^F2 G ^F E B B G ^F |\nz/2 ^F/2 G ^F E A G ^F E |\nz/2 E/2 ^F D ^C B, D E ^F |\nz/2 D/2 E G ^F G E D E |\nz/2 E/2 B G A B A G ^F4 |\nw: 1. Můj Bo- že, po- hleď z vý- so- sti, smi- luj se nad věr- ný- mi, sklí- če- né na- vštiv mi- lo- stí, za- chraň před své- vol- ný- mi. Slo- vo tvé sly- šet ne- chtě- jí, jsou sa- mi so- bě na- dě- jí. Bo- hu se vy- smí- va- jí."
+    }
+  ]
+}

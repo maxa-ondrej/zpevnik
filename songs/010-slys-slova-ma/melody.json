@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Slyš slova má\nM:2/2\nL:1/4\nQ:1/4=120\nK:C",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nD2 A B c2 c2 d c B2 A2 z2 |\nd2 d d c B A2 F2 E2 z2 A2 A A |\nG A c2 B2 A2 z2 F2 F G A2 A2 |\n_B A G2 F2 z2 A2 G F E2 D4 |\nw: 1. Slyš slo- va má, můj Bo- že, Krá- li, mou my- sl po- zo- ruj ty sám, k to- bě když o po- moc vo- lám. Zrá- na hned při- jmi o- běť chvá- ly, v lás- ce jsi stá- lý."
+    }
+  ]
+}

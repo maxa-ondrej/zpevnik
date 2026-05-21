@@ -1,0 +1,9 @@
+{
+  "header": "X:1\nT:Netrestej mne\nM:4/4\nL:1/4\nQ:1/4=120\nK:A",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n^F B, ^F A/2 |\n^G E ^F B |\nA/2 ^G/2 ^F2 |\n^G A E E/2 |\nD E ^F ^F |\nE/2 E/2 D2 |\nD/2 B,/2 ^C ^F/2 G/2 ^F |\nD/2 B,/2 ^C ^F/2 G/2 ^F |\nA ^G/2 ^F/2 ^c B |\nA/2 ^G/2 E ^F2 |\nA ^G/2 ^F/2 ^c B/2 ^F/2 |\nA ^G ^F2 |\nw: 1. Ne- tre- stej mne, Ho- spo- di- ne, v hně- vu svém, ne- ká- rej mne v roz- zlo- be- ní prch- li- vém, ne- boť jsem um- dle- ný, v kos- tech svých ra- ně- ný. Smi- luj se v lás- ce na- de mnou již, jen ty sám, Pa- ne, mne u- zdra- víš."
+    }
+  ]
+}
