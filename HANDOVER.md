@@ -219,7 +219,19 @@ Carried forward from prior HANDOVER, unchanged:
 
 5. **Lyric-search performance at 48 songs.** Measure first.
 
-6. **Reviewer auth model / deployment target.** Deployment-
+6. **Karaoke view (new default for phone).** Show only the
+   previous + current + next "parts" (lines or measures), with
+   text AND notes. Gradually highlight the syllables as Play
+   advances. Less scrolling, larger visible text, easier
+   sing-along on a small screen. The web `TimingCallbacks`
+   eventCallback already fires per note — the same path that
+   feeds the staff highlight today can drive a "current
+   syllable" cursor on a karaoke-style lyric strip. Two views:
+   one mode shows the whole staff (current behavior), the
+   other shows only the active phrase + neighbors. Should
+   become the default landing view on phone.
+
+7. **Reviewer auth model / deployment target.** Deployment-
    context decisions.
 
 ## Important Files Map

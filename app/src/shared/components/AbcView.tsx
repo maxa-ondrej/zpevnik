@@ -74,6 +74,7 @@ export function buildHtml(
   scale: number,
   visualTranspose: number,
   isDark = false,
+  tempo: number = 100,
 ): string {
   const abcLiteral = JSON.stringify(abc);
   const darkFilter = isDark ? 'filter: invert(1) hue-rotate(180deg);' : '';
@@ -85,6 +86,12 @@ export function buildHtml(
 <style>
   html, body { margin: 0; padding: 0; background: transparent; ${darkFilter} }
   #paper { padding: 0; }
+  /* Play-mode note highlight (web path uses the same class). Red
+     survives the dark-mode inverted-color theme. */
+  .${HIGHLIGHT_CLASS},
+  .${HIGHLIGHT_CLASS} path,
+  .${HIGHLIGHT_CLASS} ellipse { fill: #c0392b !important; stroke: #c0392b !important; }
+  .${HIGHLIGHT_CLASS} text { fill: #c0392b !important; }
 </style>
 </head>
 <body>
@@ -92,14 +99,80 @@ export function buildHtml(
 <script src="${ABCJS_CDN}"></script>
 <script>
   (function () {
-    function postSize() {
+    function post(msg) {
       try {
-        var h = document.body.scrollHeight;
         if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ kind: 'size', height: h }));
+          window.ReactNativeWebView.postMessage(JSON.stringify(msg));
         }
       } catch (e) {}
     }
+    function postSize() {
+      try { post({ kind: 'size', height: document.body.scrollHeight }); } catch (e) {}
+    }
+    function clearHighlights() {
+      var nodes = document.querySelectorAll('.${HIGHLIGHT_CLASS}');
+      for (var i = 0; i < nodes.length; i++) nodes[i].classList.remove('${HIGHLIGHT_CLASS}');
+    }
+    function findWrapper(el) {
+      var cur = el;
+      while (cur && cur.nodeType === 1) {
+        if (cur.classList && cur.classList.contains('abcjs-staff-wrapper')) return cur;
+        cur = cur.parentElement;
+      }
+      return null;
+    }
+    function flatten(arr) {
+      if (!arr) return [];
+      if (!Array.isArray(arr)) return [arr];
+      var out = [];
+      for (var i = 0; i < arr.length; i++) {
+        var sub = flatten(arr[i]);
+        for (var j = 0; j < sub.length; j++) out.push(sub[j]);
+      }
+      return out;
+    }
+    window.__z = { visualObj: null, tc: null, tempo: ${tempo} };
+    window.__zStart = function () {
+      if (!window.__z.visualObj || window.__z.tc) return;
+      if (typeof ABCJS.TimingCallbacks !== 'function') return;
+      var tc = new ABCJS.TimingCallbacks(window.__z.visualObj, {
+        qpm: window.__z.tempo,
+        eventCallback: function (event) {
+          clearHighlights();
+          if (event === null) {
+            post({ kind: 'followEnd' });
+            return;
+          }
+          var els = flatten(event.elements);
+          for (var i = 0; i < els.length; i++) {
+            if (els[i] && els[i].classList) els[i].classList.add('${HIGHLIGHT_CLASS}');
+          }
+          if (els.length > 0) {
+            try {
+              var wrapper = findWrapper(els[0]);
+              var ref = wrapper || els[0];
+              if (ref && ref.getBoundingClientRect) {
+                var r = ref.getBoundingClientRect();
+                // y inside the WebView's document (= y inside AbcView,
+                // since the WebView frame sits at 0 inside that View).
+                post({ kind: 'staffLine', y: r.top + (window.scrollY || 0) });
+              }
+            } catch (e) {}
+          }
+        },
+        beatCallback: function (beat, total) {
+          post({ kind: 'beat', beat: beat, total: total });
+        }
+      });
+      try { tc.start(); window.__z.tc = tc; } catch (e) {}
+    };
+    window.__zStop = function () {
+      if (window.__z.tc) {
+        try { window.__z.tc.stop(); } catch (e) {}
+        window.__z.tc = null;
+      }
+      clearHighlights();
+    };
     function render() {
       if (typeof ABCJS === 'undefined') {
         setTimeout(render, 30);
@@ -115,12 +188,11 @@ export function buildHtml(
       // line automatically; otherwise the larger notes overlap their
       // lyrics at the same wrap target.
       var clientWidth = document.body.clientWidth;
-      var scale = ${scale};
       var staffWidth = Math.max(240, clientWidth - 4);
-      var effective = clientWidth / scale;
+      var effective = clientWidth / ${scale};
       var opts = {
         staffwidth: staffWidth,
-        scale: scale,
+        scale: ${scale},
         visualTranspose: ${visualTranspose},
         paddingleft: 0,
         paddingright: 0,
@@ -135,7 +207,11 @@ export function buildHtml(
       if (preferred) {
         opts.wrap = { preferredMeasuresPerLine: preferred, lastLineLimit: 1 };
       }
-      ABCJS.renderAbc("paper", ${abcLiteral}, opts);
+      // add_classes is mandatory for the staff-line wrapper walk-up
+      // findWrapper() relies on in __zStart's eventCallback.
+      opts.add_classes = true;
+      var result = ABCJS.renderAbc("paper", ${abcLiteral}, opts);
+      window.__z.visualObj = Array.isArray(result) ? result[0] : result;
       // Allow layout to settle, then report height.
       requestAnimationFrame(function () {
         postSize();
@@ -348,13 +424,49 @@ export function AbcView({
     return <View ref={ref} style={[{ marginBottom: 24 }, darkStyle]} />;
   }
 
-  const html = buildHtml(abc, scale, transpose, isDark);
+  const html = buildHtml(abc, scale, transpose, isDark, tempo ?? 100);
+  const webViewRef = useRef<WebView>(null);
+
+  // Drive Play inside the WebView: when isFollowing flips, push a
+  // `__zStart()` / `__zStop()` invocation into the page via
+  // injectJavaScript. The HTML pre-registers both as window methods
+  // (see buildHtml above). On a fresh mount the first injection
+  // may race the script init — that's why the injected snippet
+  // wraps in `if (window.__zStart) ...`.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const wv = webViewRef.current;
+    if (!wv) return;
+    const code = isFollowing
+      ? 'if (window.__zStart) { window.__zStart(); } true;'
+      : 'if (window.__zStop) { window.__zStop(); } true;';
+    wv.injectJavaScript(code);
+  }, [isFollowing, tempo, abc]);
 
   const onMessage = (event: WebViewMessageEvent) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data) as { kind?: string; height?: number };
+      const data = JSON.parse(event.nativeEvent.data) as {
+        kind?: string;
+        height?: number;
+        beat?: number;
+        total?: number;
+        y?: number;
+      };
       if (data.kind === 'size' && typeof data.height === 'number' && data.height > 0) {
         setHeight((prev) => (Math.abs(prev - data.height!) > 1 ? data.height! : prev));
+        return;
+      }
+      if (data.kind === 'beat' && typeof data.beat === 'number' && typeof data.total === 'number') {
+        onBeatRef.current?.(data.beat, data.total);
+        return;
+      }
+      if (data.kind === 'staffLine' && typeof data.y === 'number') {
+        onStaffLineChangeRef.current?.(data.y);
+        return;
+      }
+      if (data.kind === 'followEnd') {
+        onFollowEndRef.current?.();
+        return;
       }
     } catch {
       // Ignore non-JSON messages.
@@ -364,6 +476,12 @@ export function AbcView({
   return (
     <View style={{ marginBottom: 24 }}>
       <WebView
+        // Force a fresh WebView when the theme (or other build-time
+        // params baked into the HTML) flips, otherwise some platforms
+        // hold onto the stale source.html and the dark-mode filter
+        // never applies.
+        key={`${isDark ? 'dark' : 'light'}-${tempo ?? 100}`}
+        ref={webViewRef}
         originWhitelist={['*']}
         source={{ html }}
         style={{ height, backgroundColor: 'transparent' }}
