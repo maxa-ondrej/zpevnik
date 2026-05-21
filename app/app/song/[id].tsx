@@ -196,8 +196,13 @@ export default function SongScreen() {
   // abcjs TimingCallbacks drives playback at note-level granularity and
   // calls back via `onBeat`; this setInterval is a coarser line-by-line
   // backup so play mode still does something useful in lyrics-only view.
+  // True whenever an AbcView is mounted somewhere on screen — that
+  // includes the staves view AND karaoke view (which renders an
+  // inline AbcView above its lyric strip).
   const useAbcjsTiming =
-    state.kind === 'ready' && showStaves && state.abc !== null;
+    state.kind === 'ready' &&
+    state.abc !== null &&
+    (viewMode === 'staves' || viewMode === 'karaoke');
 
   useEffect(() => {
     if (!isFollowing || useAbcjsTiming) {
@@ -496,6 +501,11 @@ export default function SongScreen() {
           <KaraokeView
             song={state.song}
             currentLineIndex={isFollowing ? followLine : undefined}
+            abc={state.abc}
+            isFollowing={isFollowing}
+            tempo={state.meta.tempo ?? undefined}
+            onBeat={onAbcBeat}
+            onFollowEnd={onAbcFollowEnd}
           />
         )}
       </ScrollView>
