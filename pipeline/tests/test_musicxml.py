@@ -149,6 +149,26 @@ class TestConvert:
         # Lyric line preserves syllabic joining.
         assert "Pá- na chvá- lit" in verse_body or "Pá-na chvá-lit" in verse_body
 
+    def test_abc_body_emits_w_line_per_measure(self) -> None:
+        """Each music line gets its OWN w: directly below it.
+
+        abcjs only aligns a w: with the music line above it; a single
+        w: at the end of a multi-measure block leaves all but the last
+        measure unlyricked. This test pins the per-measure interleave.
+        """
+        s = _parse()
+        body = convert_song(s).melody["blocks"][0]["body"]
+        lines = body.splitlines()
+        # The minimal XML has m1+m2+m3 in the verse section, each with
+        # lyrics → expect exactly 3 w: lines in the verse body.
+        w_lines = [ln for ln in lines if ln.startswith("w:")]
+        assert len(w_lines) == 3
+        # m1's w: must precede m2's first chord annotation, not follow it.
+        first_w_idx = lines.index(w_lines[0])
+        # Music line for m2 starts with `"G" G` — find its index.
+        m2_idx = next(i for i, ln in enumerate(lines) if ln.startswith('"G" G'))
+        assert first_w_idx < m2_idx
+
     def test_abc_header_includes_tempo_and_key(self) -> None:
         s = _parse()
         header = convert_song(s).melody["header"]
@@ -171,9 +191,53 @@ class TestConvert:
 
 class TestFirstPhraseTitle:
     def test_basic_phrase(self) -> None:
-        # Minimal-XML's first 6 syllables: Pá-na | chvá-lit | bu-du →
-        # three whole words joined.
-        assert first_phrase_title(_parse()) == "Pána chválit budu"
+        # Minimal-XML's first 4 whole words: Pá-na | chvá-lit | bu-du |
+        # na-vě-ky (the test XML happens to have "vě-ky" as one note).
+        assert first_phrase_title(_parse()) == "Pána chválit budu navě-ky"
+
+    def test_caps_at_word_boundary_not_mid_word(self) -> None:
+        # The bug this guard exists for: at max_words=4, a multi-syllable
+        # 4th word should be allowed to complete, not cut mid-syllable.
+        # Lyrics: 'Bůh' | 'je' | 'mou' | 'skrý-bez-peč-nou,' (4 words)
+        xml = """<score-partwise><part-list><score-part id="P1"/></part-list>
+        <part id="P1"><measure number="1">
+          <attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+            <time><beats>4</beats><beat-type>4</beat-type></time></attributes>
+          <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>Bůh</text></lyric></note>
+          <note><pitch><step>D</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>je</text></lyric></note>
+          <note><pitch><step>E</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>single</syllabic><text>mou</text></lyric></note>
+          <note><pitch><step>F</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>begin</syllabic><text>skrý</text></lyric></note>
+          <note><pitch><step>G</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>begin</syllabic><text>bez</text></lyric></note>
+          <note><pitch><step>A</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>middle</syllabic><text>peč</text></lyric></note>
+          <note><pitch><step>B</step><octave>4</octave></pitch><duration>1</duration>
+            <type>quarter</type><lyric number="1"><syllabic>end</syllabic><text>nou,</text></lyric></note>
+        </measure></part></score-partwise>"""
+        s = parse_musicxml_root(ET.fromstring(xml))
+        assert first_phrase_title(s) == "Bůh je mou skrýbezpečnou"
+
+    def test_runaway_lyric_hits_syllable_escape_hatch(self) -> None:
+        # 20 begin/middle syllables in a row with no end → the title
+        # has to give up at some point. Hard cap = 16 syllables.
+        parts = ["<score-partwise><part-list><score-part id=\"P1\"/></part-list><part id=\"P1\"><measure number=\"1\">"]
+        parts.append('<attributes><divisions>1</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time></attributes>')
+        for i in range(20):
+            syl = "begin" if i == 0 else "middle"
+            parts.append(
+                f'<note><pitch><step>C</step><octave>4</octave></pitch>'
+                f'<duration>1</duration><type>quarter</type>'
+                f'<lyric number="1"><syllabic>{syl}</syllabic>'
+                f'<text>la</text></lyric></note>'
+            )
+        parts.append("</measure></part></score-partwise>")
+        s = parse_musicxml_root(ET.fromstring("".join(parts)))
+        # Should be exactly 16 "la"s joined into one half-word.
+        assert first_phrase_title(s) == "la" * 16
 
     def test_strips_bare_verse_marker_syllable(self) -> None:
         # Engraver sometimes writes the verse number as its own syllable.

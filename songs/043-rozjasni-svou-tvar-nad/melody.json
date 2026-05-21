@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nC/2 F/2 G/2 A/2 A A/2 |\nA/2 G/2 _B/2 A/2 F z |\nA/2 G/2 _B/2 A/2 F/2 F/2 F/2 F/2 |\nz/2 F/2 G/2 A/2 G F |\nC/2 F/2 G/2 A/2 A2 |\nA/2 G/2 _B/2 A/2 F z |\nA/2 G/2 _B/2 A/2 F F |\nz/2 F/2 G/2 A/2 G F |\nw: Roz- jas- ni svou tvář nad slu- žeb- ní- kem svým, han by kéž se ne- do- ži- ji, když te- be vzý- vám. Ty jsi můj Bůh, ty jsi můj Pán, ve svém sli- to- vá- ní buď mou spá- sou."
+      "body": "\"^Verse 1\"\nC/2 F/2 G/2 A/2 A A/2 |\nw: Roz- jas- ni svou tvář nad\nA/2 G/2 _B/2 A/2 F z |\nw: slu- žeb- ní- kem svým,\nA/2 G/2 _B/2 A/2 F/2 F/2 F/2 F/2 |\nw: han by kéž se ne- do- ži- ji,\nz/2 F/2 G/2 A/2 G F |\nw: když te- be vzý- vám.\nC/2 F/2 G/2 A/2 A2 |\nw: Ty jsi můj Bůh,\nA/2 G/2 _B/2 A/2 F z |\nw: ty jsi můj Pán,\nA/2 G/2 _B/2 A/2 F F |\nw: ve svém sli- to- vá- ní\nz/2 F/2 G/2 A/2 G F |\nw: buď mou spá- sou."
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\n_B/2 F/2 G4 |\nc/2 A/2 G/2 F4 G/2 G/2 A |\nw: 1. K to- bě, Hospodine,seutíkám, ať ne- jsem zahanben na vě- ky,"
+      "body": "\"^Verse 2\"\n_B/2 F/2 G4 |\nw: 1. K to- bě, Hospodine,seutíkám,\nc/2 A/2 G/2 F4 G/2 G/2 A |\nw: ať ne- jsem zahanben na vě- ky,"
     }
   ]
 }

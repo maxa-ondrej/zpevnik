@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nc d A A/2 |\n_B c G G |\nF G A A/2 _B/2 |\nG G A2 |\nG A _B G |\nc A/2 F F |\nD E F A |\nG G F2 |\nw: 1. O- chra- ňuj mne, Bo- že sil- ný, spo- lé- hám na te- be jen. Tys mé do- bro, ni- kdo ji- ný to- bě ne- ní po- do- ben."
+      "body": "\"^Verse\"\nc d A A/2 |\nw: 1. O- chra- ňuj mne,\n_B c G G |\nw: Bo- že sil- ný,\nF G A A/2 _B/2 |\nw: spo- lé- hám na\nG G A2 |\nw: te- be jen.\nG A _B G |\nw: Tys mé do- bro,\nc A/2 F F |\nw: ni- kdo ji- ný\nD E F A |\nw: to- bě ne- ní\nG G F2 |\nw: po- do- ben."
     }
   ]
 }

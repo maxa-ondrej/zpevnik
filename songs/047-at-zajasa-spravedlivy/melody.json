@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Ať zajásá spravedlivý\nM:6/8\nL:1/4\nQ:1/4=120\nK:Bb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nD/2 G/2 A/2 _B |\nw: Ať za- já- sá\nA/2 G/2 F/2 G |\nw: spra- ve- dli- vý,\nG/2 A/2 _B/2 |\nw: vzdá- vat svou\nc A/2 |\nw: chvá- lu\nA/2 _B/2 c/2 d/2 c |\nw: Bo- hu vždy ma- jí\n_B/2 A G |\nw: u- přím- ní."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nG4 D/2 C/2 D/2 D/2 |\nw: 1. Radujtesespravedlivíz Ho spo- di- na,\nD/2 A/2 _B/2 c4 A |\nw: slu- ší se, abyhodobříchváli"
+    }
+  ]
+}

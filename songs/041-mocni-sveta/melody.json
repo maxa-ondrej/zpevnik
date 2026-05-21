@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nD D2 G G2 |\nG F D D E F |\nG E D4 |\nF G A _B c A |\nG2 G |\n_B A F |\nF G G4 |\nF F2 _B _B2 |\n_B A F F G A |\n_B G F4 |\nE F G A |\nG E |\nF2 D2 E F |\nE C D4 |\nw: 1. Moc- ní svě- ta, skloň- te se před Pá- nem moc- něj- ším. Své- mu tvůr- ci vzdej- te čest, on vlád- ne na- de vším. Je- ho jmé- nu sva- té- mu slá- vu při- zná- vej- te a v nád- he- ře sva- ty- ně jej v báz- ni vzý- vej- te."
+      "body": "\"^Verse\"\nD D2 G G2 |\nw: 1. Moc- ní svě- ta,\nG F D D E F |\nw: skloň- te se před Pá- nem\nG E D4 |\nw: moc- něj- ším.\nF G A _B c A |\nw: Své- mu tvůr- ci vzdej- te\nG2 G |\nw: čest, on\n_B A F |\nw: vlád- ne\nF G G4 |\nw: na- de vším.\nF F2 _B _B2 |\nw: Je- ho jmé- nu\n_B A F F G A |\nw: sva- té- mu slá- vu při-\n_B G F4 |\nw: zná- vej- te\nE F G A |\nw: a v nád- he- ře\nG E |\nw: sva- ty-\nF2 D2 E F |\nw: ně jej v báz- ni\nE C D4 |\nw: vzý- vej- te."
     }
   ]
 }

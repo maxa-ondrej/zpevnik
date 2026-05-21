@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nG G A B c2 c2 B2 G c2 B |\nA2 G2 z2 |\nw: 1. Bla- ze ne- hod- né- mu, hřích svou vlá- du ztrá- cí,"
+      "body": "\"^Verse 1\"\nG G A B c2 c2 B2 G c2 B |\nw: 1. Bla- ze ne- hod- né- mu, hřích svou vlá- du\nA2 G2 z2 |\nw: ztrá- cí,"
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\nc A B G E2 C2 |\nG2 G G2 B A2 G2 z2 c A |\nB G E2 C2 G2 A G2 E D2 C4 |\nw: Bla- ze hle- da- jí- cím, Bůh před pá- dem chrá- ní, k li- dem vo- la- jí- cím s lí- to- stí se sklá- ní."
+      "body": "\"^Verse 2\"\nc A B G E2 C2 |\nw: Bla- ze hle- da- jí- cím,\nG2 G G2 B A2 G2 z2 c A |\nw: Bůh před pá- dem chrá- ní, k li- dem\nB G E2 C2 G2 A G2 E D2 C4 |\nw: vo- la- jí- cím s lí- to- stí se sklá- ní."
     }
   ]
 }

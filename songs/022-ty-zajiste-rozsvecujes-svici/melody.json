@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Ty zajisté rozsvěcuješ svíci\nM:4/4\nL:1/4\nQ:1/4=120\nK:Eb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nz/2 G/2 F/2 G/2 _A2 |\nw: Ty za- ji- sté\nF/2 _E/2 F/2 _E/2 F/2 G/2 _E2 |\nw: roz- svě- cu- ješ sví- ci mou.\nz/2 _E/2 D/2 _E/2 F F2 |\nw: Hos- po- din, Bůh můj,\n_B/2 _B/2 _A/2 G/2 F/2 _E/2 F/2 _E/2 |\nw: o- svě- cu- je tem- nos- ti mé.\n_E4 |"
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n_E4 F/2 F/2 F/2 G/2 F/2 F |\nF4 _E/2 F/2 G/2 _A/2 G |"
+    }
+  ]
+}

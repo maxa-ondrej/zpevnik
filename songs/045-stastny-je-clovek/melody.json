@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nc A2 _B |\nc d A2 |\nc A G2 |\nA G D2 |\nz F D G |\nF2 _B2 |\nA _B c2 |\nG2 z |\nc A2 _B |\nc d A2 |\nc A G2 |\nA G D2 |\nC2 D G |\nF G A2 |\nc F G2 |\nF2 z |\nw: 1. Šťast- ný je člo- věk, je- muž Bůh od- pus- til a je- hož vi- na smí- ře- na jest. Šťast- ný je člo- věk, je- hož Bůh o- či- stil a v je- hož du- ši se ne- skrý- vá lest."
+      "body": "\"^Verse\"\nc A2 _B |\nw: 1. Šťast- ný je\nc d A2 |\nw: člo- věk,\nc A G2 |\nw: je- muž Bůh\nA G D2 |\nw: od- pus- til\nz F D G |\nw: a je- hož\nF2 _B2 |\nw: vi- na\nA _B c2 |\nw: smí- ře- na\nG2 z |\nw: jest.\nc A2 _B |\nw: Šťast- ný je\nc d A2 |\nw: člo- věk,\nc A G2 |\nw: je- hož Bůh\nA G D2 |\nw: o- či- stil\nC2 D G |\nw: a v je- hož\nF G A2 |\nw: du- ši se\nc F G2 |\nw: ne- skrý- vá\nF2 z |\nw: lest."
     }
   ]
 }

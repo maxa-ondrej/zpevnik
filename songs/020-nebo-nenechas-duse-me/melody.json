@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Nebo nenecháš duše mé\nM:4/4\nL:1/4\nQ:1/4=120\nK:Bb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nF/2 D/2 G/2 F/2 D2 |\nw: Ne- bo ne- ne- cháš\nz/2 D/2 C/2 _B,/2 D/2 D/2 z |\nw: du- še mé v pek le,\nF/2 D/2 G/2 F/2 D2 |\nw: zná mou u- či- níš\nz/2 F/2 G/2 _A/2 _A/2 G/2 G |\nw: mi ce- stu ži- vo- ta.\nz4 |"
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n_A4 _A4 |\nG4 z4 G8 |\nF4 |\nG4 |\nA/2 A/2 G/2 A/2 A2 |"
+    }
+  ]
+}

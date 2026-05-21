@@ -1,0 +1,13 @@
+{
+  "header": "X:1\nT:Nebudu se báti zlého\nM:4/4\nL:1/4\nQ:1/4=120\nK:D",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nG/2 G/2 ^F/2 G/2 B A ^F ^F2 |\nw: Ne- bu- du se bá- ti zlé- ho,\nz/2 E/2 ^D/2 E/2 G/2 ^F D D D2 E2 ^F2 |\nw: ne- bo ty se mnou jsi, ty se mnou jsi."
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\n^F/2 ^F/2 ^F/2 ^F/2 E/2 ^C/2 ^C |\nw: 1. Ho- spo- din jest můj pa- stýř,\n^F/2 ^F/2 ^F/2 ^F/2 E/2 |\nw: ne- bu- du mí- ti\n^C/2 ^C/2 ^C/2 ^C |\nw: ne- do- stat- ku.\nD E F F E D |\nw: Na past- vách ze- le- ných\nD/2 C/2 C2 |\nw: pa- se mne,\n_B,/2 C/2 C/2 D/2 D/2 E/2 E/2 ^F |\nw: k vo- dám ti- chým mne při vo- dí.\n^F/2 ^F/2 ^F/2 E/2 ^C/2 ^C/2 ^C |\n^F/2 ^F/2 ^F/2 |\n^F/2 ^F/2 ^F/2 E/2 E/2 E/2 E/2 E/2 ^C/2 ^C/2 ^C/2 ^C2 z/2 |\nD E F F E D D/2 C/2 C2 |\n_B,/2 C/2 C/2 D/2 D/2 E/2 E/2 ^F |"
+    }
+  ]
+}

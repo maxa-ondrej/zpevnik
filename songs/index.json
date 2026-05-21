@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-21T20:15:52.487653Z",
+  "generatedAt": "2026-05-21T20:32:05.147215Z",
   "songs": [
     {
       "id": "001",
@@ -213,6 +213,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "013",
+      "slug": "jak-vznesene-tve-jmeno",
+      "title": "Jak vznešené tvé jméno",
+      "number": 10,
+      "key": "Bb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/10.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "014",
       "slug": "pane",
       "title": "Pane",
@@ -264,6 +281,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "016",
+      "slug": "buh-je-mou-skrybezpecnou",
+      "title": "Bůh je mou skrýbezpečnou",
+      "number": 14,
+      "key": "Eb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/14.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "017",
       "slug": "muj-boze",
       "title": "Můj Bože",
@@ -273,6 +307,23 @@
       "language": "cs",
       "tags": [],
       "sourcePdf": "https://zpevnik.proscholy.cz/soubor/15.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "018",
+      "slug": "z-nas-kdo-smi-s-panem",
+      "title": "Z nás kdo smí s Pánem",
+      "number": 18,
+      "key": "Bb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/18.xml",
       "sourcePages": [
         1
       ],
@@ -332,6 +383,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "020",
+      "slug": "nebo-nenechas-duse-me",
+      "title": "Nebo nenecháš duše mé",
+      "number": 20,
+      "key": "Bb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/20.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "021",
       "slug": "na-zachranu-tvou",
       "title": "Na záchranu tvou",
@@ -352,6 +420,23 @@
       "id": "022",
       "slug": "ty-zajiste-rozsve",
       "title": "Ty zajisté rozsvě",
+      "number": 22,
+      "key": "Eb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/22.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "022",
+      "slug": "ty-zajiste-rozsvecujes-svici",
+      "title": "Ty zajisté rozsvěcuješ svíci",
       "number": 22,
       "key": "Eb",
       "tempo": 120,
@@ -392,6 +477,23 @@
       "language": "cs",
       "tags": [],
       "sourcePdf": "https://zpevnik.proscholy.cz/soubor/24.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "025",
+      "slug": "dnes-tvuj-lid-vstric",
+      "title": "Dnes tvůj lid vstříc",
+      "number": 25,
+      "key": "G",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/25.xml",
       "sourcePages": [
         1
       ],
@@ -468,6 +570,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "028",
+      "slug": "hospodin-raci-sam-pas",
+      "title": "Hospodin ráčí sám pas",
+      "number": 28,
+      "key": "F",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/28.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "029",
       "slug": "nebudu-se-bati",
       "title": "Nebudu se báti",
@@ -485,9 +604,43 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "029",
+      "slug": "nebudu-se-bati-zleho",
+      "title": "Nebudu se báti zlého",
+      "number": 29,
+      "key": "D",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/29.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "030",
       "slug": "sam-hospodin-muj-pa",
       "title": "Sám Hospodin můj pa",
+      "number": 30,
+      "key": "D",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/30.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "030",
+      "slug": "sam-hospodin-muj-pastyr",
+      "title": "Sám Hospodin můj pastýř",
       "number": 30,
       "key": "D",
       "tempo": 120,
@@ -536,9 +689,43 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "032",
+      "slug": "k-tobe-dusi-pozdvihuji",
+      "title": "K tobě duši pozdvihuji",
+      "number": 33,
+      "key": "G",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/33.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "033",
       "slug": "svou-dusi-pozvedam",
       "title": "Svou duši pozvedám",
+      "number": 34,
+      "key": "G",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/34.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "033",
+      "slug": "svou-dusi-pozvedam-jen",
+      "title": "Svou duši pozvedám jen",
       "number": 34,
       "key": "G",
       "tempo": 120,
@@ -587,6 +774,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "035",
+      "slug": "souzeni-srdce-meho-rozmnozuji",
+      "title": "Soužení srdce mého rozmnožují",
+      "number": 36,
+      "key": "F",
+      "tempo": 99,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/36.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "036",
       "slug": "hospodin-me-je-svet",
       "title": "Hospodin mé je svět",
@@ -596,6 +800,40 @@
       "language": "cs",
       "tags": [],
       "sourcePdf": "https://zpevnik.proscholy.cz/soubor/37.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "036",
+      "slug": "hospodin-me-je-svetlo",
+      "title": "Hospodin mé je světlo",
+      "number": 37,
+      "key": "G",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/37.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "037",
+      "slug": "pan-buh-je-sila",
+      "title": "Pán Bůh je síla",
+      "number": 38,
+      "key": "G",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/38.xml",
       "sourcePages": [
         1
       ],
@@ -706,6 +944,23 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "042",
+      "slug": "s-duverou-k-to-be-volam",
+      "title": "S důvěrou k to bě volám",
+      "number": 44,
+      "key": "C",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/44.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "043",
       "slug": "rozjasni-svou-tvar-nad",
       "title": "Rozjasni svou tvář nad",
@@ -774,9 +1029,43 @@
       "reviewStatus": "auto"
     },
     {
+      "id": "046",
+      "slug": "rozveselte-se-v-hospodinu",
+      "title": "Rozveselte se v Hospodinu",
+      "number": 48,
+      "key": "C",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/48.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
       "id": "047",
       "slug": "at-zajasa-sprave",
       "title": "Ať zajásá sprave",
+      "number": 49,
+      "key": "Bb",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/49.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
+    },
+    {
+      "id": "047",
+      "slug": "at-zajasa-spravedlivy",
+      "title": "Ať zajásá spravedlivý",
       "number": 49,
       "key": "Bb",
       "tempo": 120,

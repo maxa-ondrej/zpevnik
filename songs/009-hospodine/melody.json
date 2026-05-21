@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nC/2 _B,/2 C C |\n_D _E F C |\n_D _A G _E |\nF C z |\n_B,/2 _D/2 _D F |\nG _A _B G |\n_A/2 F/2 _E G |\nF F z |\nc/2 c _B c |\n_B _A _B2 |\n_A G _E _D |\nG G F2 |\nw: 1. Ho- spo- di- ne, jak jsou mno- zí ne- přá- te- lé mo- ji. Po- hleď, Bo- že, jak mi hro- zí vstá- va- jí- ce k bo- ji. O mé du- ši mno- zí lžou, že již ne- má po- moc tvou."
+      "body": "\"^Verse\"\nC/2 _B,/2 C C |\nw: 1. Ho- spo- di- ne,\n_D _E F C |\nw: jak jsou mno- zí\n_D _A G _E |\nw: ne- přá- te- lé\nF C z |\nw: mo- ji.\n_B,/2 _D/2 _D F |\nw: Po- hleď, Bo- že,\nG _A _B G |\nw: jak mi hro- zí\n_A/2 F/2 _E G |\nw: vstá- va- jí- ce\nF F z |\nw: k bo- ji.\nc/2 c _B c |\nw: O mé du- ši\n_B _A _B2 |\nw: mno- zí lžou,\n_A G _E _D |\nw: že již ne- má\nG G F2 |\nw: po- moc tvou."
     }
   ]
 }

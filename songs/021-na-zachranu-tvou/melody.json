@@ -3,7 +3,7 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\nz/2 G/2 z/2 _E/2 |\nG F/2 G/2 _E2 _E D/2 D/2 C2 |\n_E/2 _E/2 _A/2 G/2 F C/2 C/2 C/2 _E/2 D |\nF/2 D/2 |\n_B _B/2 G/2 _A _B/2 D D/2 D/2 F _E/2 |\nc _B _E _E |\nc/2 d/2 _B/2 _E/2 F/2 F/2 |\nG _B c _B/2 _A/2 _E _E _E _E/2 _E/2 |\nG F2 _E D2 |\nw: Na zá- chra- nu tvou, Bo- že, spo- lé- hám, ty svou ce- stu znát mi dá- váš, v ra- do- sti smím dál žít před tvou tvá- ří."
+      "body": "\"^Verse\"\nz/2 G/2 z/2 _E/2 |\nw: Na\nG F/2 G/2 _E2 _E D/2 D/2 C2 |\nw: zá- chra- nu tvou,\n_E/2 _E/2 _A/2 G/2 F C/2 C/2 C/2 _E/2 D |\nw: Bo- že, spo- lé- hám,\nF/2 D/2 |\nw: ty\n_B _B/2 G/2 _A _B/2 D D/2 D/2 F _E/2 |\nw: svou ce- stu znát mi\nc _B _E _E |\nw: dá- váš,\nc/2 d/2 _B/2 _E/2 F/2 F/2 |\nw: v ra- do- sti\nG _B c _B/2 _A/2 _E _E _E _E/2 _E/2 |\nw: smím dál žít před tvou\nG F2 _E D2 |\nw: tvá- ří."
     }
   ]
 }

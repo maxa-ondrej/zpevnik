@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse 1\"\nD/2 D/2 A2 |\nA/2 A/2 G/2 F/2 G/2 A/2 |\nF/2 D/2 D2 |\nw: 1. Bo- že můj, Bo- že, proč jsi mi teď vzdá- len?"
+      "body": "\"^Verse 1\"\nD/2 D/2 A2 |\nw: 1. Bo- že můj,\nA/2 A/2 G/2 F/2 G/2 A/2 |\nw: Bo- že, proč jsi mi teď\nF/2 D/2 D2 |\nw: vzdá- len?"
     },
     {
       "type": "verse",
-      "body": "\"^Verse 2\"\nA |\nc A G F |\nG G |\n_A/2 G/2 F/2 G/2 |\nG A c A |\nG F |\nG G |\n_A/2 G/2 F/2 G/2 G |\nD/2 D/2 A2 |\nA/2 A/2 G/2 F/2 G/2 A/2 |\nF2 _E2 |\nw: Tak zpí- val i král Da- vid, sly- šel jsi jej? Tak v tí- sni kři- čel Da- vid, spa- sil jsi jej? Bo- že můj, Bo- že, proč jsi mi teď vzdá- len?"
+      "body": "\"^Verse 2\"\nA |\nw: Tak\nc A G F |\nw: zpí- val i král\nG G |\nw: Da- vid,\n_A/2 G/2 F/2 G/2 |\nw: sly- šel jsi jej?\nG A c A |\nw: Tak v tí- sni\nG F |\nw: kři- čel\nG G |\nw: Da- vid,\n_A/2 G/2 F/2 G/2 G |\nw: spa- sil jsi jej?\nD/2 D/2 A2 |\nw: Bo- že můj,\nA/2 A/2 G/2 F/2 G/2 A/2 |\nw: Bo- že, proč jsi mi teď\nF2 _E2 |\nw: vzdá- len?"
     }
   ]
 }

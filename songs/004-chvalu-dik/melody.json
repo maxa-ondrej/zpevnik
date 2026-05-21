@@ -3,11 +3,11 @@
   "blocks": [
     {
       "type": "verse",
-      "body": "\"^Verse\"\n\"C\" G G/2 A/2 \"B7\" A2 |\n\"C\" G/2 A/2 B/2 c/2 \"B7\" B A |\nc/2 \"C\" c/2 B/2 A/2 \"Bb\" G A |\n\"A7\" E z z2 |\nD \"Dm\" D D \"Adim\" ^D2 |\n\"C\" E/2 G/2 \"Bb\" E/2 G/2 \"A7\" B A |\nA/2 \"D7\" A/2 c/2 A/2 \"D7\" E _E |\n\"G\" D z z2 |\nG \"C\" G/2 A/2 \"B7\" A2 |\n\"C\" G/2 A/2 B/2 c/2 \"B7\" B A |\nc/2 \"C\" c/2 B/2 A/2 \"Bb\" G A |\n\"A7\" E z z2 |\nD \"Dm\" D D ^D/2 \"Adim\" ^D |\n\"C\" E/2 G/2 \"Bb\" E/2 G/2 \"A7\" B A |\nA/2 \"D7\" A/2 c/2 A/2 \"G7\" E E |\n\"C\" C2 z2 |\nw: Chvá- lu, dík všich- ni vzdej- me Pá- nu, on je ce- stou ži- vo- ta, pro všech- ny má mí- sto ve svém plá- nu je- ho lá- ska, do- bro- ta. 1. Chvá- lu, dík, je- ho jmé- nu slá- va pro- vo- lej- me s ra- do- stí. Na kaž- dý den své slo- vo nám dá- vá pro- vá- ze- né mi- lo- stí."
+      "body": "\"^Verse\"\n\"C\" G G/2 A/2 \"B7\" A2 |\nw: Chvá- lu, dík\n\"C\" G/2 A/2 B/2 c/2 \"B7\" B A |\nw: všich- ni vzdej- me Pá- nu,\nc/2 \"C\" c/2 B/2 A/2 \"Bb\" G A |\nw: on je ce- stou ži- vo-\n\"A7\" E z z2 |\nw: ta,\nD \"Dm\" D D \"Adim\" ^D2 |\nw: pro všech- ny má\n\"C\" E/2 G/2 \"Bb\" E/2 G/2 \"A7\" B A |\nw: mí- sto ve svém plá- nu\nA/2 \"D7\" A/2 c/2 A/2 \"D7\" E _E |\nw: je- ho lá- ska, do- bro-\n\"G\" D z z2 |\nw: ta.\nG \"C\" G/2 A/2 \"B7\" A2 |\nw: 1. Chvá- lu, dík,\n\"C\" G/2 A/2 B/2 c/2 \"B7\" B A |\nw: je- ho jmé- nu slá- va\nc/2 \"C\" c/2 B/2 A/2 \"Bb\" G A |\nw: pro- vo- lej- me s ra- do-\n\"A7\" E z z2 |\nw: stí.\nD \"Dm\" D D ^D/2 \"Adim\" ^D |\nw: Na kaž- dý den\n\"C\" E/2 G/2 \"Bb\" E/2 G/2 \"A7\" B A |\nw: své slo- vo nám dá- vá\nA/2 \"D7\" A/2 c/2 A/2 \"G7\" E E |\nw: pro- vá- ze- né mi- lo-\n\"C\" C2 z2 |\nw: stí."
     },
     {
       "type": "chorus",
-      "body": "\"^Chorus\"\nc/2 \"C\" c/2 c/2 A/2 G A |\n\"C7\" c/2 c/2 c/2 A/2 G A |\nd/2 \"F\" c/2 d/2 c/2 \"C\" ^G/2 c/2 ^G/2 c/2 |\n\"F\" d \"E\" c \"F\" d z |\nd/2 \"D\" d/2 d/2 B/2 A A |\n\"D7\" d/2 d/2 d/2 B/2 A A |\nG/2 \"G\" G/2 G/2 G/2 \"A7\" A/2 G/2 A/2 G/2 |\n\"Gdim\" _B _B \"G7\" G z |\nw: Ha- le- lu- ja zpí- vej, ha- le- lu- ja zpí- vej Bo- hu Ot- ci, je- ho Du- chu sva- té- mu. Ha- le- lu- ja zpí- vej, ha- le- lu- ja zpí- vej je- ho Sy- nu za nás v o- běť da- né- mu."
+      "body": "\"^Chorus\"\nc/2 \"C\" c/2 c/2 A/2 G A |\nw: Ha- le- lu- ja zpí- vej,\n\"C7\" c/2 c/2 c/2 A/2 G A |\nw: ha- le- lu- ja zpí- vej\nd/2 \"F\" c/2 d/2 c/2 \"C\" ^G/2 c/2 ^G/2 c/2 |\nw: Bo- hu Ot- ci, je- ho Du- chu\n\"F\" d \"E\" c \"F\" d z |\nw: sva- té- mu.\nd/2 \"D\" d/2 d/2 B/2 A A |\nw: Ha- le- lu- ja zpí- vej,\n\"D7\" d/2 d/2 d/2 B/2 A A |\nw: ha- le- lu- ja zpí- vej\nG/2 \"G\" G/2 G/2 G/2 \"A7\" A/2 G/2 A/2 G/2 |\nw: je- ho Sy- nu za nás v o- běť\n\"Gdim\" _B _B \"G7\" G z |\nw: da- né- mu."
     }
   ]
 }

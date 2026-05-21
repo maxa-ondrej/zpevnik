@@ -218,28 +218,31 @@ def _build_melody(
 def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
     """Emit an ABC body for one section.
 
-    Layout: one line per source measure (`"C" C E G | "G" A G G F |`)
-    followed by a `w:` lyric line for the section. Annotation `"^Label"`
-    sits at the top so the staff is captioned in the rendered notation.
+    Layout: one music line per source measure, followed IMMEDIATELY by
+    that measure's `w:` syllable line (when it has any). Annotation
+    `"^Label"` sits at the top.
+
+    The per-measure `w:` is load-bearing: abcjs aligns a `w:` directive
+    only to the music line directly above it. Emitting one giant `w:`
+    at the end of a 16-measure block leaves the first 15 measures
+    without lyrics in the rendered staff — exactly the bug the user
+    saw on song 004. The hand-curated demo melodies (songs/001-003)
+    follow the same per-line pattern.
     """
-    music_lines: list[str] = []
-    syllables: list[str] = []
+    parts = [f'"^{label}"']
     for m in measures:
         tokens: list[str] = []
+        syllables: list[str] = []
         for note in m.notes:
             if note.chord_above:
                 tokens.append(f'"{note.chord_above}"')
             tokens.append(_note_to_abc(note, divisions))
             if note.lyric:
                 syllables.append(_syllable_for_w_line(note.lyric, note.syllabic))
-        # ABC measure separator at the end.
         tokens.append("|")
-        music_lines.append(" ".join(tokens))
-
-    music = "\n".join(music_lines)
-    parts = [f'"^{label}"', music]
-    if syllables:
-        parts.append("w: " + " ".join(syllables))
+        parts.append(" ".join(tokens))
+        if syllables:
+            parts.append("w: " + " ".join(syllables))
     return "\n".join(parts)
 
 
@@ -344,13 +347,26 @@ _VERSE_MARKER_RE = re.compile(r"^[VR]?\d+[.)]\s*", re.IGNORECASE)
 _BARE_VERSE_MARKER_RE = re.compile(r"^[VR]?\d+[.)]$", re.IGNORECASE)
 
 
-def first_phrase_title(song: Song, max_syllables: int = 6) -> str:
-    """Build a placeholder title from the first few lyric syllables.
+def first_phrase_title(
+    song: Song,
+    max_words: int = 4,
+    max_syllables: int = 16,
+) -> str:
+    """Build a placeholder title from the first lyric phrase.
 
     Used by the batch converter when the source XML carries no title
-    (proscholy.cz exports are like this). Joins begin/middle syllables
-    into whole words and stops at the syllable cap or the first
-    sentence-ending punctuation.
+    (proscholy.cz exports are like this). Walks syllables forward,
+    joining begin/middle/end into whole words, then stops at the FIRST
+    word boundary that satisfies any of:
+      - `max_words` complete words have been collected,
+      - the just-completed word ended with sentence punctuation,
+      - the hard `max_syllables` escape hatch tripped (runaway lyric
+        with no word boundary in sight — emit the partial word).
+
+    The earlier v0 capped on syllable count anywhere — including
+    mid-word — and produced truncations like 'Bůh je mou skrýbezpeč'
+    instead of 'Bůh je mou skrýbezpečnou'. Capping on word boundaries
+    fixes that for the cost of one extra syllable's worth of length.
 
     Verse-number markers can appear in two shapes on the first lyric:
       - As their own syllable: <text>1.</text>  — skip the whole syllable.
@@ -375,13 +391,19 @@ def first_phrase_title(song: Song, max_syllables: int = 6) -> str:
                 first_word = False
             current.append(text)
             syllable_count += 1
-            if n.syllabic in (None, "single", "end"):
+            at_word_boundary = n.syllabic in (None, "single", "end")
+            if at_word_boundary:
                 words.append("".join(current))
                 current = []
+                if len(words) >= max_words:
+                    stop = True
+                    break
                 if re.search(r"[.,;!?]$", words[-1]):
                     stop = True
                     break
-            if syllable_count >= max_syllables:
+            elif syllable_count >= max_syllables:
+                # Runaway lyric (e.g. melisma with no word ending) —
+                # flush whatever partial word we have and stop.
                 stop = True
                 break
         if stop:
