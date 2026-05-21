@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-16T20:00:13.659827Z",
+  "generatedAt": "2026-05-21T19:40:15.499276Z",
   "songs": [
     {
       "id": "001",
@@ -58,6 +58,23 @@
       "hasStaffImages": false,
       "staveCount": 0,
       "reviewStatus": "approved"
+    },
+    {
+      "id": "004",
+      "slug": "chvalu-dik",
+      "title": "Chválu, dík",
+      "number": 299,
+      "key": "C",
+      "tempo": 120,
+      "language": "cs",
+      "tags": [],
+      "sourcePdf": "https://zpevnik.proscholy.cz/soubor/299.xml",
+      "sourcePages": [
+        1
+      ],
+      "hasStaffImages": false,
+      "staveCount": 0,
+      "reviewStatus": "auto"
     }
   ]
 }

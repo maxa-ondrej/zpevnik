@@ -52,6 +52,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 # Typer's idiomatic API puts typer.Option/Argument calls in defaults.
 # The Annotated alternative is a heavier refactor that doesn't earn its keep here.
 "zpevnik_pipeline/cli.py" = ["B008"]
+# Long inline XML fixtures in this file are deliberately kept on one
+# line per <note> so they read like the score's measure layout.
+"tests/test_musicxml.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

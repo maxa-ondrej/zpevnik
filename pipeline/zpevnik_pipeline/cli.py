@@ -388,5 +388,96 @@ def review(
     uvicorn.run(fastapi_app, host=host, port=port)
 
 
+@app.command()
+def musicxml(
+    input_path: Path = typer.Argument(..., exists=True, dir_okay=False),
+    songs_dir: Path = typer.Option(Path("../songs"), "--songs"),
+    title: str = typer.Option("", "--title", help="Override title (XML often omits it)."),
+    id_: str = typer.Option("", "--id", help="3+ digit id; auto-numbered if omitted."),
+    number: int | None = typer.Option(None, "--number", help="Songbook ordinal."),
+    source: str = typer.Option(
+        "", "--source",
+        help="Provenance URL/path stored in meta.json sourcePdf.",
+    ),
+    force: bool = typer.Option(
+        False, "--force",
+        help="Overwrite even when the existing song is reviewStatus=approved.",
+    ),
+) -> None:
+    """Convert one MusicXML file into a songs/<id>-<slug>/ directory.
+
+    Writes song.cho, melody.json, and meta.json; rebuilds songs/index.json.
+    """
+    import json as _json
+    import re as _re
+
+    from .musicxml import convert_musicxml
+    from .output.writer import _read_existing_meta, write_index, write_song
+
+    result = convert_musicxml(input_path, title=title or None)
+
+    # Resolve id: explicit > auto-incremented from existing songs/.
+    if id_:
+        if not _re.fullmatch(r"\d{3,}", id_):
+            console.print(f"[red]--id must be 3+ digits, got {id_!r}[/red]")
+            raise typer.Exit(code=1)
+        new_id = id_
+    else:
+        existing_ids: list[int] = []
+        if songs_dir.is_dir():
+            for d in songs_dir.iterdir():
+                m = _re.match(r"^(\d{3,})-", d.name)
+                if m:
+                    existing_ids.append(int(m.group(1)))
+        new_id = f"{max(existing_ids, default=0) + 1:03d}"
+
+    result.meta["id"] = new_id
+    if number is not None:
+        result.meta["number"] = number
+    if source:
+        result.meta["sourcePdf"] = source
+
+    # Fill the schema-required fields that the converter can't infer.
+    if not result.meta.get("sourcePdf"):
+        result.meta["sourcePdf"] = f"musicxml:{input_path.name}"
+    if not result.meta.get("sourcePages"):
+        result.meta["sourcePages"] = [1]
+
+    meta_model = SongMeta.model_validate(result.meta)
+
+    songs_dir.mkdir(parents=True, exist_ok=True)
+    song_dir, written = write_song(
+        songs_dir, meta=meta_model, chordpro=result.song_cho, force=force,
+    )
+    if not written:
+        console.print(
+            f"[yellow]Skipped[/yellow] {song_dir} — reviewStatus=approved; "
+            "pass --force to overwrite."
+        )
+        return
+
+    # melody.json is the converter's contribution beyond what write_song does.
+    melody_path = song_dir / "melody.json"
+    melody_path.write_text(
+        _json.dumps(result.melody, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    # Rebuild the index from whatever's on disk so the new song shows up.
+    metas: list[SongMeta] = []
+    for d in sorted(songs_dir.iterdir()):
+        meta_file = d / "meta.json"
+        if meta_file.is_file():
+            existing = _read_existing_meta(meta_file)
+            if existing is not None:
+                metas.append(existing)
+    write_index(songs_dir, metas)
+
+    console.print(f"[green]Wrote[/green] {song_dir}")
+    console.print(f"  song.cho     ({len(result.song_cho)} bytes)")
+    console.print(f"  melody.json  ({len(result.melody['blocks'])} blocks)")
+    console.print(f"  meta.json    (id={new_id}, slug={meta_model.slug})")
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()
