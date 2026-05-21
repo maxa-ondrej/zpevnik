@@ -12,8 +12,9 @@
  * is laid out above it via flex column, so content never overlaps.
  */
 
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '../store/settings';
 import { useTheme, type Theme } from '../store/theme';
@@ -26,6 +27,10 @@ interface BottomBarProps {
   /** True while constant-px-per-second auto-scroll is running. */
   isPlaying: boolean;
   onTogglePlay: () => void;
+  /** Controlled expand state — lifted so the parent can render a
+   *  tap-outside-to-close backdrop. */
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 }
 
 export function BottomBar({
@@ -33,19 +38,63 @@ export function BottomBar({
   onToggleFollow,
   isPlaying,
   onTogglePlay,
+  expanded,
+  onExpandedChange,
 }: BottomBarProps) {
-  const [expanded, setExpanded] = useState(false);
+  // Local alias for ergonomics inside the gesture handler.
+  const setExpanded = onExpandedChange;
   const showStaves = useSettings((s) => s.showStaves);
   const setShowStaves = useSettings((s) => s.setShowStaves);
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Pan responder for swipe-up to expand / swipe-down to collapse.
+  // Threshold is small (24px) so a casual flick works, but we
+  // require some movement so a normal button tap on a child still
+  // routes to the Pressable's press handler.
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 8,
+        onPanResponderRelease: (_, g) => {
+          if (g.dy < -24) setExpanded(true);
+          else if (g.dy > 24) setExpanded(false);
+        },
+      }),
+    [],
+  );
 
   return (
     <View
       style={[
         styles.container,
-        { backgroundColor: theme.bg, borderTopColor: theme.borderSoft },
+        {
+          backgroundColor: theme.bg,
+          borderTopColor: theme.borderSoft,
+          // Stay clear of the home indicator on iPhone but don't
+          // burn the full inset — the bar already has its own
+          // vertical padding inside the always-row.
+          paddingBottom: Math.max(6, insets.bottom * 0.4),
+        },
       ]}
     >
+      {/* Drag handle. The PanResponder lives on the outer View (so it
+          can claim the gesture from any touch on the bar) and a
+          Pressable inside provides the tap-to-toggle fallback +
+          accessibility role. */}
+      <View {...panResponder.panHandlers} style={styles.handleHit}>
+        <Pressable
+          onPress={() => setExpanded(!expanded)}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Hide more controls' : 'Show more controls'}
+          accessibilityHint="Swipe up to expand, down to collapse"
+          accessibilityState={{ expanded }}
+        >
+          <View style={[styles.handle, { backgroundColor: theme.borderSoft }]} />
+        </Pressable>
+      </View>
+
       {expanded && (
         <View
           style={[
@@ -75,15 +124,6 @@ export function BottomBar({
           onPress={() => setShowStaves(!showStaves)}
           label={showStaves ? '♪  Staves' : '✎  Lyrics'}
           accessibilityLabel={showStaves ? 'Hide staves' : 'Show staves'}
-        />
-        <BarBtn
-          theme={theme}
-          active={expanded}
-          onPress={() => setExpanded((v) => !v)}
-          label={expanded ? '⌄' : '⌃'}
-          accessibilityLabel={expanded ? 'Hide more controls' : 'Show more controls'}
-          accessibilityRole="button"
-          flex={0.5}
         />
       </View>
     </View>
@@ -136,6 +176,17 @@ function BarBtn({
 const styles = StyleSheet.create({
   container: {
     borderTopWidth: 1,
+  },
+  // Generous touch target so the user doesn't need to land on the
+  // 4-pixel-tall pill exactly. PanResponder lives here.
+  handleHit: {
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  handle: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
   },
   expandedPanel: {
     paddingHorizontal: 8,

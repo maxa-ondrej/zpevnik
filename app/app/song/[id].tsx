@@ -68,6 +68,9 @@ export default function SongScreen() {
   const toggleFavorite = useFavorites((s) => s.toggle);
   const isFavorite = typeof id === 'string' && favorites.includes(id);
   const [setlistSheetOpen, setSetlistSheetOpen] = useState(false);
+  // BottomBar expand state lifted here so we can render a tap-
+  // outside-to-close backdrop over the page content.
+  const [controlsExpanded, setControlsExpanded] = useState(false);
   const theme = useTheme();
 
   // Record this song as recently viewed. Fires once per id change.
@@ -489,11 +492,25 @@ export default function SongScreen() {
         )}
       </ScrollView>
 
+      {/* Tap-outside-to-close backdrop, only when the bar is expanded.
+           Sits above the ScrollView but BELOW the bar's z-stack so
+           the bar's own controls are still tappable. */}
+      {controlsExpanded && (
+        <Pressable
+          onPress={() => setControlsExpanded(false)}
+          style={styles.backdrop}
+          accessibilityRole="button"
+          accessibilityLabel="Close controls"
+        />
+      )}
+
       <BottomBar
         isFollowing={isFollowing}
         onToggleFollow={toggleFollow}
         isPlaying={isPlaying}
         onTogglePlay={togglePlay}
+        expanded={controlsExpanded}
+        onExpandedChange={setControlsExpanded}
       />
     </View>
   );
@@ -501,6 +518,10 @@ export default function SongScreen() {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
   topBar: {
     paddingHorizontal: 16,
     paddingTop: 12,
