@@ -11,10 +11,17 @@
  *   - `notes`: flat per-note array from melody.json (pitch in MIDI,
  *     durationBeats in quarter-notes, lyric, syllabic, chord).
  *   - `noteIndex`: which note is currently under the playhead.
+ *   - `isFollowing` + `tempo`: enables continuous rAF-driven scroll.
+ *     Without them, the strip snaps to whichever beat noteIndex maps
+ *     to (useful for paused / static preview).
  *
- * v0 is snap-to-note (no smooth interpolation between events).
- * Smooth scrolling can come later via requestAnimationFrame + elapsed
- * time from Play start.
+ * The continuous scroll re-anchors its time-clock to each `noteIndex`
+ * change. Inside one note we advance `elapsedSec * (tempo / 60)` beats
+ * from the note's start, clamped to the note's `durationBeats`. The
+ * clamp matters: if abcjs is late firing the next `onNoteEvent` the
+ * strip just parks at the note's end (which is exactly where the next
+ * note starts) — so when the event finally arrives the strip continues
+ * smoothly with no visible jump.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -34,6 +41,13 @@ interface PitchTimelineViewProps {
   /** Index of the active note (< 0 → before the first note). The
    *  playhead is centred on this note's start time. */
   noteIndex: number;
+  /** When true, drive the strip continuously via rAF interpolated
+   *  inside the current note. When false (or tempo missing), the
+   *  strip snaps to the noteIndex-implied beat. */
+  isFollowing?: boolean;
+  /** Quarter-notes per minute. Required for smooth scroll; without it
+   *  the component falls back to snap-to-note even if isFollowing. */
+  tempo?: number;
   /** Optional override for the container width — used to size the
    *  playhead's absolute x position. When omitted, the component
    *  measures itself via onLayout. */
@@ -43,6 +57,8 @@ interface PitchTimelineViewProps {
 export function PitchTimelineView({
   notes,
   noteIndex,
+  isFollowing,
+  tempo,
   viewportWidth,
 }: PitchTimelineViewProps) {
   const theme = useTheme();
@@ -111,16 +127,65 @@ export function PitchTimelineView({
   const containerWidth =
     viewportWidth && viewportWidth > 0 ? viewportWidth : measuredWidth;
   const playheadX = containerWidth * PLAYHEAD_OFFSET_RATIO;
-  const targetX = playheadX - currentBeat * PX_PER_BEAT;
+  const snapTargetX = playheadX - currentBeat * PX_PER_BEAT;
 
-  const translateX = useRef(new Animated.Value(targetX)).current;
+  // useNativeDriver: false throughout — the smooth-scroll path needs
+  // setValue() per frame from the JS thread, and a single Animated.Value
+  // can't legally mix native and non-native drivers. The cost is one
+  // bridge call per frame on a single transform, which RN handles fine.
+  const translateX = useRef(new Animated.Value(snapTargetX)).current;
+
+  // rAF anchor: when did the current note start playing? Reset on
+  // every noteIndex change AND on every isFollowing flip (so resuming
+  // Play doesn't think we're mid-note from before the pause).
+  const noteIndexRef = useRef(noteIndex);
+  const noteStartedAtRef = useRef<number>(Date.now());
   useEffect(() => {
-    Animated.timing(translateX, {
-      toValue: targetX,
+    noteIndexRef.current = noteIndex;
+    noteStartedAtRef.current = Date.now();
+  }, [noteIndex, isFollowing]);
+
+  // Continuous rAF-driven scroll. Active only while Play is running
+  // AND we have a tempo to convert elapsed seconds → beats. Reads
+  // noteIndex from a ref so per-event noteIndex changes don't
+  // cancel + restart the loop.
+  useEffect(() => {
+    if (!isFollowing || !tempo || tempo <= 0) return;
+    if (notes.length === 0) return;
+    let raf = 0;
+    const tick = () => {
+      const idx = noteIndexRef.current;
+      if (idx >= 0 && idx < notes.length) {
+        const noteBeatStart = layout.starts[idx] ?? 0;
+        const noteDuration = notes[idx]?.durationBeats ?? 0;
+        const elapsedSec = (Date.now() - noteStartedAtRef.current) / 1000;
+        const elapsedBeats = Math.min(
+          elapsedSec * (tempo / 60),
+          noteDuration,
+        );
+        const beats = noteBeatStart + elapsedBeats;
+        translateX.setValue(playheadX - beats * PX_PER_BEAT);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isFollowing, tempo, notes, layout, playheadX, translateX]);
+
+  // Snap path — handles initial mount, paused-state parking, and the
+  // case where no tempo was provided. Skipped while rAF is driving.
+  // The cleanup stops the in-flight tween so it doesn't keep writing
+  // setValue while the rAF loop is also driving translateX.
+  useEffect(() => {
+    if (isFollowing && tempo && tempo > 0) return;
+    const anim = Animated.timing(translateX, {
+      toValue: snapTargetX,
       duration: 160,
-      useNativeDriver: true,
-    }).start();
-  }, [targetX, translateX]);
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [isFollowing, tempo, snapTargetX, translateX]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;

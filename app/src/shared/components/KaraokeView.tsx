@@ -231,7 +231,16 @@ export function KaraokeView({
   if (abc && notes && notes.length > 0) {
     return (
       <View style={styles.container}>
-        <PitchTimelineView notes={notes} noteIndex={isFollowing ? noteIndex : -1} />
+        {/* Shift the index by -1 at the boundary: KaraokeView's local
+            noteIndex counts onset events (each note's START increments
+            it), but the pitch-bar wants "currently-playing note". So
+            noteIndex=1 here → bar 0 is the one being sung. */}
+        <PitchTimelineView
+          notes={notes}
+          noteIndex={isFollowing ? Math.max(-1, noteIndex - 1) : -1}
+          isFollowing={isFollowing}
+          tempo={tempo}
+        />
         <View style={styles.hiddenTiming} pointerEvents="none">
           <AbcView
             abc={abc}
