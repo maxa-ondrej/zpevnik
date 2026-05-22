@@ -28,8 +28,10 @@ import { useTheme, type Theme } from '../store/theme';
 import { SongControls } from './SongControls';
 
 // Snap target for the fully-expanded panel. Roughly fits 3 rows of
-// SongControls groups on a phone-width viewport.
-const OPEN_HEIGHT = 240;
+// SongControls groups on a phone-width viewport. In landscape we use
+// a shorter snap so the panel doesn't swallow most of the screen.
+const OPEN_HEIGHT_PORTRAIT = 240;
+const OPEN_HEIGHT_LANDSCAPE = 200;
 
 interface BottomBarProps {
   /** True while abcjs / setInterval follow is running. */
@@ -42,6 +44,9 @@ interface BottomBarProps {
    *  tap-outside-to-close backdrop. */
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
+  /** Phone is currently in landscape — tightens paddings + auto-
+   *  collapses the panel so karaoke gets every vertical pixel. */
+  isLandscape?: boolean;
 }
 
 export function BottomBar({
@@ -51,11 +56,26 @@ export function BottomBar({
   onTogglePlay,
   expanded,
   onExpandedChange,
+  isLandscape = false,
 }: BottomBarProps) {
   const viewMode = useSettings((s) => s.viewMode);
   const setViewMode = useSettings((s) => s.setViewMode);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const OPEN_HEIGHT = isLandscape ? OPEN_HEIGHT_LANDSCAPE : OPEN_HEIGHT_PORTRAIT;
+
+  // Auto-collapse when *transitioning into* landscape — the user
+  // rotated to give karaoke more room; leaving the panel open defeats
+  // that. We compare against the previous orientation via a ref so
+  // the user can still manually re-open the panel in landscape
+  // without us slamming it shut again.
+  const prevLandscapeRef = useRef(isLandscape);
+  useEffect(() => {
+    if (!prevLandscapeRef.current && isLandscape && expanded) {
+      onExpandedChange(false);
+    }
+    prevLandscapeRef.current = isLandscape;
+  }, [isLandscape, expanded, onExpandedChange]);
 
   // Cycle: karaoke → staves → lyrics → karaoke.
   const cycleViewMode = () => {
@@ -115,7 +135,7 @@ export function BottomBar({
           onExpandedChange(open);
         },
       }),
-    [panelHeight, onExpandedChange],
+    [panelHeight, onExpandedChange, OPEN_HEIGHT],
   );
 
   return (
@@ -141,7 +161,7 @@ export function BottomBar({
       {/* Drag handle — pill graphic + tap fallback. */}
       <Pressable
         onPress={() => onExpandedChange(!expanded)}
-        style={styles.handleHit}
+        style={[styles.handleHit, isLandscape && styles.handleHitLandscape]}
         accessibilityRole="button"
         accessibilityLabel={expanded ? 'Hide more controls' : 'Show more controls'}
         accessibilityHint="Swipe up to expand, down to collapse"
@@ -155,13 +175,14 @@ export function BottomBar({
           whole bar (handle + row + panel) translates together as
           panelHeight changes — gives a "sheet sliding up" feel
           rather than "panel revealing above a static row." */}
-      <View style={styles.alwaysRow}>
+      <View style={[styles.alwaysRow, isLandscape && styles.alwaysRowLandscape]}>
         <BarBtn
           theme={theme}
           active={isFollowing}
           onPress={onToggleFollow}
           label={isFollowing ? '⏸  Pause' : '▶  Play'}
           accessibilityLabel={isFollowing ? 'Pause follow' : 'Start follow'}
+          compact={isLandscape}
         />
         <BarBtn
           theme={theme}
@@ -173,6 +194,7 @@ export function BottomBar({
           onPress={cycleViewMode}
           label={viewModeLabel}
           accessibilityLabel={`View mode: ${viewMode}. Tap to cycle.`}
+          compact={isLandscape}
         />
       </View>
       {/* Animated panel — height tracks the pan in real time, snaps
@@ -214,6 +236,7 @@ function BarBtn({
   label,
   accessibilityLabel,
   accessibilityRole = 'button',
+  compact = false,
 }: {
   theme: Theme;
   active: boolean;
@@ -221,12 +244,14 @@ function BarBtn({
   label: string;
   accessibilityLabel: string;
   accessibilityRole?: 'button' | 'link';
+  compact?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.btn,
+        compact && styles.btnCompact,
         { borderColor: theme.border, backgroundColor: theme.inputBg },
         active && { backgroundColor: theme.accent, borderColor: theme.accent },
         pressed && { opacity: 0.7 },
@@ -238,6 +263,7 @@ function BarBtn({
       <Text
         style={[
           styles.btnText,
+          compact && styles.btnTextCompact,
           { color: theme.text },
           active && { color: theme.accentText, fontWeight: '600' },
         ]}
@@ -258,6 +284,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     alignItems: 'center',
   },
+  handleHitLandscape: { paddingVertical: 2 },
   handle: {
     width: 44,
     height: 4,
@@ -276,6 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  alwaysRowLandscape: { paddingVertical: 2 },
   btn: {
     width: 120,
     paddingVertical: 10,
@@ -284,8 +312,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  btnCompact: { paddingVertical: 4, borderRadius: 6 },
   btnText: {
     fontSize: 15,
     fontWeight: '500',
   },
+  btnTextCompact: { fontSize: 13 },
 });

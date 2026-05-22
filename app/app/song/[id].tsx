@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -65,6 +66,9 @@ export default function SongScreen() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const viewMode = useSettings((s) => s.viewMode);
   const showStaves = viewMode === 'staves';
+  // Tighter top bar in landscape — karaoke needs every vertical pixel.
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isLandscape = winW > winH;
   const transpose = useSettings((s) => s.transpose);
   const fontSize = useSettings((s) => s.fontSize);
   const autoScrollSpeed = useSettings((s) => s.autoScrollSpeed);
@@ -407,13 +411,29 @@ export default function SongScreen() {
       <Stack.Screen options={{ title: headerTitle }} />
 
       {/* Fixed top bar — title row + controls. Doesn't scroll with content. */}
-      <View style={[styles.topBar, { borderBottomColor: theme.borderSoft, backgroundColor: theme.bg }]}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: theme.text }]}>{state.meta.title}</Text>
+      <View
+        style={[
+          styles.topBar,
+          isLandscape && styles.topBarLandscape,
+          { borderBottomColor: theme.borderSoft, backgroundColor: theme.bg },
+        ]}
+      >
+        <View style={[styles.titleRow, isLandscape && styles.titleRowLandscape]}>
+          <Text
+            style={[
+              styles.title,
+              isLandscape && styles.titleLandscape,
+              { color: theme.text },
+            ]}
+            numberOfLines={1}
+          >
+            {state.meta.title}
+          </Text>
           <Pressable
             onPress={() => setSetlistSheetOpen(true)}
             style={({ pressed }) => [
               styles.setlistBtn,
+              isLandscape && styles.setlistBtnLandscape,
               { borderColor: theme.border, backgroundColor: theme.inputBg },
               pressed && { opacity: 0.6 },
             ]}
@@ -431,7 +451,13 @@ export default function SongScreen() {
             accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             accessibilityState={{ selected: isFavorite }}
           >
-            <Text style={[styles.favIcon, { color: isFavorite ? theme.accent : theme.textDim }]}>
+            <Text
+              style={[
+                styles.favIcon,
+                isLandscape && styles.favIconLandscape,
+                { color: isFavorite ? theme.accent : theme.textDim },
+              ]}
+            >
               {isFavorite ? '★' : '☆'}
             </Text>
           </Pressable>
@@ -536,6 +562,7 @@ export default function SongScreen() {
         onTogglePlay={togglePlay}
         expanded={controlsExpanded}
         onExpandedChange={setControlsExpanded}
+        isLandscape={isLandscape}
       />
     </View>
   );
@@ -553,6 +580,9 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderBottomWidth: 1,
   },
+  // Landscape overrides — tightens the top bar to ~24px so karaoke
+  // has more vertical room. Stacks on top of the portrait styles.
+  topBarLandscape: { paddingTop: 4, paddingBottom: 0 },
   scrollArea: { flex: 1 },
   // Horizontal padding tightened so the staff can use almost the
   // full viewport width on phone — abcjs's own paddingleft is 0 too.
@@ -566,16 +596,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
+  titleRowLandscape: { marginBottom: 2 },
   title: { fontSize: 22, fontWeight: '600', flex: 1 },
+  titleLandscape: { fontSize: 16 },
   setlistBtn: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
     borderRadius: 6,
   },
+  setlistBtnLandscape: { paddingVertical: 2, paddingHorizontal: 8 },
   setlistBtnText: { fontSize: 13, fontWeight: '500' },
   favBtn: { padding: 4 },
   favIcon: { fontSize: 26, lineHeight: 28 },
+  favIconLandscape: { fontSize: 20, lineHeight: 22 },
   error: {},
   staves: { marginBottom: 16, gap: 6 },
   stave: { width: '100%', aspectRatio: 12 },
