@@ -33,6 +33,16 @@ RUN rm -f app/public/songs && cp -r songs app/public/songs
 # Produces /build/app/dist with the static export.
 RUN cd app && npm run build:web
 
+# Expo SDK 54's static export emits `<script src="…entry-….js" defer>`
+# for the entry chunk — classic script. The bundle uses `import.meta`,
+# which is only legal inside a module script, so the browser throws
+# `SyntaxError: Cannot use 'import.meta' outside a module` and the app
+# never boots. Inject `type="module"` into every entry tag the export
+# generated (one per precompiled HTML page).
+RUN find /build/app/dist -name "*.html" -exec sed -i \
+    's|<script src="\(/_expo/static/js/web/entry-[^"]*\)" defer></script>|<script type="module" src="\1" defer></script>|g' \
+    {} \;
+
 # ---------------------------------------------------------------- runtime ---
 FROM nginx:alpine AS runtime
 # curl for the Coolify healthcheck. nginx:alpine has BusyBox wget but
