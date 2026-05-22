@@ -23,9 +23,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { ParsedSong, SongLine } from '../chordpro/parser';
 import { transposeChord } from '../chordpro/transpose';
 import { render as renderNotation } from '../chordpro/notation';
+import type { MelodyNote } from '../melody/assemble';
 import { useSettings } from '../store/settings';
 import { useTheme, type Theme } from '../store/theme';
 import { AbcView } from './AbcView';
+import { PitchTimelineView } from './PitchTimelineView';
 
 interface KaraokeViewProps {
   song: ParsedSong;
@@ -46,6 +48,10 @@ interface KaraokeViewProps {
   onBeat?: (beat: number, total: number) => void;
   /** Forwarded so the parent can stop following when the song ends. */
   onFollowEnd?: () => void;
+  /** Flat per-note array from melody.json — drives the pitch-bar
+   *  timeline. When non-empty, the karaoke view shows the
+   *  Simply-Sing-style strip instead of the abcjs staff cut-out. */
+  notes?: MelodyNote[];
 }
 
 // Visible vertical extent of the staff cut-out. Sized to fit ~2
@@ -61,6 +67,7 @@ export function KaraokeView({
   tempo,
   onBeat,
   onFollowEnd,
+  notes,
 }: KaraokeViewProps) {
   const fontSize = useSettings((s) => s.fontSize);
   const notation = useSettings((s) => s.notation);
@@ -207,12 +214,39 @@ export function KaraokeView({
     );
   }
 
-  // With a staff present, the lyrics under the notes (abcjs's `w:`
-  // directive) ARE the karaoke text — no separate lyric strip
-  // needed. The staff cut-out shows ~2 lines at a time, abcjs
-  // highlights the active note red, and ScrollView keeps the
-  // active phrase centered. When the song has NO melody.json
-  // (lyric-only), fall back to the prev/current/next text strip.
+  // Karaoke v6 — Simply-Sing-style pitch-bar strip.
+  //
+  // When melody.json provided a `notes[]` array, render the
+  // PitchTimelineView (horizontal bars sliding under a fixed
+  // playhead). The abcjs WebView still drives the timing —
+  // mounted at height 0 so it ticks `onNoteEvent` without
+  // taking screen space.
+  //
+  // Older melody.json files lack `notes[]` → fall back to the
+  // staff cut-out so karaoke keeps working until the corpus
+  // is re-emitted.
+  //
+  // No-melody songs (no `abc`) → final fallback below: prev /
+  // current / next lyric strip.
+  if (abc && notes && notes.length > 0) {
+    return (
+      <View style={styles.container}>
+        <PitchTimelineView notes={notes} noteIndex={isFollowing ? noteIndex : -1} />
+        <View style={styles.hiddenTiming} pointerEvents="none">
+          <AbcView
+            abc={abc}
+            transpose={transpose}
+            fontSize={fontSize}
+            isFollowing={isFollowing}
+            tempo={tempo}
+            onBeat={handleBeat}
+            onFollowEnd={onFollowEnd}
+            onNoteEvent={handleNoteEvent}
+          />
+        </View>
+      </View>
+    );
+  }
   if (abc) {
     return (
       <View style={styles.container}>
@@ -423,6 +457,17 @@ const styles = StyleSheet.create({
     width: '100%',
     height: STAFF_VIEWPORT_HEIGHT,
     marginBottom: 16,
+  },
+  hiddenTiming: {
+    // AbcView still drives onNoteEvent / onFollowEnd via its WebView's
+    // TimingCallbacks; we just don't want to SHOW the staff when the
+    // pitch-bar strip is the active visualisation. Hide via 0-size
+    // overflow:hidden — display:none would unmount the WebView on
+    // some RN versions and stop the timing.
+    width: 0,
+    height: 0,
+    overflow: 'hidden',
+    opacity: 0,
   },
   row: {
     width: '100%',

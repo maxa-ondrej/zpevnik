@@ -35,6 +35,9 @@ type State =
       song: ParsedSong;
       staveUris: string[];
       abc: string | null;
+      /** Flat per-note array across all melody blocks (for the karaoke
+       *  pitch-bar view). Empty when the song has no melody.json. */
+      melodyNotes: import('../../src/shared/melody/assemble').MelodyNote[];
       /** Total beat count derived from melody.json's bar count + meter. */
       totalBeats: number | null;
     }
@@ -360,10 +363,13 @@ export default function SongScreen() {
         const song = parseChordPro(cho);
         const staveUris = staveUrisFor(dir, meta.staveCount);
         const abc = melody ? assembleAbc(melody) : null;
+        const melodyNotes = melody
+          ? melody.blocks.flatMap((b) => b.notes ?? [])
+          : [];
         const totalBeats = totalBeatsFromMelody(melody);
 
         if (!cancelled) {
-          setState({ kind: 'ready', meta, song, staveUris, abc, totalBeats });
+          setState({ kind: 'ready', meta, song, staveUris, abc, melodyNotes, totalBeats });
         }
       } catch (err) {
         if (!cancelled) setState({ kind: 'error', message: String(err) });
@@ -506,6 +512,7 @@ export default function SongScreen() {
             tempo={state.meta.tempo ?? undefined}
             onBeat={onAbcBeat}
             onFollowEnd={onAbcFollowEnd}
+            notes={state.melodyNotes}
           />
         )}
       </ScrollView>

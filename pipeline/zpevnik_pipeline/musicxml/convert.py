@@ -237,7 +237,7 @@ def _build_melody(
     header_parts.append(f"K:{song.key}")
     header = "\n".join(header_parts)
 
-    blocks: list[dict[str, str]] = []
+    blocks: list[dict[str, Any]] = []
     verse_n = 0
     chorus_n = 0
     for sec, typ in zip(sections, types, strict=True):
@@ -254,9 +254,63 @@ def _build_melody(
             label = typ.capitalize()
 
         body = _section_to_abc(sec, song.divisions, label)
-        blocks.append({"type": typ, "body": body})
+        notes = _section_to_notes(sec, song.divisions)
+        blocks.append({"type": typ, "body": body, "notes": notes})
 
     return {"header": header, "blocks": blocks}
+
+
+# ── per-note serialization (drives the karaoke pitch-bar view) ───────────
+
+# Diatonic step → MIDI offset within an octave (C major).
+_STEP_TO_SEMITONE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+
+
+def _note_to_midi(step: str | None, octave: int | None, alter: int) -> int | None:
+    """Return a MIDI pitch number for the given pitched note, or None for rests."""
+    if step is None or octave is None:
+        return None
+    base = _STEP_TO_SEMITONE.get(step.upper())
+    if base is None:
+        return None
+    # MIDI: C4 = 60, octave + 1 maps to MIDI's reference of C-1=0.
+    return (octave + 1) * 12 + base + alter
+
+
+def _section_to_notes(
+    measures: list[Measure], divisions: int,
+) -> list[dict[str, Any]]:
+    """Flat per-note list for the karaoke pitch timeline.
+
+    Each entry: { pitch: MIDI int | null, durationBeats: float,
+    lyric: string | null, syllabic: 'begin'|'middle'|'end'|'single'|null,
+    chord: string | null }. `durationBeats` is in quarter-note units
+    (matches the ABC `L:1/4` header). Chord-tone notes (simultaneous
+    polyphony) are dropped — only the lead voice melody is emitted.
+    """
+    out: list[dict[str, Any]] = []
+    for m in measures:
+        for note in m.notes:
+            if note.is_chord_tone:
+                continue
+            pitch = (
+                None
+                if note.rest
+                else _note_to_midi(note.step, note.octave, note.alter)
+            )
+            duration_beats = (
+                note.duration / divisions if divisions > 0 else 1.0
+            )
+            out.append(
+                {
+                    "pitch": pitch,
+                    "durationBeats": duration_beats,
+                    "lyric": note.lyric,
+                    "syllabic": note.syllabic,
+                    "chord": note.chord_above,
+                }
+            )
+    return out
 
 
 def _section_to_abc(measures: list[Measure], divisions: int, label: str) -> str:
