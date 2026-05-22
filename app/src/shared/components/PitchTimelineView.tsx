@@ -25,7 +25,14 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import { transposeChord } from '../chordpro/transpose';
 import { render as renderNotation } from '../chordpro/notation';
@@ -45,7 +52,10 @@ const PX_PER_BEAT_MAX = 120;
 const TARGET_VISIBLE_SECONDS = 3;
 const BAR_HEIGHT = 14;         // pill bar thickness for pitched notes
 const REST_HEIGHT = 4;         // thinner line for rests — visually quiet
-const BAR_AREA_HEIGHT = 200;   // vertical zone the bars can occupy
+// Vertical zone the bars occupy. Smaller in landscape so the strip
+// doesn't crowd out the top bar + bottom controls on a short screen.
+const BAR_AREA_HEIGHT_PORTRAIT = 200;
+const BAR_AREA_HEIGHT_LANDSCAPE = 140;
 const CHORD_ROW_HEIGHT = 22;   // top strip reserved for chord labels
 const LYRIC_GAP = 12;          // px between bar bottom and lyric text
 const PLAYHEAD_OFFSET_RATIO = 0.3; // x-fraction from left where the playhead sits
@@ -78,6 +88,14 @@ export function PitchTimelineView({
   const theme = useTheme();
   const notation = useSettings((s) => s.notation);
   const transpose = useSettings((s) => s.transpose);
+
+  // Pick a bar-area height that fits the current orientation. Landscape
+  // phones are short vertically, so a 200px strip pushes against the
+  // top + bottom UI; 140px leaves a useful margin.
+  const { width: winW, height: winH } = useWindowDimensions();
+  const barAreaHeight =
+    winW > winH ? BAR_AREA_HEIGHT_LANDSCAPE : BAR_AREA_HEIGHT_PORTRAIT;
+  const stripHeight = barAreaHeight + LYRIC_GAP + 32;
 
   // Precompute: cumulative start time (in beats) of each note,
   // total song time, and pitch range for the y-mapping.
@@ -116,10 +134,10 @@ export function PitchTimelineView({
   // the top so the highest-pitched bars don't collide with chord
   // labels. Rests are pinned to the bottom row as a thin line.
   const pitchToY = (pitch: number | null): number => {
-    if (pitch === null) return BAR_AREA_HEIGHT - REST_HEIGHT - 4;
+    if (pitch === null) return barAreaHeight - REST_HEIGHT - 4;
     const span = layout.maxPitch - layout.minPitch;
     const norm = (pitch - layout.minPitch) / span; // 0..1
-    const usable = BAR_AREA_HEIGHT - BAR_HEIGHT - CHORD_ROW_HEIGHT;
+    const usable = barAreaHeight - BAR_HEIGHT - CHORD_ROW_HEIGHT;
     // Invert so high pitch = small y; offset by chord-row reservation.
     return CHORD_ROW_HEIGHT + Math.round(usable * (1 - norm));
   };
@@ -252,16 +270,16 @@ export function PitchTimelineView({
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.bgAlt }]}
+      style={[styles.container, { height: stripHeight, backgroundColor: theme.bgAlt }]}
       onLayout={handleLayout}
     >
       {ready ? (
         <>
-      <View style={styles.barArea}>
+      <View style={[styles.barArea, { height: barAreaHeight }]}>
         <Animated.View
           style={{ transform: [{ translateX }] }}
         >
-          <View style={styles.strip}>
+          <View style={[styles.strip, { height: stripHeight }]}>
             {notes.map((note, i) => {
               const start = layout.starts[i] ?? 0;
               const x = start * pxPerBeat;
@@ -350,7 +368,14 @@ export function PitchTimelineView({
               return (
                 <View
                   key={`l-${i}`}
-                  style={[styles.lyricCell, { left: x, width: w }]}
+                  style={[
+                    styles.lyricCell,
+                    {
+                      left: x,
+                      width: w,
+                      top: barAreaHeight + LYRIC_GAP - 8,
+                    },
+                  ]}
                 >
                   <Text
                     style={[
@@ -390,18 +415,18 @@ export function PitchTimelineView({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: BAR_AREA_HEIGHT + LYRIC_GAP + 32,
+    // height comes from inline style (orientation-dependent).
     overflow: 'hidden',
     borderRadius: 12,
     marginBottom: 16,
   },
   barArea: {
-    height: BAR_AREA_HEIGHT,
+    // height from inline style.
     overflow: 'visible',
   },
   strip: {
     position: 'relative',
-    height: BAR_AREA_HEIGHT + LYRIC_GAP + 32,
+    // height from inline style.
   },
   bar: {
     position: 'absolute',
@@ -420,7 +445,7 @@ const styles = StyleSheet.create({
   },
   lyricCell: {
     position: 'absolute',
-    top: BAR_AREA_HEIGHT + LYRIC_GAP - 8,
+    // top from inline style (depends on dynamic barAreaHeight).
     alignItems: 'center',
   },
   lyric: {
