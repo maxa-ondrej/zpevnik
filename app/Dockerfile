@@ -35,6 +35,10 @@ RUN cd app && npm run build:web
 
 # ---------------------------------------------------------------- runtime ---
 FROM nginx:alpine AS runtime
+# curl for the Coolify healthcheck. nginx:alpine has BusyBox wget but
+# Coolify's healthcheck input field rejects multi-token commands;
+# curl keeps the test a plain one-liner.
+RUN apk add --no-cache curl
 COPY --from=builder /build/app/dist /usr/share/nginx/html
 # SPA fallback so dynamic routes like /song/[id] don't 404 against nginx.
 COPY app/nginx.conf /etc/nginx/conf.d/default.conf

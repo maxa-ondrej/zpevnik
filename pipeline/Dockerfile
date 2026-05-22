@@ -22,6 +22,12 @@ FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
+# curl is for the Coolify healthcheck (the slim base has neither
+# curl nor wget). Keep apt lists out of the final layer.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Just the reviewer's actual runtime deps.
 RUN pip install --no-cache-dir \
         "fastapi>=0.110" \
