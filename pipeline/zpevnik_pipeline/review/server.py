@@ -21,12 +21,16 @@ the human is making the edit.
 
 from __future__ import annotations
 
+import base64
 import json
+import os
+import secrets as _secrets_stdlib
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from fastapi import Body, FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -103,6 +107,39 @@ def create_app(songs_dir: Path) -> FastAPI:
     songs_dir = songs_dir.resolve()
     songs_dir.mkdir(parents=True, exist_ok=True)
     api = FastAPI(title="Zpěvník Review", version="0.1.0")
+
+    # Optional HTTP Basic auth — enabled when BOTH env vars are set.
+    # Local dev / docker-compose leaves them unset → no auth, no breakage.
+    # /health stays unauthenticated so Coolify's healthcheck can reach it.
+    auth_user = os.environ.get("REVIEWER_USER")
+    auth_pass = os.environ.get("REVIEWER_PASS")
+    if auth_user and auth_pass:
+
+        @api.middleware("http")
+        async def basic_auth(
+            request: Request,
+            call_next: Callable[[Request], Awaitable[Response]],
+        ) -> Response:
+            if request.url.path == "/health":
+                return await call_next(request)
+            header = request.headers.get("authorization", "")
+            if header[:6].lower() == "basic ":
+                try:
+                    decoded = base64.b64decode(header[6:]).decode("utf-8")
+                except (ValueError, UnicodeDecodeError):
+                    decoded = ""
+                u, sep, p = decoded.partition(":")
+                if (
+                    sep
+                    and _secrets_stdlib.compare_digest(u, auth_user)
+                    and _secrets_stdlib.compare_digest(p, auth_pass)
+                ):
+                    return await call_next(request)
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "auth required"},
+                headers={"WWW-Authenticate": 'Basic realm="Zpevnik Review"'},
+            )
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():

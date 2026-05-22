@@ -41,6 +41,15 @@ COPY pipeline/zpevnik_pipeline/review             ./zpevnik_pipeline/review
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 EXPOSE 8765
+
+# Seed the songs corpus. When this image is run with a NAMED VOLUME
+# mounted at /data/songs (the production / Coolify path), Docker
+# populates the empty volume from the image's content on first mount —
+# so a fresh deploy starts with the curated corpus rather than an
+# empty directory. Subsequent writes by the reviewer persist in the
+# volume and the seed is ignored.
+COPY songs /data/songs
+
 VOLUME ["/data/songs"]
 
 # Bypasses cli.py (which would force-import numpy/cv2/pytesseract).
