@@ -204,42 +204,53 @@ export function PitchTimelineView({
   // bridge call per frame on a single transform, which RN handles fine.
   const translateX = useRef(new Animated.Value(snapTargetX)).current;
 
-  // rAF anchor: when did the current note start playing? Reset on
-  // every noteIndex change AND on every isFollowing flip (so resuming
-  // Play doesn't think we're mid-note from before the pause).
-  const noteIndexRef = useRef(noteIndex);
-  const noteStartedAtRef = useRef<number>(Date.now());
+  // Song-start anchor: the wall-clock moment at which beat 0 of the
+  // song begins. Set ONCE per Play session on the first noteIndex tick
+  // (back-adjusted by the note's beat-start so anacrusis / first-note-
+  // not-at-zero still works). Never re-anchored mid-song — that's what
+  // caused section-boundary stutter: per-note anchoring drifts whenever
+  // abcjs's per-event timing doesn't perfectly match the pipeline's
+  // notes[] durations (e.g. when abcjs skips events for rests).
+  //
+  // With a single song-start anchor the strip just runs at constant
+  // tempo from beat 0 — abcjs and the strip share the same wall clock,
+  // so they stay in sync without depending on event-by-event alignment.
+  const songStartedAtMsRef = useRef<number | null>(null);
+  // Cleared whenever Play stops; the next first-event recomputes it.
   useEffect(() => {
-    noteIndexRef.current = noteIndex;
-    noteStartedAtRef.current = Date.now();
-  }, [noteIndex, isFollowing]);
+    if (!isFollowing) songStartedAtMsRef.current = null;
+  }, [isFollowing]);
+  // First (or first-after-resume) noteIndex tick establishes the anchor.
+  useEffect(() => {
+    if (!isFollowing || !tempo || tempo <= 0) return;
+    if (songStartedAtMsRef.current !== null) return;
+    if (noteIndex < 0 || noteIndex >= notes.length) return;
+    const beatStart = layout.starts[noteIndex] ?? 0;
+    songStartedAtMsRef.current = Date.now() - (beatStart * 60_000) / tempo;
+  }, [isFollowing, noteIndex, layout, tempo, notes.length]);
 
   // Continuous rAF-driven scroll. Active only while Play is running
-  // AND we have a tempo to convert elapsed seconds → beats. Reads
-  // noteIndex from a ref so per-event noteIndex changes don't
-  // cancel + restart the loop.
+  // AND we have a tempo. translateX is purely a function of wall time
+  // since the song-start anchor — no per-note clamps, no resets.
   useEffect(() => {
     if (!isFollowing || !tempo || tempo <= 0) return;
     if (notes.length === 0) return;
     let raf = 0;
+    const beatsPerMs = tempo / 60_000;
     const tick = () => {
-      const idx = noteIndexRef.current;
-      if (idx >= 0 && idx < notes.length) {
-        const noteBeatStart = layout.starts[idx] ?? 0;
-        const noteDuration = notes[idx]?.durationBeats ?? 0;
-        const elapsedSec = (Date.now() - noteStartedAtRef.current) / 1000;
-        const elapsedBeats = Math.min(
-          elapsedSec * (tempo / 60),
-          noteDuration,
+      const anchor = songStartedAtMsRef.current;
+      if (anchor !== null) {
+        const beats = Math.min(
+          (Date.now() - anchor) * beatsPerMs,
+          layout.totalBeats,
         );
-        const beats = noteBeatStart + elapsedBeats;
         translateX.setValue(playheadX - beats * pxPerBeat);
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isFollowing, tempo, notes, layout, playheadX, pxPerBeat, translateX]);
+  }, [isFollowing, tempo, notes.length, layout, playheadX, pxPerBeat, translateX]);
 
   // Snap path — handles initial mount, paused-state parking, and the
   // case where no tempo was provided. Skipped while rAF is driving.
