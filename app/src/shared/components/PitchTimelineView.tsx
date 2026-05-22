@@ -17,8 +17,8 @@
  * time from Play start.
  */
 
-import { useEffect, useMemo, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import type { MelodyNote } from '../melody/assemble';
 import { useTheme } from '../store/theme';
@@ -34,8 +34,9 @@ interface PitchTimelineViewProps {
   /** Index of the active note (< 0 → before the first note). The
    *  playhead is centred on this note's start time. */
   noteIndex: number;
-  /** Hint for the container width — used to size the playhead's
-   *  absolute x position. Falls back to onLayout measure. */
+  /** Optional override for the container width — used to size the
+   *  playhead's absolute x position. When omitted, the component
+   *  measures itself via onLayout. */
   viewportWidth?: number;
 }
 
@@ -101,8 +102,14 @@ export function PitchTimelineView({
 
   // translateX = playhead position - currentBeat * pxPerBeat
   // (so currentBeat-th beat ends up at playhead x).
+  // Container width is measured via onLayout; an explicit
+  // `viewportWidth` prop overrides the measurement (useful for tests
+  // or when the parent already knows the exact size). Before the
+  // first layout pass we hold `measuredWidth === 0` and gate the
+  // strip render below so the playhead never lands at the wrong x.
+  const [measuredWidth, setMeasuredWidth] = useState(0);
   const containerWidth =
-    viewportWidth && viewportWidth > 0 ? viewportWidth : 360;
+    viewportWidth && viewportWidth > 0 ? viewportWidth : measuredWidth;
   const playheadX = containerWidth * PLAYHEAD_OFFSET_RATIO;
   const targetX = playheadX - currentBeat * PX_PER_BEAT;
 
@@ -115,6 +122,11 @@ export function PitchTimelineView({
     }).start();
   }, [targetX, translateX]);
 
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && w !== measuredWidth) setMeasuredWidth(w);
+  };
+
   if (notes.length === 0) {
     return (
       <View style={[styles.empty, { backgroundColor: theme.bgAlt }]}>
@@ -123,10 +135,18 @@ export function PitchTimelineView({
     );
   }
 
+  // Gate the strip until we know the container width — without it
+  // the playhead's absolute x would resolve to 0 and the strip would
+  // mount in the wrong place for one frame before snapping back.
+  const ready = containerWidth > 0;
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.bgAlt }]}
+      onLayout={handleLayout}
     >
+      {ready ? (
+        <>
       <View style={styles.barArea}>
         <Animated.View
           style={{ transform: [{ translateX }] }}
@@ -203,6 +223,8 @@ export function PitchTimelineView({
           { left: playheadX, backgroundColor: theme.accent },
         ]}
       />
+        </>
+      ) : null}
     </View>
   );
 }
