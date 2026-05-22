@@ -27,7 +27,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
+import { transposeChord } from '../chordpro/transpose';
+import { render as renderNotation } from '../chordpro/notation';
 import type { MelodyNote } from '../melody/assemble';
+import { useSettings } from '../store/settings';
 import { useTheme } from '../store/theme';
 
 // pxPerBeat is derived per-render from tempo + container width so the
@@ -40,8 +43,10 @@ const PX_PER_BEAT_FALLBACK = 80;
 const PX_PER_BEAT_MIN = 40;
 const PX_PER_BEAT_MAX = 120;
 const TARGET_VISIBLE_SECONDS = 3;
-const BAR_HEIGHT = 14;         // pill bar thickness
+const BAR_HEIGHT = 14;         // pill bar thickness for pitched notes
+const REST_HEIGHT = 4;         // thinner line for rests — visually quiet
 const BAR_AREA_HEIGHT = 200;   // vertical zone the bars can occupy
+const CHORD_ROW_HEIGHT = 22;   // top strip reserved for chord labels
 const LYRIC_GAP = 12;          // px between bar bottom and lyric text
 const PLAYHEAD_OFFSET_RATIO = 0.3; // x-fraction from left where the playhead sits
 
@@ -71,6 +76,8 @@ export function PitchTimelineView({
   viewportWidth,
 }: PitchTimelineViewProps) {
   const theme = useTheme();
+  const notation = useSettings((s) => s.notation);
+  const transpose = useSettings((s) => s.transpose);
 
   // Precompute: cumulative start time (in beats) of each note,
   // total song time, and pitch range for the y-mapping.
@@ -105,14 +112,16 @@ export function PitchTimelineView({
   }, [notes]);
 
   // Y-coordinate for a given MIDI pitch — higher pitch = smaller y
-  // (top of the bar area). Rests are pinned to the bottom-middle.
+  // (toward the top of the bar area). Reserves CHORD_ROW_HEIGHT at
+  // the top so the highest-pitched bars don't collide with chord
+  // labels. Rests are pinned to the bottom row as a thin line.
   const pitchToY = (pitch: number | null): number => {
-    if (pitch === null) return BAR_AREA_HEIGHT - BAR_HEIGHT - 4;
+    if (pitch === null) return BAR_AREA_HEIGHT - REST_HEIGHT - 4;
     const span = layout.maxPitch - layout.minPitch;
     const norm = (pitch - layout.minPitch) / span; // 0..1
-    const usable = BAR_AREA_HEIGHT - BAR_HEIGHT;
-    // Invert so high pitch = small y.
-    return Math.round(usable * (1 - norm));
+    const usable = BAR_AREA_HEIGHT - BAR_HEIGHT - CHORD_ROW_HEIGHT;
+    // Invert so high pitch = small y; offset by chord-row reservation.
+    return CHORD_ROW_HEIGHT + Math.round(usable * (1 - norm));
   };
 
   // Current play time in beats — the start time of the active note.
@@ -124,6 +133,20 @@ export function PitchTimelineView({
     if (noteIndex >= notes.length) return layout.totalBeats;
     return layout.starts[noteIndex] ?? 0;
   }, [noteIndex, notes, layout]);
+
+  // Currently-sounding chord = the most recent chord-change note at or
+  // before the playhead. `note.chord` is set only on the note where
+  // the chord changes; downstream notes inherit it implicitly. We
+  // need this index so the chord label currently above the playhead
+  // can be styled "active" while past chord changes are dimmed.
+  const activeChordIdx = useMemo(() => {
+    if (noteIndex < 0) return -1;
+    const start = Math.min(noteIndex, notes.length - 1);
+    for (let i = start; i >= 0; i -= 1) {
+      if (notes[i]?.chord) return i;
+    }
+    return -1;
+  }, [noteIndex, notes]);
 
   // translateX = playhead position - currentBeat * pxPerBeat
   // (so currentBeat-th beat ends up at playhead x).
@@ -254,6 +277,17 @@ export function PitchTimelineView({
                   : past
                     ? theme.accent
                     : theme.borderSoft;
+              // Rests render as a thin line so they read as "silence"
+              // vs. the chunkier pitched bars. Dimmed further unless
+              // active so they don't compete for attention.
+              const height = isRest ? REST_HEIGHT : BAR_HEIGHT;
+              const opacity = isRest
+                ? active
+                  ? 0.7
+                  : 0.35
+                : past && !active
+                  ? 0.55
+                  : 1;
               return (
                 <View
                   key={i}
@@ -263,11 +297,48 @@ export function PitchTimelineView({
                       left: x,
                       top: y,
                       width: Math.max(2, w),
+                      height,
+                      borderRadius: height / 2,
                       backgroundColor: barColor,
-                      opacity: past && !active ? 0.55 : 1,
+                      opacity,
                     },
                   ]}
                 />
+              );
+            })}
+            {notes.map((note, i) => {
+              if (!note.chord) return null;
+              const start = layout.starts[i] ?? 0;
+              const x = start * pxPerBeat;
+              const isActive = i === activeChordIdx;
+              const isPast = i < activeChordIdx;
+              const label = renderNotation(
+                transposeChord(note.chord, transpose),
+                notation,
+              );
+              return (
+                <View
+                  key={`c-${i}`}
+                  style={[styles.chordCell, { left: x }]}
+                >
+                  <Text
+                    style={[
+                      styles.chord,
+                      {
+                        color: isActive
+                          ? theme.accent
+                          : isPast
+                            ? theme.textMuted
+                            : theme.text,
+                        opacity: isPast ? 0.55 : 1,
+                        fontWeight: isActive ? '700' : '600',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                </View>
               );
             })}
             {notes.map((note, i) => {
@@ -334,8 +405,18 @@ const styles = StyleSheet.create({
   },
   bar: {
     position: 'absolute',
-    height: BAR_HEIGHT,
-    borderRadius: BAR_HEIGHT / 2,
+    // height + borderRadius come from inline style so rests can render
+    // as a thinner line than pitched notes.
+  },
+  chordCell: {
+    position: 'absolute',
+    top: 0,
+    height: CHORD_ROW_HEIGHT,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  chord: {
+    fontSize: 13,
   },
   lyricCell: {
     position: 'absolute',
