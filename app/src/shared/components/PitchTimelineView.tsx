@@ -166,11 +166,21 @@ export function PitchTimelineView({
     return out;
   }, [notes]);
 
-  // Currently-sounding chord = O(1) lookup into the table above.
+  // Bar/chord/lyric highlights are driven by `displayedActiveIdx`, NOT
+  // the noteIndex prop. noteIndex tracks abcjs's event count, which can
+  // drift relative to the strip's time-based position (abcjs sometimes
+  // doesn't fire eventCallback for rests, and per-event timing has
+  // jitter). Deriving the visual idx from the SAME wall-clock that
+  // drives translateX keeps the playhead and the colored bars in lock-
+  // step. Updated in the rAF tick below; reset to -1 when Play stops.
+  const [displayedActiveIdx, setDisplayedActiveIdx] = useState(-1);
+  const displayedActiveIdxRef = useRef(-1);
+
+  // Currently-sounding chord = O(1) lookup keyed on the time-derived idx.
   const activeChordIdx =
-    noteIndex < 0 || notes.length === 0
+    displayedActiveIdx < 0 || notes.length === 0
       ? -1
-      : (chordIdxByNote[Math.min(noteIndex, notes.length - 1)] ?? -1);
+      : (chordIdxByNote[Math.min(displayedActiveIdx, notes.length - 1)] ?? -1);
 
   // translateX = playhead position - currentBeat * pxPerBeat
   // (so currentBeat-th beat ends up at playhead x).
@@ -229,9 +239,12 @@ export function PitchTimelineView({
     songStartedAtMsRef.current = Date.now() - (beatStart * 60_000) / tempo;
   }, [isFollowing, noteIndex, layout, tempo, notes.length]);
 
-  // Continuous rAF-driven scroll. Active only while Play is running
-  // AND we have a tempo. translateX is purely a function of wall time
-  // since the song-start anchor — no per-note clamps, no resets.
+  // Continuous rAF-driven scroll + active-idx derivation. translateX is
+  // a function of wall time since the song-start anchor; displayedActiveIdx
+  // is the largest i where starts[i] ≤ current beats. Both share the
+  // same `beats` value, so the playhead and highlight can never drift.
+  // The forward walk from displayedActiveIdxRef makes the idx update
+  // O(1) amortized — usually idx is unchanged or advances by one.
   useEffect(() => {
     if (!isFollowing || !tempo || tempo <= 0) return;
     if (notes.length === 0) return;
@@ -240,17 +253,36 @@ export function PitchTimelineView({
     const tick = () => {
       const anchor = songStartedAtMsRef.current;
       if (anchor !== null) {
-        const beats = Math.min(
-          (Date.now() - anchor) * beatsPerMs,
-          layout.totalBeats,
-        );
+        const elapsedBeats = (Date.now() - anchor) * beatsPerMs;
+        const beats = Math.min(elapsedBeats, layout.totalBeats);
         translateX.setValue(playheadX - beats * pxPerBeat);
+
+        let idx = displayedActiveIdxRef.current;
+        while (
+          idx + 1 < notes.length &&
+          (layout.starts[idx + 1] ?? Infinity) <= elapsedBeats
+        ) {
+          idx += 1;
+        }
+        if (idx !== displayedActiveIdxRef.current) {
+          displayedActiveIdxRef.current = idx;
+          setDisplayedActiveIdx(idx);
+        }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [isFollowing, tempo, notes.length, layout, playheadX, pxPerBeat, translateX]);
+
+  // Reset the displayed-active index when Play stops so the next session
+  // starts clean (no leftover "active" bar from the previous session).
+  useEffect(() => {
+    if (!isFollowing) {
+      displayedActiveIdxRef.current = -1;
+      setDisplayedActiveIdx(-1);
+    }
+  }, [isFollowing]);
 
   // Snap path — handles initial mount, paused-state parking, and the
   // case where no tempo was provided. Skipped while rAF is driving.
@@ -313,9 +345,9 @@ export function PitchTimelineView({
               const y = pitchToY(note.pitch);
               const isRest = note.pitch === null;
               const state: PastActiveFuture =
-                i < noteIndex
+                i < displayedActiveIdx
                   ? 'past'
-                  : i === noteIndex
+                  : i === displayedActiveIdx
                     ? 'active'
                     : 'future';
               return (
@@ -360,8 +392,8 @@ export function PitchTimelineView({
               const start = layout.starts[i] ?? 0;
               const x = start * pxPerBeat;
               const w = note.durationBeats * pxPerBeat;
-              const filled = i <= noteIndex;
-              const isActiveNote = i === noteIndex;
+              const filled = i <= displayedActiveIdx;
+              const isActiveNote = i === displayedActiveIdx;
               return (
                 <LyricCell
                   key={`l-${i}`}
