@@ -45,6 +45,14 @@ interface Props {
    *  view advance a per-syllable cursor in lockstep with the music
    *  instead of approximating via fractional beat math. */
   onNoteEvent?: () => void;
+  /** When true, skip the per-event DOM highlight + getBoundingClientRect
+   *  work. Use this when AbcView is mounted purely as a timing source
+   *  (e.g. inside the karaoke pitch-bar path, where the staff is
+   *  hidden); the DOM mutations trigger style invalidation and the
+   *  bounding-rect calls force layout flushes that visibly stutter the
+   *  rAF loop on the main React tree. onNoteEvent / onFollowEnd /
+   *  onBeat still fire normally. */
+  silent?: boolean;
 }
 
 const BASE_FONT_SIZE = 16;
@@ -297,6 +305,7 @@ export function AbcView({
   onFollowEnd,
   onStaffLineChange,
   onNoteEvent,
+  silent = false,
 }: Props) {
   const ref = useRef<View>(null);
   const [height, setHeight] = useState<number>(120);
@@ -313,12 +322,14 @@ export function AbcView({
   const onFollowEndRef = useRef(onFollowEnd);
   const onStaffLineChangeRef = useRef(onStaffLineChange);
   const onNoteEventRef = useRef(onNoteEvent);
+  const silentRef = useRef(silent);
   useEffect(() => {
     onBeatRef.current = onBeat;
     onFollowEndRef.current = onFollowEnd;
     onStaffLineChangeRef.current = onStaffLineChange;
     onNoteEventRef.current = onNoteEvent;
-  }, [onBeat, onFollowEnd, onStaffLineChange, onNoteEvent]);
+    silentRef.current = silent;
+  }, [onBeat, onFollowEnd, onStaffLineChange, onNoteEvent, silent]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -380,12 +391,22 @@ export function AbcView({
     const tc = new TimingCallbacksCtor(visualObj, {
       qpm: tempo ?? 100,
       eventCallback: (event: { elements?: AbcEventElement[] } | null) => {
-        clearHighlights(container);
         if (event === null) {
-          // End of song.
+          // End of song. Always clear (cheap, runs once).
+          clearHighlights(container);
           onFollowEndRef.current?.();
           return;
         }
+        // Silent mode: skip ALL DOM work. The pitch-bar karaoke path
+        // mounts AbcView at 0×0 purely as a timing source; the
+        // clearHighlights + classList mutations + getBoundingClientRect
+        // calls below force layout flushes on the main thread, visibly
+        // stuttering the rAF loop driving the pitch-bar strip.
+        if (silentRef.current) {
+          onNoteEventRef.current?.();
+          return;
+        }
+        clearHighlights(container);
         const highlighted = event.elements ? flattenElements(event.elements) : [];
         highlighted.forEach((el) => el.classList?.add(HIGHLIGHT_CLASS));
 

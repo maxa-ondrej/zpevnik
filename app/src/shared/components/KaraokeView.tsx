@@ -251,6 +251,7 @@ export function KaraokeView({
             onBeat={handleBeat}
             onFollowEnd={onFollowEnd}
             onNoteEvent={handleNoteEvent}
+            silent
           />
         </View>
       </View>

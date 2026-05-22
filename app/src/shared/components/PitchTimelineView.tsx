@@ -152,19 +152,25 @@ export function PitchTimelineView({
     return layout.starts[noteIndex] ?? 0;
   }, [noteIndex, notes, layout]);
 
-  // Currently-sounding chord = the most recent chord-change note at or
-  // before the playhead. `note.chord` is set only on the note where
-  // the chord changes; downstream notes inherit it implicitly. We
-  // need this index so the chord label currently above the playhead
-  // can be styled "active" while past chord changes are dimmed.
-  const activeChordIdx = useMemo(() => {
-    if (noteIndex < 0) return -1;
-    const start = Math.min(noteIndex, notes.length - 1);
-    for (let i = start; i >= 0; i -= 1) {
-      if (notes[i]?.chord) return i;
+  // Precomputed: for each note index, the index of the most recent
+  // chord-change note at or before it. Built once per song; replaces a
+  // per-event O(N) walk-back that visibly stuttered the rAF loop at
+  // section boundaries on songs with sparse chord changes.
+  const chordIdxByNote = useMemo(() => {
+    const out = new Int32Array(notes.length);
+    let lastChord = -1;
+    for (let i = 0; i < notes.length; i += 1) {
+      if (notes[i]?.chord) lastChord = i;
+      out[i] = lastChord;
     }
-    return -1;
-  }, [noteIndex, notes]);
+    return out;
+  }, [notes]);
+
+  // Currently-sounding chord = O(1) lookup into the table above.
+  const activeChordIdx =
+    noteIndex < 0 || notes.length === 0
+      ? -1
+      : (chordIdxByNote[Math.min(noteIndex, notes.length - 1)] ?? -1);
 
   // translateX = playhead position - currentBeat * pxPerBeat
   // (so currentBeat-th beat ends up at playhead x).
