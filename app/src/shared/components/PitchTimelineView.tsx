@@ -30,7 +30,16 @@ import { Animated, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-
 import type { MelodyNote } from '../melody/assemble';
 import { useTheme } from '../store/theme';
 
-const PX_PER_BEAT = 80;        // horizontal pixels per quarter-note
+// pxPerBeat is derived per-render from tempo + container width so the
+// strip shows a roughly constant TARGET_VISIBLE_SECONDS of music at any
+// tempo. Clamped to keep bars readable on very slow songs and from
+// becoming too cramped on very fast ones. PX_PER_BEAT_FALLBACK is the
+// pre-tempo-aware default — used before onLayout and when no tempo is
+// available.
+const PX_PER_BEAT_FALLBACK = 80;
+const PX_PER_BEAT_MIN = 40;
+const PX_PER_BEAT_MAX = 120;
+const TARGET_VISIBLE_SECONDS = 3;
 const BAR_HEIGHT = 14;         // pill bar thickness
 const BAR_AREA_HEIGHT = 200;   // vertical zone the bars can occupy
 const LYRIC_GAP = 12;          // px between bar bottom and lyric text
@@ -127,7 +136,20 @@ export function PitchTimelineView({
   const containerWidth =
     viewportWidth && viewportWidth > 0 ? viewportWidth : measuredWidth;
   const playheadX = containerWidth * PLAYHEAD_OFFSET_RATIO;
-  const snapTargetX = playheadX - currentBeat * PX_PER_BEAT;
+
+  // Tempo-aware pixel scale: target ~TARGET_VISIBLE_SECONDS of music
+  // on screen. fast tempo → fewer pixels per beat (more beats fit);
+  // slow tempo → more pixels per beat. Clamped so bars don't get
+  // unreadably tight or absurdly stretched.
+  const pxPerBeat = useMemo(() => {
+    if (containerWidth <= 0 || !tempo || tempo <= 0) {
+      return PX_PER_BEAT_FALLBACK;
+    }
+    const raw = (containerWidth / TARGET_VISIBLE_SECONDS) * (60 / tempo);
+    return Math.max(PX_PER_BEAT_MIN, Math.min(PX_PER_BEAT_MAX, raw));
+  }, [containerWidth, tempo]);
+
+  const snapTargetX = playheadX - currentBeat * pxPerBeat;
 
   // useNativeDriver: false throughout — the smooth-scroll path needs
   // setValue() per frame from the JS thread, and a single Animated.Value
@@ -164,13 +186,13 @@ export function PitchTimelineView({
           noteDuration,
         );
         const beats = noteBeatStart + elapsedBeats;
-        translateX.setValue(playheadX - beats * PX_PER_BEAT);
+        translateX.setValue(playheadX - beats * pxPerBeat);
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isFollowing, tempo, notes, layout, playheadX, translateX]);
+  }, [isFollowing, tempo, notes, layout, playheadX, pxPerBeat, translateX]);
 
   // Snap path — handles initial mount, paused-state parking, and the
   // case where no tempo was provided. Skipped while rAF is driving.
@@ -219,8 +241,8 @@ export function PitchTimelineView({
           <View style={styles.strip}>
             {notes.map((note, i) => {
               const start = layout.starts[i] ?? 0;
-              const x = start * PX_PER_BEAT;
-              const w = note.durationBeats * PX_PER_BEAT - 2; // small gap
+              const x = start * pxPerBeat;
+              const w = note.durationBeats * pxPerBeat - 2; // small gap
               const y = pitchToY(note.pitch);
               const past = i < noteIndex;
               const active = i === noteIndex;
@@ -251,8 +273,8 @@ export function PitchTimelineView({
             {notes.map((note, i) => {
               if (!note.lyric) return null;
               const start = layout.starts[i] ?? 0;
-              const x = start * PX_PER_BEAT;
-              const w = note.durationBeats * PX_PER_BEAT;
+              const x = start * pxPerBeat;
+              const w = note.durationBeats * pxPerBeat;
               const filled = i <= noteIndex;
               return (
                 <View
