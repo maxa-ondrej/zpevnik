@@ -24,7 +24,7 @@
  * smoothly with no visible jump.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   StyleSheet,
@@ -36,7 +36,7 @@ import {
 
 import { transposeChord } from '../chordpro/transpose';
 import { render as renderNotation } from '../chordpro/notation';
-import type { MelodyNote } from '../melody/assemble';
+import type { MelodyNote, Syllabic } from '../melody/assemble';
 import { useSettings } from '../store/settings';
 import { useTheme } from '../store/theme';
 
@@ -280,47 +280,37 @@ export function PitchTimelineView({
           style={{ transform: [{ translateX }] }}
         >
           <View style={[styles.strip, { height: stripHeight }]}>
+            {/*
+              Bars / chords / lyrics are rendered via memo'd
+              subcomponents below, with a stable `state` prop
+              (past/active/future). When noteIndex advances by 1, only
+              the bar transitioning out of active and the bar entering
+              active actually re-render — every other item's props are
+              referentially unchanged, so React.memo bails out. This is
+              what keeps the rAF loop from stalling at each event.
+            */}
             {notes.map((note, i) => {
               const start = layout.starts[i] ?? 0;
               const x = start * pxPerBeat;
               const w = note.durationBeats * pxPerBeat - 2; // small gap
               const y = pitchToY(note.pitch);
-              const past = i < noteIndex;
-              const active = i === noteIndex;
               const isRest = note.pitch === null;
-              const barColor = isRest
-                ? theme.borderSoft
-                : active
-                  ? theme.accent
-                  : past
-                    ? theme.accent
-                    : theme.borderSoft;
-              // Rests render as a thin line so they read as "silence"
-              // vs. the chunkier pitched bars. Dimmed further unless
-              // active so they don't compete for attention.
-              const height = isRest ? REST_HEIGHT : BAR_HEIGHT;
-              const opacity = isRest
-                ? active
-                  ? 0.7
-                  : 0.35
-                : past && !active
-                  ? 0.55
-                  : 1;
+              const state: PastActiveFuture =
+                i < noteIndex
+                  ? 'past'
+                  : i === noteIndex
+                    ? 'active'
+                    : 'future';
               return (
-                <View
+                <Bar
                   key={i}
-                  style={[
-                    styles.bar,
-                    {
-                      left: x,
-                      top: y,
-                      width: Math.max(2, w),
-                      height,
-                      borderRadius: height / 2,
-                      backgroundColor: barColor,
-                      opacity,
-                    },
-                  ]}
+                  x={x}
+                  y={y}
+                  w={w}
+                  state={state}
+                  isRest={isRest}
+                  accent={theme.accent}
+                  borderSoft={theme.borderSoft}
                 />
               );
             })}
@@ -328,35 +318,24 @@ export function PitchTimelineView({
               if (!note.chord) return null;
               const start = layout.starts[i] ?? 0;
               const x = start * pxPerBeat;
-              const isActive = i === activeChordIdx;
-              const isPast = i < activeChordIdx;
-              const label = renderNotation(
-                transposeChord(note.chord, transpose),
-                notation,
-              );
+              const state: PastActiveFuture =
+                i < activeChordIdx
+                  ? 'past'
+                  : i === activeChordIdx
+                    ? 'active'
+                    : 'future';
               return (
-                <View
+                <ChordLabel
                   key={`c-${i}`}
-                  style={[styles.chordCell, { left: x }]}
-                >
-                  <Text
-                    style={[
-                      styles.chord,
-                      {
-                        color: isActive
-                          ? theme.accent
-                          : isPast
-                            ? theme.textMuted
-                            : theme.text,
-                        opacity: isPast ? 0.55 : 1,
-                        fontWeight: isActive ? '700' : '600',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {label}
-                  </Text>
-                </View>
+                  x={x}
+                  chord={note.chord}
+                  transpose={transpose}
+                  notation={notation}
+                  state={state}
+                  accent={theme.accent}
+                  text={theme.text}
+                  textMuted={theme.textMuted}
+                />
               );
             })}
             {notes.map((note, i) => {
@@ -365,33 +344,20 @@ export function PitchTimelineView({
               const x = start * pxPerBeat;
               const w = note.durationBeats * pxPerBeat;
               const filled = i <= noteIndex;
+              const isActiveNote = i === noteIndex;
               return (
-                <View
+                <LyricCell
                   key={`l-${i}`}
-                  style={[
-                    styles.lyricCell,
-                    {
-                      left: x,
-                      width: w,
-                      top: barAreaHeight + LYRIC_GAP - 8,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.lyric,
-                      {
-                        color: filled ? theme.accent : theme.text,
-                        fontWeight: i === noteIndex ? '700' : '500',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {note.syllabic === 'begin' || note.syllabic === 'middle'
-                      ? note.lyric + '-'
-                      : note.lyric}
-                  </Text>
-                </View>
+                  x={x}
+                  w={w}
+                  top={barAreaHeight + LYRIC_GAP - 8}
+                  lyric={note.lyric}
+                  syllabic={note.syllabic}
+                  filled={filled}
+                  active={isActiveNote}
+                  accent={theme.accent}
+                  text={theme.text}
+                />
               );
             })}
           </View>
@@ -411,6 +377,149 @@ export function PitchTimelineView({
     </View>
   );
 }
+
+type PastActiveFuture = 'past' | 'active' | 'future';
+
+// Each per-note child is wrapped in React.memo and receives only
+// primitive props. When noteIndex advances, the parent computes a new
+// `state` for every child, but for all but two children that new value
+// equals the previous one — the memo's shallow compare skips the render.
+
+interface BarProps {
+  x: number;
+  y: number;
+  w: number;
+  state: PastActiveFuture;
+  isRest: boolean;
+  accent: string;
+  borderSoft: string;
+}
+
+const Bar = memo(function Bar({
+  x,
+  y,
+  w,
+  state,
+  isRest,
+  accent,
+  borderSoft,
+}: BarProps) {
+  const height = isRest ? REST_HEIGHT : BAR_HEIGHT;
+  const barColor = isRest
+    ? borderSoft
+    : state === 'future'
+      ? borderSoft
+      : accent;
+  const opacity = isRest
+    ? state === 'active'
+      ? 0.7
+      : 0.35
+    : state === 'past'
+      ? 0.55
+      : 1;
+  return (
+    <View
+      style={[
+        styles.bar,
+        {
+          left: x,
+          top: y,
+          width: Math.max(2, w),
+          height,
+          borderRadius: height / 2,
+          backgroundColor: barColor,
+          opacity,
+        },
+      ]}
+    />
+  );
+});
+
+interface ChordLabelProps {
+  x: number;
+  chord: string;
+  transpose: number;
+  notation: 'cs' | 'en';
+  state: PastActiveFuture;
+  accent: string;
+  text: string;
+  textMuted: string;
+}
+
+const ChordLabel = memo(function ChordLabel({
+  x,
+  chord,
+  transpose,
+  notation,
+  state,
+  accent,
+  text,
+  textMuted,
+}: ChordLabelProps) {
+  const label = renderNotation(transposeChord(chord, transpose), notation);
+  const color =
+    state === 'active' ? accent : state === 'past' ? textMuted : text;
+  return (
+    <View style={[styles.chordCell, { left: x }]}>
+      <Text
+        style={[
+          styles.chord,
+          {
+            color,
+            opacity: state === 'past' ? 0.55 : 1,
+            fontWeight: state === 'active' ? '700' : '600',
+          },
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+});
+
+interface LyricCellProps {
+  x: number;
+  w: number;
+  top: number;
+  lyric: string;
+  syllabic: Syllabic | null;
+  filled: boolean;
+  active: boolean;
+  accent: string;
+  text: string;
+}
+
+const LyricCell = memo(function LyricCell({
+  x,
+  w,
+  top,
+  lyric,
+  syllabic,
+  filled,
+  active,
+  accent,
+  text,
+}: LyricCellProps) {
+  const display =
+    syllabic === 'begin' || syllabic === 'middle' ? lyric + '-' : lyric;
+  return (
+    <View style={[styles.lyricCell, { left: x, width: w, top }]}>
+      <Text
+        style={[
+          styles.lyric,
+          {
+            color: filled ? accent : text,
+            fontWeight: active ? '700' : '500',
+          },
+        ]}
+        numberOfLines={1}
+      >
+        {display}
+      </Text>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
