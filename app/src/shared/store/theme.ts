@@ -10,9 +10,35 @@
  * component can opt in to whichever colors it actually needs.
  */
 
-import { useColorScheme } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Appearance } from 'react-native';
 
 import { useSettings } from './settings';
+
+// Cross-platform "is the system in dark mode?" hook.
+// Replaces `useColorScheme()` because RN-web's implementation has been
+// observed returning 'light' even when the OS prefers dark (likely a
+// hydration-timing quirk in the static export). Subscribing to
+// `Appearance` directly with an explicit listener works reliably on
+// both web (which reads matchMedia) and native.
+function useSystemColorScheme(): 'light' | 'dark' {
+  const [scheme, setScheme] = useState<'light' | 'dark'>(() => {
+    const initial = Appearance.getColorScheme();
+    return initial === 'dark' ? 'dark' : 'light';
+  });
+  useEffect(() => {
+    // Snap to whatever Appearance reports NOW — guards against a stale
+    // initial value if `getColorScheme()` returned null during the
+    // first render (SSR or pre-hydration).
+    const current = Appearance.getColorScheme();
+    setScheme(current === 'dark' ? 'dark' : 'light');
+    const sub = Appearance.addChangeListener(({ colorScheme }) => {
+      setScheme(colorScheme === 'dark' ? 'dark' : 'light');
+    });
+    return () => sub.remove();
+  }, []);
+  return scheme;
+}
 
 export interface Theme {
   isDark: boolean;
@@ -72,8 +98,8 @@ const DARK: Theme = {
 
 export function useTheme(): Theme {
   const setting = useSettings((s) => s.darkMode);
-  const systemScheme = useColorScheme();
+  const systemScheme = useSystemColorScheme();
   const effective: 'light' | 'dark' =
-    setting === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : setting;
+    setting === 'system' ? systemScheme : setting;
   return effective === 'dark' ? DARK : LIGHT;
 }
