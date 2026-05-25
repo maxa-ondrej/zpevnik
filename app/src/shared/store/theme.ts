@@ -11,25 +11,50 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 import { useSettings } from './settings';
 
 // Cross-platform "is the system in dark mode?" hook.
-// Replaces `useColorScheme()` because RN-web's implementation has been
-// observed returning 'light' even when the OS prefers dark (likely a
-// hydration-timing quirk in the static export). Subscribing to
-// `Appearance` directly with an explicit listener works reliably on
-// both web (which reads matchMedia) and native.
+//
+// On WEB: reads `window.matchMedia('(prefers-color-scheme: dark)')`
+// directly, sidestepping RN-web's `Appearance` / `useColorScheme()`
+// wrapper. The wrapper has been observed returning 'light' even when
+// matchMedia would report dark — looks like a hydration-timing or
+// SSR-bridging issue in the Expo static export. matchMedia itself is
+// reliable across browsers we target.
+//
+// On NATIVE: uses `Appearance.addChangeListener`, which is the
+// underlying mechanism for `useColorScheme` and is stable there.
 function useSystemColorScheme(): 'light' | 'dark' {
   const [scheme, setScheme] = useState<'light' | 'dark'>(() => {
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function'
+    ) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
     const initial = Appearance.getColorScheme();
     return initial === 'dark' ? 'dark' : 'light';
   });
   useEffect(() => {
-    // Snap to whatever Appearance reports NOW — guards against a stale
-    // initial value if `getColorScheme()` returned null during the
-    // first render (SSR or pre-hydration).
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function'
+    ) {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      // Snap to NOW in case the initializer ran before hydration with
+      // a stale value.
+      setScheme(mql.matches ? 'dark' : 'light');
+      const onChange = (e: MediaQueryListEvent) =>
+        setScheme(e.matches ? 'dark' : 'light');
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    }
     const current = Appearance.getColorScheme();
     setScheme(current === 'dark' ? 'dark' : 'light');
     const sub = Appearance.addChangeListener(({ colorScheme }) => {
