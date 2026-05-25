@@ -15,7 +15,7 @@
 
 import abcjs from 'abcjs';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, View, type ViewStyle } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { useTheme } from '../store/theme';
@@ -450,12 +450,25 @@ export function AbcView({
   }, [isFollowing, tempo, abc, transpose, fontSize, scale]);
 
   if (Platform.OS === 'web') {
-    // CSS `filter: invert + hue-rotate` flips the black SVG abcjs draws
-    // into white-on-dark without needing to know any abcjs internals.
+    // Pin `color: black` so abcjs's SVG text (which inherits
+    // currentColor) always paints in black on its canvas. Without this,
+    // the `<meta name="color-scheme" content="light dark">` declared
+    // in app/+html.tsx makes the browser default text color WHITE in
+    // dark mode → abcjs paints white → the invert filter below flips
+    // it to black → black on dark bg = invisible.
+    //
+    // With the pin in place, the filter does the original job: flips
+    // abcjs's black notation to white-on-dark for dark mode, no-op
+    // for light mode. ViewStyle's TS def doesn't include `color`, so
+    // we cast — RN-web passes it through to the underlying div.
+    const baseStyle = {
+      marginBottom: 24,
+      color: 'black',
+    } as ViewStyle;
     const darkStyle = isDark
-      ? { filter: 'invert(1) hue-rotate(180deg)' as const }
+      ? ({ filter: 'invert(1) hue-rotate(180deg)' } as ViewStyle)
       : null;
-    return <View ref={ref} style={[{ marginBottom: 24 }, darkStyle]} />;
+    return <View ref={ref} style={[baseStyle, darkStyle]} />;
   }
 
   const html = buildHtml(abc, scale, transpose, isDark, tempo ?? 100);
