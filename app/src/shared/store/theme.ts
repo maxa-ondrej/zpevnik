@@ -30,6 +30,10 @@ export interface Theme {
   accentText: string;
   danger: string;
   inputBg: string;
+  /** Semi-transparent overlay color for modal scrims and tap-outside
+   *  pressables. Dark-mode value uses a heavier alpha so the scrim is
+   *  still visibly darker than the already-dark bg behind it. */
+  backdrop: string;
 }
 
 const LIGHT: Theme = {
@@ -46,6 +50,7 @@ const LIGHT: Theme = {
   accentText: '#ffffff',
   danger: '#a00',
   inputBg: '#ffffff',
+  backdrop: 'rgba(0,0,0,0.35)',
 };
 
 const DARK: Theme = {
@@ -62,6 +67,7 @@ const DARK: Theme = {
   accentText: '#0a1f17',
   danger: '#ff8b8b',
   inputBg: '#1c1c1c',
+  backdrop: 'rgba(0,0,0,0.55)',
 };
 
 export function useTheme(): Theme {

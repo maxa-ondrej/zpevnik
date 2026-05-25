@@ -55,7 +55,10 @@ export function AddToSetlistSheet({ songId, visible, onClose }: Props) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable
+        style={[styles.backdrop, { backgroundColor: theme.backdrop }]}
+        onPress={onClose}
+      >
         {/* Inner Pressable absorbs taps so they don't dismiss the sheet. */}
         <Pressable
           style={[styles.sheet, { backgroundColor: theme.bg, borderColor: theme.border }]}
@@ -151,7 +154,7 @@ export function AddToSetlistSheet({ songId, visible, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    // backgroundColor from theme.backdrop (inline above).
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,

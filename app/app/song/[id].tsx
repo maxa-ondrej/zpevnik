@@ -549,7 +549,7 @@ export default function SongScreen() {
       {controlsExpanded && (
         <Pressable
           onPress={() => setControlsExpanded(false)}
-          style={styles.backdrop}
+          style={[styles.backdrop, { backgroundColor: theme.backdrop }]}
           accessibilityRole="button"
           accessibilityLabel="Close controls"
         />
@@ -572,7 +572,9 @@ const styles = StyleSheet.create({
   page: { flex: 1 },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    // backgroundColor comes from theme.backdrop (set inline above) so
+    // dark mode uses a heavier scrim that's still visibly distinct
+    // from the near-black bg behind it.
   },
   topBar: {
     paddingHorizontal: 16,
