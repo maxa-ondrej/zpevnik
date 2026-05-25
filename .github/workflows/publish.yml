@@ -11,6 +11,12 @@ on:
     paths-ignore:
       - '**.md'
       - 'scripts/**'
+      # app.json changes are usually native-only (bundle id, Android
+      # package, iOS infoPlist). The web build effectively no-ops on
+      # those edits. If you ever change a field that DOES affect the
+      # web export (e.g. `web.*`, `scheme`, `name`), force a deploy
+      # via a deliberate touch of another tracked file.
+      - 'app/app.json'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
