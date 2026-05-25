@@ -1,0 +1,270 @@
+{
+  "header": "X:1\nT:Jsem Ti blízko\nM:4/4\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n\"G\" B A/2 G/2 \"C\" E2 | \"D7\" ^F E/2 ^F/2 \"G\" G2 |\nw: Mag- ni- fi- cat, mag- ni- fi- cat,\n\"G\" D D/2 D/2 \"C\" E/2 E/2 ^F/2 G/2 | \"D7\" A A \"G\" G/2 A/2 B |\nw: mag- ni- fi- cat a- ni- ma me- a Do- mi- num,\n\"G\" B A/2 G/2 \"C\" E2 | \"D7\" c B/2 A/2 \"G\" G2 |\nw: mag- ni- fi- cat, mag- ni- fi- cat,\n\"G\" d c/2 B/2 \"C\" c/2 B/2 A/2 G/2 | \"D7\" ^F2 \"G\" G2 :|\nw: mag- ni- fi- cat a- ni- ma me- a!",
+      "notes": [
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "Mag",
+          "syllabic": "begin",
+          "chord": "G"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "cat,",
+          "syllabic": "end",
+          "chord": "C"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.0,
+          "lyric": "mag",
+          "syllabic": "begin",
+          "chord": "D7"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "cat,",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": "mag",
+          "syllabic": "begin",
+          "chord": "G"
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "cat",
+          "syllabic": "end",
+          "chord": "C"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "a",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "ma",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "me",
+          "syllabic": "begin",
+          "chord": "D7"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "a",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "Do",
+          "syllabic": "begin",
+          "chord": "G"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "mi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "num,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "mag",
+          "syllabic": "begin",
+          "chord": "G"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "cat,",
+          "syllabic": "end",
+          "chord": "C"
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "mag",
+          "syllabic": "begin",
+          "chord": "D7"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "cat,",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 74,
+          "durationBeats": 1.0,
+          "lyric": "mag",
+          "syllabic": "begin",
+          "chord": "G"
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "fi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 0.5,
+          "lyric": "cat",
+          "syllabic": "end",
+          "chord": "C"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "a",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "ni",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "ma",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 2.0,
+          "lyric": "me",
+          "syllabic": "begin",
+          "chord": "D7"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "a!",
+          "syllabic": "end",
+          "chord": "G"
+        }
+      ]
+    }
+  ]
+}

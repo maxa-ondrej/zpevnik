@@ -1,0 +1,249 @@
+{
+  "header": "X:1\nT:Radostnou zprávu nesu\nM:4/4\nL:1/4\nQ:1/4=120\nK:Em",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n\"Em\" B G/2 ^F/2 E2 | B/2 A/2 B/2 A/2 B d |\nw: Kam v~sou- du den dáš, co dnes- ka shá- níš,\n\"D\" A ^F/2 E/2 D2 | A/2 G/2 A/2 G/2 A B |\nw: kam v~sou- du den dáš, co dnes- ka shá- níš,\n\"Em\" B G/2 ^F/2 E2 | \"G\" B/2 A/2 B/2 A/2 B d |\nw: kam v~sou- du den dáš, co dnes- ka shá- níš,\n\"A7\" B2 \"B7\" A ^F/2 | \"Em\" E4 |\nw: v~ten sou- du den.",
+      "notes": [
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "Kam",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "v sou",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "du",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "den",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "dáš,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "co",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "dnes",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "ka",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "shá",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 74,
+          "durationBeats": 1.0,
+          "lyric": "níš,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "kam",
+          "syllabic": "single",
+          "chord": "D"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "v sou",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "du",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 2.0,
+          "lyric": "den",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "dáš,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "co",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "dnes",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "ka",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "shá",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "níš,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "kam",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "v sou",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "du",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "den",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "dáš,",
+          "syllabic": "single",
+          "chord": "G"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "co",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "dnes",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "ka",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "shá",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 74,
+          "durationBeats": 1.0,
+          "lyric": "níš,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 2.0,
+          "lyric": "v ten",
+          "syllabic": "single",
+          "chord": "A7"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.5,
+          "lyric": "sou",
+          "syllabic": "begin",
+          "chord": "B7"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "du",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 4.0,
+          "lyric": "den.",
+          "syllabic": "single",
+          "chord": "Em"
+        }
+      ]
+    }
+  ]
+}

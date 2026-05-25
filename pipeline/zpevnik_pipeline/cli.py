@@ -620,13 +620,21 @@ def musicxml_batch(
             except Exception:
                 extra_verses = []
 
-        # Parse + derive title from first lyrics.
+        # Parse + derive title.
         try:
             song = parse_musicxml(cache_path)
         except Exception as e:
             skipped.append((rid, f"parse failed: {e}"))
             continue
-        title = first_phrase_title(song)
+        # Prefer the canonical title from proscholy's frontend HTML
+        # (<h1 class="text-2xl font-custom-medium">…</h1>). The XML
+        # doesn't carry a title for these exports, so the v0 fallback
+        # was `first_phrase_title(song)` — which derives a placeholder
+        # from the first lyric line and ends up wrong whenever the
+        # song's official name differs from its first phrase (most of
+        # the corpus). HTML scrape is best-effort: a 404 / network
+        # blip falls through to the first-phrase derivation.
+        title = _fetch_proscholy_title(rid, cache_dir) or first_phrase_title(song)
 
         # Convert (re-parses inside, but reuses our title via override).
         result = convert_musicxml(cache_path, title=title, extra_verses=extra_verses)
@@ -695,6 +703,47 @@ def musicxml_batch(
         console.print(f"\n[yellow]Skipped[/yellow] {len(skipped)}:")
         for rid, reason in skipped:
             console.print(f"  /soubor/{rid}.xml — {reason}")
+
+
+def _fetch_proscholy_title(rid: int, cache_dir: Path) -> str | None:
+    """Try to read the canonical song title from proscholy.cz's frontend.
+
+    The page at `https://zpevnik.proscholy.cz/pisen/<rid>` carries the
+    title in a stable hook:
+
+        <h1 class="text-2xl font-custom-medium">{title}</h1>
+
+    Returns the unescaped title or None on any failure (404, network
+    blip, no h1 match). Caches the page HTML in `cache_dir/pisen-{rid}.html`
+    so repeated `--force` runs don't re-hammer the server.
+    """
+    import html as _html
+    import re as _re
+    import urllib.request as _urllib
+
+    cache_path = cache_dir / f"pisen-{rid}.html"
+    if not cache_path.exists():
+        try:
+            req = _urllib.Request(
+                f"https://zpevnik.proscholy.cz/pisen/{rid}",
+                headers={"User-Agent": "zpevnik-pipeline/0.1"},
+            )
+            with _urllib.urlopen(req, timeout=30) as resp:
+                cache_path.write_bytes(resp.read())
+        except Exception:
+            return None
+    try:
+        body = cache_path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+    match = _re.search(
+        r'<h1[^>]*class="text-2xl[^"]*font-custom-medium[^"]*"[^>]*>([^<]+)</h1>',
+        body,
+    )
+    if not match:
+        return None
+    title = _html.unescape(match.group(1)).strip()
+    return title or None
 
 
 def _parse_id_spec(spec: str) -> list[int]:

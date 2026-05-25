@@ -1,0 +1,17 @@
+{
+  "id": "025",
+  "slug": "hosana",
+  "title": "Hosana",
+  "number": 25,
+  "key": "G",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/25.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}
