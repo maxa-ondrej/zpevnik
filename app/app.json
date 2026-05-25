@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.majksa.zpevnik",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Used in Live mode to follow the song you are singing and auto-scroll the lyrics. Audio never leaves the device."
+        "NSMicrophoneUsageDescription": "Used in Live mode to follow the song you are singing and auto-scroll the lyrics. Audio never leaves the device.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
