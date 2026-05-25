@@ -1,0 +1,17 @@
+{
+  "id": "365",
+  "slug": "svoboda",
+  "title": "Svoboda",
+  "number": 365,
+  "key": "D",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/365.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}

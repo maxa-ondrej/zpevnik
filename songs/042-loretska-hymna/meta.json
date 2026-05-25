@@ -1,0 +1,17 @@
+{
+  "id": "042",
+  "slug": "loretska-hymna",
+  "title": "Loretská hymna",
+  "number": 42,
+  "key": "F",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/42.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}

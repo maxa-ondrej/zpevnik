@@ -540,7 +540,6 @@ def musicxml_batch(
     re-do them). Songs/index.json is rebuilt once at the end.
     """
     import json as _json
-    import re as _re
     import urllib.request as _urllib
 
     from .musicxml import convert_musicxml
@@ -555,22 +554,9 @@ def musicxml_batch(
     cache_dir.mkdir(parents=True, exist_ok=True)
     songs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Pre-scan existing songs/ to know the next-available id and to
-    # map already-converted source URLs to their existing local id —
-    # `--force` re-uses that id rather than allocating a duplicate.
-    # Stale-folder cleanup (when --force changes the slug) happens at
-    # write time below, not here, so we catch all `{id}-*` siblings.
-    next_id = 1
-    existing_by_source: dict[str, str] = {}  # sourcePdf URL → local id
-    for d in sorted(songs_dir.iterdir()) if songs_dir.is_dir() else []:
-        m = _re.match(r"^(\d{3,})-", d.name)
-        if m:
-            next_id = max(next_id, int(m.group(1)) + 1)
-        meta_file = d / "meta.json"
-        if meta_file.is_file():
-            meta = _read_existing_meta(meta_file)
-            if meta is not None and meta.sourcePdf:
-                existing_by_source[meta.sourcePdf] = meta.id
+    # Local id IS the proscholy soubor id (zero-padded). No pre-scan
+    # needed: deterministic mapping, no allocation. The only reason
+    # to consult existing folders is the early-skip path below.
 
     new_metas: list[SongMeta] = []
     skipped: list[tuple[int, str]] = []
@@ -579,11 +565,21 @@ def musicxml_batch(
     for rid in remote_ids:
         source_url = f"{base_url}/{rid}.xml"
         cache_path = cache_dir / f"{rid}.xml"
-        existing_id = existing_by_source.get(source_url)
+        local_id_padded = f"{rid:03d}"
+        # An existing `{rid:03d}-*` dir means this song has been
+        # converted before (with the same deterministic id).
+        existing_dir = next(
+            (
+                d
+                for d in (songs_dir.iterdir() if songs_dir.is_dir() else [])
+                if d.is_dir() and d.name.startswith(f"{local_id_padded}-")
+            ),
+            None,
+        )
 
-        # Skip if we already have this exact source (unless --force).
-        if not force and existing_id is not None:
-            skipped.append((rid, f"already converted → id {existing_id}"))
+        # Skip if already on disk (unless --force).
+        if not force and existing_dir is not None:
+            skipped.append((rid, f"already converted → {existing_dir.name}"))
             continue
 
         # Download (cache hit avoids re-fetch).
@@ -638,13 +634,11 @@ def musicxml_batch(
 
         # Convert (re-parses inside, but reuses our title via override).
         result = convert_musicxml(cache_path, title=title, extra_verses=extra_verses)
-        # On --force re-runs we reuse the existing local id so we don't
-        # allocate a duplicate folder alongside the original.
-        if existing_id is not None:
-            local_id = existing_id
-        else:
-            local_id = f"{next_id:03d}"
-            next_id += 1
+        # Local id IS the proscholy soubor id — gives a 1:1 mapping
+        # so song-detail URLs (/song/004) line up with the source
+        # (/soubor/004.xml, /pisen/4). Zero-padded to 3 digits since
+        # the corpus only goes up to ~800.
+        local_id = f"{rid:03d}"
         result.meta["id"] = local_id
         # For proscholy.cz, the soubor id IS the canonical songbook number;
         # surface it in the list as the visible number column.
@@ -706,44 +700,55 @@ def musicxml_batch(
 
 
 def _fetch_proscholy_title(rid: int, cache_dir: Path) -> str | None:
-    """Try to read the canonical song title from proscholy.cz's frontend.
+    """Try to read the canonical song title from proscholy.cz.
 
-    The page at `https://zpevnik.proscholy.cz/pisen/<rid>` carries the
-    title in a stable hook:
+    Queries proscholy's GraphQL endpoint for `song_lyric(id: rid).name`,
+    which carries the canonical title. The frontend HTML (/pisen/<rid>)
+    is JS-rendered for some songs — its static body just says
+    `načítám…` and the h1 never lands without running the JS. GraphQL
+    is the underlying source that the frontend itself talks to.
 
-        <h1 class="text-2xl font-custom-medium">{title}</h1>
+    Returns the unescaped name or None on any failure: 404 of an
+    orphan file with no song_lyric record (file IDs and song-lyric
+    IDs are SEPARATE spaces; some soubor files have no matching
+    song_lyric), network blip, malformed response. Falls back to
+    first_phrase_title at the call site.
 
-    Returns the unescaped title or None on any failure (404, network
-    blip, no h1 match). Caches the page HTML in `cache_dir/pisen-{rid}.html`
-    so repeated `--force` runs don't re-hammer the server.
+    Result is cached per rid in cache_dir so --force re-runs don't
+    re-hammer the server.
     """
-    import html as _html
-    import re as _re
+    import json as _json
     import urllib.request as _urllib
 
-    cache_path = cache_dir / f"pisen-{rid}.html"
+    cache_path = cache_dir / f"name-{rid}.json"
     if not cache_path.exists():
         try:
+            payload = _json.dumps(
+                {"query": f'{{ song_lyric(id: "{rid}") {{ name }} }}'}
+            ).encode("utf-8")
             req = _urllib.Request(
-                f"https://zpevnik.proscholy.cz/pisen/{rid}",
-                headers={"User-Agent": "zpevnik-pipeline/0.1"},
+                "https://zpevnik.proscholy.cz/graphql",
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "zpevnik-pipeline/0.1",
+                },
             )
             with _urllib.urlopen(req, timeout=30) as resp:
                 cache_path.write_bytes(resp.read())
         except Exception:
             return None
     try:
-        body = cache_path.read_text(encoding="utf-8", errors="replace")
+        body = _json.loads(cache_path.read_text(encoding="utf-8"))
     except Exception:
         return None
-    match = _re.search(
-        r'<h1[^>]*class="text-2xl[^"]*font-custom-medium[^"]*"[^>]*>([^<]+)</h1>',
-        body,
-    )
-    if not match:
+    song = (body or {}).get("data", {}).get("song_lyric")
+    if not isinstance(song, dict):
         return None
-    title = _html.unescape(match.group(1)).strip()
-    return title or None
+    name = song.get("name")
+    if not isinstance(name, str):
+        return None
+    return name.strip() or None
 
 
 def _parse_id_spec(spec: str) -> list[int]:

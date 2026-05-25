@@ -1,0 +1,17 @@
+{
+  "id": "001",
+  "slug": "kdo-se-vzdava-cest",
+  "title": "Kdo se vzdává cest",
+  "number": 1,
+  "key": "D",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/1.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}

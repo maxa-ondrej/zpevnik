@@ -1,0 +1,17 @@
+{
+  "id": "275",
+  "slug": "hudba-dohrava",
+  "title": "Hudba dohráva",
+  "number": 275,
+  "key": "F",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/275.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}
