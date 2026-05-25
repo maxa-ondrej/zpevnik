@@ -1,0 +1,50 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_SONGS_BASE_URL": "https://zpevnik.majksa.net"
+      },
+      "ios": {
+        "resourceClass": "m-medium",
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SONGS_BASE_URL": "https://zpevnik.majksa.net"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {},
+      "android": {
+        "track": "internal"
+      }
+    }
+  }
+}

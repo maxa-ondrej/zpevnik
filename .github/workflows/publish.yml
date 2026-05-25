@@ -17,6 +17,9 @@ on:
       # web export (e.g. `web.*`, `scheme`, `name`), force a deploy
       # via a deliberate touch of another tracked file.
       - 'app/app.json'
+      # eas.json is consumed only by `eas build` (native iOS/Android),
+      # never by the web export. Same no-op-deploy reasoning.
+      - 'app/eas.json'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
