@@ -15,31 +15,24 @@ import { Appearance, Platform } from 'react-native';
 
 import { useSettings } from './settings';
 
-// Cross-platform "is the system in dark mode?" hook.
+// Cross-platform "is the system in dark mode?" hook, SSR-safe.
 //
-// On WEB: reads `window.matchMedia('(prefers-color-scheme: dark)')`
-// directly, sidestepping RN-web's `Appearance` / `useColorScheme()`
-// wrapper. The wrapper has been observed returning 'light' even when
-// matchMedia would report dark — looks like a hydration-timing or
-// SSR-bridging issue in the Expo static export. matchMedia itself is
-// reliable across browsers we target.
+// CRUCIAL: the initial state is ALWAYS 'light' regardless of platform
+// or system preference. This matches what SSR produces (no DOM /
+// matchMedia in Node → falls back to 'light'). On hydration the CSR
+// render will then match the SSR snapshot, avoiding a hydration
+// mismatch — those are silently kept by React 18 in production, which
+// means the SSR'd LIGHT inline styles would stay even after the hook
+// returns 'dark'. We then setScheme to the real value in a useEffect,
+// which CHANGES state and forces a re-render that updates the DOM.
 //
-// On NATIVE: uses `Appearance.addChangeListener`, which is the
-// underlying mechanism for `useColorScheme` and is stable there.
+// The pre-hydration script in `app/+html.tsx` paints the body bg dark
+// before React boots so this brief light→dark transition isn't a
+// jarring full-page flash; only React-rendered fills will briefly
+// flicker. Web reads matchMedia directly (the most reliable source);
+// native uses Appearance.
 function useSystemColorScheme(): 'light' | 'dark' {
-  const [scheme, setScheme] = useState<'light' | 'dark'>(() => {
-    if (
-      Platform.OS === 'web' &&
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function'
-    ) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-    }
-    const initial = Appearance.getColorScheme();
-    return initial === 'dark' ? 'dark' : 'light';
-  });
+  const [scheme, setScheme] = useState<'light' | 'dark'>('light');
   useEffect(() => {
     if (
       Platform.OS === 'web' &&
@@ -47,8 +40,6 @@ function useSystemColorScheme(): 'light' | 'dark' {
       typeof window.matchMedia === 'function'
     ) {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
-      // Snap to NOW in case the initializer ran before hydration with
-      // a stale value.
       setScheme(mql.matches ? 'dark' : 'light');
       const onChange = (e: MediaQueryListEvent) =>
         setScheme(e.matches ? 'dark' : 'light');
