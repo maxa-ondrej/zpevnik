@@ -15,13 +15,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ondrejmaxa.zpevnik",
+      "bundleIdentifier": "com.majksa.zpevnik",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Used in Live mode to follow the song you are singing and auto-scroll the lyrics. Audio never leaves the device."
       }
     },
     "android": {
-      "package": "com.ondrejmaxa.zpevnik",
+      "package": "com.majksa.zpevnik",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
