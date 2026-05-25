@@ -1,0 +1,81 @@
+{
+  "header": "X:1\nT:Amen\nM:2/2\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nC2 F2 | G _B A2 |\nw: A- men, a- * men.\nc A2 A | G2 F2 :|\nw: A- * men, a- men.",
+      "notes": [
+        {
+          "pitch": 60,
+          "durationBeats": 2.0,
+          "lyric": "A",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 2.0,
+          "lyric": "men,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "a",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": "men.",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "A",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "men,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "a",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 2.0,
+          "lyric": "men.",
+          "syllabic": "end",
+          "chord": null
+        }
+      ]
+    }
+  ]
+}

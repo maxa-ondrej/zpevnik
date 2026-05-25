@@ -1,0 +1,284 @@
+{
+  "header": "X:1\nT:Ježíše Krista slavíme, věříme mu a víme\nM:4/4\nL:1/4\nQ:1/4=120\nK:Bb",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nz/2 F/2 F F G F _B c _B2 |\nw: Je- ží- še Kris- ta sla- ví- me,\nA c d c _B G F z/2 F/2 _B A |\nw: vě- ří- me mu a ví- me, že zro- zen\nc G F D C z/2 C/2 G G G A |\nw: z~že- ny pro nás žil a Bůh se k~nám v~něm\n_B G F G _E/2 F/2 G F4 |\nw: při- blí- žil. * Ky- ri- e- leis.",
+      "notes": [
+        {
+          "pitch": null,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 0.5,
+          "lyric": "Je",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "ží",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "še",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "Kris",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "ta",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": "sla",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "ví",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 2.0,
+          "lyric": "me,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "vě",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "ří",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 74,
+          "durationBeats": 1.0,
+          "lyric": "me",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "mu",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": "a",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "ví",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "me,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": null,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 0.5,
+          "lyric": "že",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": "zro",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "zen",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "z že",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "ny",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "pro",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": "nás",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 1.0,
+          "lyric": "žil",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": null,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 0.5,
+          "lyric": "a",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "Bůh",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "se",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "k nám",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "v něm",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": "při",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "blí",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "žil.",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 63,
+          "durationBeats": 0.5,
+          "lyric": "Ky",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 0.5,
+          "lyric": "ri",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "e",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 4.0,
+          "lyric": "leis.",
+          "syllabic": "end",
+          "chord": null
+        }
+      ]
+    }
+  ]
+}

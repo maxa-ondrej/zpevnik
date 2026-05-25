@@ -1,0 +1,214 @@
+{
+  "header": "X:1\nT:Benedictus qui venit\nM:6/8\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\n\"Em\" E/2 E/4 \"D\" ^F/2 \"G\" G G/2 | \"Am\" ^F \"B\" ^F |\nw: Be- ne- di- ctus qui ve- nit,\n\"Em\" G/2 G/4 \"D\" A/2 \"G\" B B/2 | \"Am\" c \"B\" B B/2 |\nw: Be- ne- di- ctus qui ve- nit in\n\"Em\" B \"D\" A/2 \"G\" G B/2 | \"Am\" A G/2 \"B\" ^F |\nw: no- mi- ne, in no- mi- ne,\n\"Em\" E/2 E/2 \"D\" ^F/2 \"G\" G | \"Am\" ^F E/2 \"B\" B, :|\nw: in no- mi- ne Do- mi- ni.",
+      "notes": [
+        {
+          "pitch": 64,
+          "durationBeats": 0.75,
+          "lyric": "Be",
+          "syllabic": "begin",
+          "chord": "Em"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.25,
+          "lyric": "ne",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "di",
+          "syllabic": "middle",
+          "chord": "D"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "ctus",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "qui",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.5,
+          "lyric": "ve",
+          "syllabic": "begin",
+          "chord": "Am"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.5,
+          "lyric": "nit,",
+          "syllabic": "end",
+          "chord": "B"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.75,
+          "lyric": "Be",
+          "syllabic": "begin",
+          "chord": "Em"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.25,
+          "lyric": "ne",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "di",
+          "syllabic": "middle",
+          "chord": "D"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "ctus",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "qui",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.5,
+          "lyric": "ve",
+          "syllabic": "begin",
+          "chord": "Am"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "nit",
+          "syllabic": "end",
+          "chord": "B"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "in",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "no",
+          "syllabic": "begin",
+          "chord": "Em"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "mi",
+          "syllabic": "middle",
+          "chord": "D"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "ne,",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "in",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "no",
+          "syllabic": "begin",
+          "chord": "Am"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "mi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.5,
+          "lyric": "ne,",
+          "syllabic": "end",
+          "chord": "B"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "in",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "no",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 0.5,
+          "lyric": "mi",
+          "syllabic": "middle",
+          "chord": "D"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.5,
+          "lyric": "ne",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.0,
+          "lyric": "Do",
+          "syllabic": "begin",
+          "chord": "Am"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "mi",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 59,
+          "durationBeats": 1.5,
+          "lyric": "ni.",
+          "syllabic": "end",
+          "chord": "B"
+        }
+      ]
+    }
+  ]
+}

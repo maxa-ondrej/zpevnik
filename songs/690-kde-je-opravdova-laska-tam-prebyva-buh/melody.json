@@ -1,0 +1,207 @@
+{
+  "header": "X:1\nT:Kde je opravdová láska, tam přebývá Bůh\nM:4/4\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nA c d/2 c/2 _B/2 A/2 | G C C2 |\nw: Kde je o- prav- do- vá lá- * ska,\n_B, D F/2 A G/2 | G2 z |\nw: tam * pře- bý- vá Bůh.\n|: A4 G/2 F/2 E/2 D/2 D2 |\nw: Spojila~nás~vjedno~láska Kris- ta Pá- * na.\nG4 A/2 _B/2 c/2 A/2 A2 :|\nw: Jásejme~a~hledejme~jen v~něm svou ra- * dost!",
+      "notes": [
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "Kde",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "je",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 74,
+          "durationBeats": 0.5,
+          "lyric": "o",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 0.5,
+          "lyric": "prav",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 0.5,
+          "lyric": "do",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "vá",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "lá",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 2.0,
+          "lyric": "ska,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 58,
+          "durationBeats": 1.0,
+          "lyric": "tam",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 0.5,
+          "lyric": "pře",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "bý",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "vá",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 3.0,
+          "lyric": "Bůh.",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": null,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 4.0,
+          "lyric": "Spojila nás vjedno láska",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "Kris",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 0.5,
+          "lyric": "ta",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "Pá",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 2.0,
+          "lyric": "na.",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 4.0,
+          "lyric": "Jásejme a hledejme jen",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": "v něm",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 0.5,
+          "lyric": "svou",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 0.5,
+          "lyric": "ra",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": "dost!",
+          "syllabic": "end",
+          "chord": null
+        }
+      ]
+    }
+  ]
+}

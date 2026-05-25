@@ -1,0 +1,269 @@
+{
+  "header": "X:1\nT:Tma a pusto kolem je, ztracen jsem a sám\nM:4/4\nL:1/4\nQ:1/4=120\nK:F",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse 1\"\nD E F G F E D2 D C2 |\nw: Tma a pu- sto ko- lem je, ztra- cen\nA,2 C D4 :|\nw: jsem a sám,",
+      "notes": [
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": "Tma",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "a",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "pu",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "sto",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "ko",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "lem",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 2.0,
+          "lyric": "je,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": "ztra",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 2.0,
+          "lyric": "cen",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 57,
+          "durationBeats": 2.0,
+          "lyric": "jsem",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 60,
+          "durationBeats": 1.0,
+          "lyric": "a",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 4.0,
+          "lyric": "sám,",
+          "syllabic": "single",
+          "chord": null
+        }
+      ]
+    },
+    {
+      "type": "verse",
+      "body": "\"^Verse 2\"\nF G A A A G A2 |\nw: Na- blíz- ku mi, pro sím, buď,\nc A2 G2 G A4 _B A G F |\nw: před zlým o- chra- ňuj, veď mě dál, ať\nE D E2 A G2 F E2 D4 |\nw: ne- zblou- dím, Pa- ne Bo- že můj.",
+      "notes": [
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "Na",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "blíz",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "ku",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "mi,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "pro",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "sím,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": "buď,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 72,
+          "durationBeats": 1.0,
+          "lyric": "před",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": "zlým",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "o",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "chra",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 4.0,
+          "lyric": "ňuj,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 70,
+          "durationBeats": 1.0,
+          "lyric": "veď",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "mě",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "dál,",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "ať",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "ne",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 1.0,
+          "lyric": "zblou",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "dím,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "Pa",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": "ne",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 65,
+          "durationBeats": 1.0,
+          "lyric": "Bo",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": "že",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 62,
+          "durationBeats": 4.0,
+          "lyric": "můj.",
+          "syllabic": "single",
+          "chord": null
+        }
+      ]
+    }
+  ]
+}

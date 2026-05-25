@@ -1,0 +1,17 @@
+{
+  "id": "104",
+  "slug": "boze",
+  "title": "Bože",
+  "number": 104,
+  "key": "F",
+  "tempo": 120,
+  "language": "cs",
+  "tags": [],
+  "sourcePdf": "https://zpevnik.proscholy.cz/soubor/104.xml",
+  "sourcePages": [
+    1
+  ],
+  "hasStaffImages": false,
+  "staveCount": 0,
+  "reviewStatus": "auto"
+}

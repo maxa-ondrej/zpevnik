@@ -558,6 +558,14 @@ def musicxml_batch(
     # needed: deterministic mapping, no allocation. The only reason
     # to consult existing folders is the early-skip path below.
 
+    # Single GraphQL roundtrip for the {media_id → canonical title}
+    # map. /soubor/N.xml and song_lyric.id use DIFFERENT id spaces
+    # (file 4 ≠ song 4); the only reliable bridge is the externals
+    # relation, which lists every MusicXML attachment's media_id and
+    # the song_lyric it belongs to. Empty dict on failure → all songs
+    # fall back to first_phrase_title.
+    xml_titles = _fetch_proscholy_xml_titles(cache_dir)
+
     new_metas: list[SongMeta] = []
     skipped: list[tuple[int, str]] = []
     wrote: list[tuple[int, str, str]] = []  # (remote_id, local_id, title)
@@ -622,15 +630,13 @@ def musicxml_batch(
         except Exception as e:
             skipped.append((rid, f"parse failed: {e}"))
             continue
-        # Prefer the canonical title from proscholy's frontend HTML
-        # (<h1 class="text-2xl font-custom-medium">…</h1>). The XML
-        # doesn't carry a title for these exports, so the v0 fallback
-        # was `first_phrase_title(song)` — which derives a placeholder
-        # from the first lyric line and ends up wrong whenever the
-        # song's official name differs from its first phrase (most of
-        # the corpus). HTML scrape is best-effort: a 404 / network
-        # blip falls through to the first-phrase derivation.
-        title = _fetch_proscholy_title(rid, cache_dir) or first_phrase_title(song)
+        # Look up the canonical name via the pre-built externals map.
+        # /soubor/N.xml maps to a song_lyric only via the externals
+        # relation, since file ids and song_lyric ids live in
+        # different spaces (file 4 is a different entity from
+        # song_lyric 4). Fall back to first_phrase_title when proscholy
+        # has the file but no externals record for it.
+        title = xml_titles.get(f"{rid}.xml") or first_phrase_title(song)
 
         # Convert (re-parses inside, but reuses our title via override).
         result = convert_musicxml(cache_path, title=title, extra_verses=extra_verses)
@@ -699,32 +705,34 @@ def musicxml_batch(
             console.print(f"  /soubor/{rid}.xml — {reason}")
 
 
-def _fetch_proscholy_title(rid: int, cache_dir: Path) -> str | None:
-    """Try to read the canonical song title from proscholy.cz.
+def _fetch_proscholy_xml_titles(cache_dir: Path) -> dict[str, str]:
+    """Build a single `{ media_id → song_lyric.name }` map for every
+    MusicXML external registered on proscholy.cz.
 
-    Queries proscholy's GraphQL endpoint for `song_lyric(id: rid).name`,
-    which carries the canonical title. The frontend HTML (/pisen/<rid>)
-    is JS-rendered for some songs — its static body just says
-    `načítám…` and the h1 never lands without running the JS. GraphQL
-    is the underlying source that the frontend itself talks to.
+    On proscholy, the URL `/soubor/<N>.xml` is NOT keyed by song_lyric
+    id — it's a file in a separate id space. The actual canonical
+    title for that XML is reachable only through the song_lyric the
+    file is attached to. The GraphQL `externals(media_type:"file/xml")`
+    query returns every such attachment in one shot, so we fetch all
+    ~700 entries once and look up by media_id (e.g. "4.xml" for the
+    `/soubor/4.xml` URL).
 
-    Returns the unescaped name or None on any failure: 404 of an
-    orphan file with no song_lyric record (file IDs and song-lyric
-    IDs are SEPARATE spaces; some soubor files have no matching
-    song_lyric), network blip, malformed response. Falls back to
-    first_phrase_title at the call site.
-
-    Result is cached per rid in cache_dir so --force re-runs don't
-    re-hammer the server.
+    Result cached at <cache>/xml-externals.json — re-using on
+    subsequent batch runs avoids re-hammering the GraphQL endpoint.
     """
     import json as _json
     import urllib.request as _urllib
 
-    cache_path = cache_dir / f"name-{rid}.json"
+    cache_path = cache_dir / "xml-externals.json"
     if not cache_path.exists():
         try:
             payload = _json.dumps(
-                {"query": f'{{ song_lyric(id: "{rid}") {{ name }} }}'}
+                {
+                    "query": (
+                        '{ externals(media_type: "file/xml")'
+                        " { media_id song_lyric { name } } }"
+                    )
+                }
             ).encode("utf-8")
             req = _urllib.Request(
                 "https://zpevnik.proscholy.cz/graphql",
@@ -734,21 +742,25 @@ def _fetch_proscholy_title(rid: int, cache_dir: Path) -> str | None:
                     "User-Agent": "zpevnik-pipeline/0.1",
                 },
             )
-            with _urllib.urlopen(req, timeout=30) as resp:
+            with _urllib.urlopen(req, timeout=60) as resp:
                 cache_path.write_bytes(resp.read())
         except Exception:
-            return None
+            return {}
     try:
         body = _json.loads(cache_path.read_text(encoding="utf-8"))
     except Exception:
-        return None
-    song = (body or {}).get("data", {}).get("song_lyric")
-    if not isinstance(song, dict):
-        return None
-    name = song.get("name")
-    if not isinstance(name, str):
-        return None
-    return name.strip() or None
+        return {}
+    externals = (body or {}).get("data", {}).get("externals") or []
+    out: dict[str, str] = {}
+    for e in externals:
+        if not isinstance(e, dict):
+            continue
+        media_id = e.get("media_id")
+        song_lyric = e.get("song_lyric") or {}
+        name = song_lyric.get("name") if isinstance(song_lyric, dict) else None
+        if isinstance(media_id, str) and isinstance(name, str) and name.strip():
+            out[media_id] = name.strip()
+    return out
 
 
 def _parse_id_spec(spec: str) -> list[int]:

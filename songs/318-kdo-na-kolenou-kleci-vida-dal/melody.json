@@ -1,0 +1,402 @@
+{
+  "header": "X:1\nT:Kdo na kolenou klečí, vídá dál\nM:4/4\nL:1/4\nQ:1/4=120\nK:G",
+  "blocks": [
+    {
+      "type": "verse",
+      "body": "\"^Verse\"\nE | \"Em\" G E G E | G B \"B7\" B, ^D |\nw: Kdo na ko- le- nou kle- čí, ví- dá\n\"Em\" E2 \"D\" ^F | \"G\" G2 z \"B7\" A | \"Em\" B B B B |\nw: dál. * * Kdo na ko- le- nou\nB E G B | \"Am\" A2 A/2 G/2 A/2 B/2 | \"Em\" B z |\nw: kle- čí, ví- dá dál. * * * * *",
+      "notes": [
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "Kdo",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "na",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "ko",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "le",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "nou",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "kle",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "čí,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 59,
+          "durationBeats": 1.0,
+          "lyric": "ví",
+          "syllabic": "begin",
+          "chord": "B7"
+        },
+        {
+          "pitch": 63,
+          "durationBeats": 1.0,
+          "lyric": "dá",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 3.0,
+          "lyric": "dál.",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 66,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "D"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 2.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "G"
+        },
+        {
+          "pitch": null,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 1.0,
+          "lyric": "Kdo",
+          "syllabic": "single",
+          "chord": "B7"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "na",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "ko",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "le",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "nou",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "kle",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "čí,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "ví",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": "dá",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 2.0,
+          "lyric": "dál.",
+          "syllabic": "single",
+          "chord": "Am"
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 69,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "Em"
+        },
+        {
+          "pitch": null,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        }
+      ]
+    },
+    {
+      "type": "chorus",
+      "body": "\"^Chorus\"\nE E | \"Em\" B2 B B/2 | G/2 E/2 E2 |\nw: Ži- vot svůj prý kdo ztra- tí, *\nE | \"Em\" G E/2 \"Am\" G/2 G E/2 | \"Em\" E2 \"C\" z G | \"Em\" E2 |\nw: jen ten ho za- chrá- ní. * Dlou- hý,\nG | \"G\" E B, \"B7\" ^D ^D | \"A\" E4 | \"Em\" z2 z |\nw: těž- ký je chá- pá- ní.",
+      "notes": [
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "Ži",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "vot",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 2.0,
+          "lyric": "svůj",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 1.5,
+          "lyric": "prý",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 71,
+          "durationBeats": 0.5,
+          "lyric": "kdo",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "ztra",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "tí,",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "jen",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.5,
+          "lyric": "ten",
+          "syllabic": "single",
+          "chord": "Em"
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "ho",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 0.5,
+          "lyric": "za",
+          "syllabic": "begin",
+          "chord": "Am"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "chrá",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 0.5,
+          "lyric": "ní.",
+          "syllabic": "end",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 2.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "Em"
+        },
+        {
+          "pitch": null,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "C"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "Dlou",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 3.0,
+          "lyric": "hý,",
+          "syllabic": "end",
+          "chord": "Em"
+        },
+        {
+          "pitch": 67,
+          "durationBeats": 1.0,
+          "lyric": "těž",
+          "syllabic": "begin",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 1.0,
+          "lyric": "ký",
+          "syllabic": "end",
+          "chord": "G"
+        },
+        {
+          "pitch": 59,
+          "durationBeats": 1.0,
+          "lyric": "je",
+          "syllabic": "single",
+          "chord": null
+        },
+        {
+          "pitch": 63,
+          "durationBeats": 1.0,
+          "lyric": "chá",
+          "syllabic": "begin",
+          "chord": "B7"
+        },
+        {
+          "pitch": 63,
+          "durationBeats": 1.0,
+          "lyric": "pá",
+          "syllabic": "middle",
+          "chord": null
+        },
+        {
+          "pitch": 64,
+          "durationBeats": 4.0,
+          "lyric": "ní.",
+          "syllabic": "end",
+          "chord": "A"
+        },
+        {
+          "pitch": null,
+          "durationBeats": 2.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": "Em"
+        },
+        {
+          "pitch": null,
+          "durationBeats": 1.0,
+          "lyric": null,
+          "syllabic": null,
+          "chord": null
+        }
+      ]
+    }
+  ]
+}
