@@ -1,26 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-05-21T20:39:43.096398Z",
   "songs": [
-    {
-      "id": "001",
-      "slug": "pana-chvalit-budu",
-      "title": "Pána chválit budu",
-      "number": 1,
-      "key": "C",
-      "tempo": null,
-      "language": "cs",
-      "tags": [
-        "demo"
-      ],
-      "sourcePdf": "(hand-authored)",
-      "sourcePages": [
-        1
-      ],
-      "hasStaffImages": false,
-      "staveCount": 0,
-      "reviewStatus": "approved"
-    },
     {
       "id": "005",
       "slug": "kdo-se-vzdava-cest",
@@ -39,25 +19,6 @@
       "reviewStatus": "auto"
     },
     {
-      "id": "002",
-      "slug": "hospodin-je-muj-pastyr",
-      "title": "Hospodin je můj pastýř",
-      "number": 2,
-      "key": "D",
-      "tempo": null,
-      "language": "cs",
-      "tags": [
-        "demo"
-      ],
-      "sourcePdf": "(hand-authored)",
-      "sourcePages": [
-        1
-      ],
-      "hasStaffImages": false,
-      "staveCount": 0,
-      "reviewStatus": "approved"
-    },
-    {
       "id": "006",
       "slug": "aj",
       "title": "Aj",
@@ -73,25 +34,6 @@
       "hasStaffImages": false,
       "staveCount": 0,
       "reviewStatus": "auto"
-    },
-    {
-      "id": "003",
-      "slug": "ja-mam-v-nebi-otce",
-      "title": "Já mám v nebi Otce",
-      "number": 3,
-      "key": "G",
-      "tempo": null,
-      "language": "cs",
-      "tags": [
-        "demo"
-      ],
-      "sourcePdf": "(hand-authored)",
-      "sourcePages": [
-        1
-      ],
-      "hasStaffImages": false,
-      "staveCount": 0,
-      "reviewStatus": "approved"
     },
     {
       "id": "007",
@@ -824,5 +766,6 @@
       "staveCount": 0,
       "reviewStatus": "auto"
     }
-  ]
+  ],
+  "generatedAt": "2026-05-25T21:05:34.311977Z"
 }
