@@ -95,6 +95,11 @@ export function KaraokeView({
   // how far into that line the cursor sits — no dependency on the
   // parent's coarser beat-based `followLine` for line transitions.
   const [noteIndex, setNoteIndex] = useState(0);
+  // One-shot flag: flips true on the first onNoteEvent of a Play
+  // session, used by PitchTimelineView to anchor the song-start
+  // clock at the moment audio actually begins (rather than at the
+  // isFollowing edge, which fires ~100ms before abcjs starts playing).
+  const [hasFirstEvent, setHasFirstEvent] = useState(false);
 
   // Reset the cursor whenever a new Play session starts (off → on).
   // Without this, restarting Play mid-song would resume from
@@ -104,10 +109,17 @@ export function KaraokeView({
     if (isFollowing && !wasFollowing.current) {
       setNoteIndex(0);
     }
+    if (!isFollowing) {
+      setHasFirstEvent(false);
+    }
     wasFollowing.current = isFollowing;
   }, [isFollowing]);
 
-  const handleNoteEvent = () => setNoteIndex((n) => n + 1);
+  const handleNoteEvent = () => {
+    setNoteIndex((n) => n + 1);
+    // Idempotent after the first call — React bails on same-value setState.
+    setHasFirstEvent(true);
+  };
 
   // Forward beats to parent so anything else that depends on
   // `followLine` (e.g. the staves view's line highlight in a
@@ -231,13 +243,14 @@ export function KaraokeView({
   if (abc && notes && notes.length > 0) {
     return (
       <View style={styles.container}>
-        {/* Shift the index by -1 at the boundary: KaraokeView's local
-            noteIndex counts onset events (each note's START increments
-            it), but the pitch-bar wants "currently-playing note". So
-            noteIndex=1 here → bar 0 is the one being sung. */}
+        {/* PitchTimelineView is fully self-driven once it knows Play
+            has started: hasFirstEvent triggers the song-start anchor,
+            then translateX + the active-bar highlight are derived
+            from wall time × tempo. The per-event noteIndex tracked
+            here is only used by the text-strip fallback below. */}
         <PitchTimelineView
           notes={notes}
-          noteIndex={isFollowing ? Math.max(-1, noteIndex - 1) : -1}
+          hasFirstEvent={hasFirstEvent}
           isFollowing={isFollowing}
           tempo={tempo}
         />

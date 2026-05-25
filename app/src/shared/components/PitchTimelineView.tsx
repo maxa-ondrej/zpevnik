@@ -10,18 +10,18 @@
  * Driven by:
  *   - `notes`: flat per-note array from melody.json (pitch in MIDI,
  *     durationBeats in quarter-notes, lyric, syllabic, chord).
- *   - `noteIndex`: which note is currently under the playhead.
  *   - `isFollowing` + `tempo`: enables continuous rAF-driven scroll.
- *     Without them, the strip snaps to whichever beat noteIndex maps
- *     to (useful for paused / static preview).
+ *   - `hasFirstEvent`: one-shot signal from the parent saying "abcjs
+ *     just fired its first event for this Play session". Used to pin
+ *     the song-start anchor to the actual moment audio begins
+ *     (compensating for abcjs's startup latency).
  *
- * The continuous scroll re-anchors its time-clock to each `noteIndex`
- * change. Inside one note we advance `elapsedSec * (tempo / 60)` beats
- * from the note's start, clamped to the note's `durationBeats`. The
- * clamp matters: if abcjs is late firing the next `onNoteEvent` the
- * strip just parks at the note's end (which is exactly where the next
- * note starts) — so when the event finally arrives the strip continues
- * smoothly with no visible jump.
+ * The continuous scroll uses a SINGLE song-start anchor set when
+ * `hasFirstEvent` first flips true. translateX is then purely a
+ * function of wall time × tempo from that anchor — no per-note
+ * re-anchoring, no clamps. The same elapsed-beats value also drives
+ * `displayedActiveIdx`, so the playhead and the colored active bar
+ * are locked together by construction.
  */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -62,15 +62,17 @@ const PLAYHEAD_OFFSET_RATIO = 0.3; // x-fraction from left where the playhead si
 
 interface PitchTimelineViewProps {
   notes: MelodyNote[];
-  /** Index of the active note (< 0 → before the first note). The
-   *  playhead is centred on this note's start time. */
-  noteIndex: number;
-  /** When true, drive the strip continuously via rAF interpolated
-   *  inside the current note. When false (or tempo missing), the
-   *  strip snaps to the noteIndex-implied beat. */
+  /** Set to true by the parent on the first abcjs onNoteEvent of a
+   *  Play session; flipped back to false when Play stops. Used as a
+   *  one-shot trigger for the song-start anchor — the actual event
+   *  count isn't needed since the strip's position is purely time-
+   *  derived from that anchor. */
+  hasFirstEvent: boolean;
+  /** When true, the strip slides continuously via rAF; otherwise it
+   *  snaps to beat 0 (the resting position). */
   isFollowing?: boolean;
   /** Quarter-notes per minute. Required for smooth scroll; without it
-   *  the component falls back to snap-to-note even if isFollowing. */
+   *  the component holds the strip at beat 0. */
   tempo?: number;
   /** Optional override for the container width — used to size the
    *  playhead's absolute x position. When omitted, the component
@@ -80,7 +82,7 @@ interface PitchTimelineViewProps {
 
 export function PitchTimelineView({
   notes,
-  noteIndex,
+  hasFirstEvent,
   isFollowing,
   tempo,
   viewportWidth,
@@ -142,16 +144,6 @@ export function PitchTimelineView({
     return CHORD_ROW_HEIGHT + Math.round(usable * (1 - norm));
   };
 
-  // Current play time in beats — the start time of the active note.
-  // When noteIndex is past the end, pin to the end so the strip
-  // doesn't keep scrolling into empty space.
-  const currentBeat = useMemo(() => {
-    if (notes.length === 0) return 0;
-    if (noteIndex < 0) return 0;
-    if (noteIndex >= notes.length) return layout.totalBeats;
-    return layout.starts[noteIndex] ?? 0;
-  }, [noteIndex, notes, layout]);
-
   // Precomputed: for each note index, the index of the most recent
   // chord-change note at or before it. Built once per song; replaces a
   // per-event O(N) walk-back that visibly stuttered the rAF loop at
@@ -166,13 +158,10 @@ export function PitchTimelineView({
     return out;
   }, [notes]);
 
-  // Bar/chord/lyric highlights are driven by `displayedActiveIdx`, NOT
-  // the noteIndex prop. noteIndex tracks abcjs's event count, which can
-  // drift relative to the strip's time-based position (abcjs sometimes
-  // doesn't fire eventCallback for rests, and per-event timing has
-  // jitter). Deriving the visual idx from the SAME wall-clock that
-  // drives translateX keeps the playhead and the colored bars in lock-
-  // step. Updated in the rAF tick below; reset to -1 when Play stops.
+  // Bar/chord/lyric highlights are driven by `displayedActiveIdx`,
+  // updated in the rAF tick from the SAME wall-clock that drives
+  // translateX — so the playhead and the colored bars are locked
+  // together. Reset to -1 whenever Play stops.
   const [displayedActiveIdx, setDisplayedActiveIdx] = useState(-1);
   const displayedActiveIdxRef = useRef(-1);
 
@@ -181,6 +170,18 @@ export function PitchTimelineView({
     displayedActiveIdx < 0 || notes.length === 0
       ? -1
       : (chordIdxByNote[Math.min(displayedActiveIdx, notes.length - 1)] ?? -1);
+
+  // Current play beat for the SNAP path (when the strip isn't being
+  // rAF-driven). displayedActiveIdx is -1 in the paused state, so the
+  // snap target falls back to beat 0 (= the strip parks at playheadX,
+  // showing the song start). When following + tempo are set, this is
+  // ignored — the rAF effect drives translateX directly.
+  const currentBeat = useMemo(() => {
+    if (notes.length === 0) return 0;
+    if (displayedActiveIdx < 0) return 0;
+    if (displayedActiveIdx >= notes.length) return layout.totalBeats;
+    return layout.starts[displayedActiveIdx] ?? 0;
+  }, [displayedActiveIdx, notes, layout]);
 
   // translateX = playhead position - currentBeat * pxPerBeat
   // (so currentBeat-th beat ends up at playhead x).
@@ -215,29 +216,25 @@ export function PitchTimelineView({
   const translateX = useRef(new Animated.Value(snapTargetX)).current;
 
   // Song-start anchor: the wall-clock moment at which beat 0 of the
-  // song begins. Set ONCE per Play session on the first noteIndex tick
-  // (back-adjusted by the note's beat-start so anacrusis / first-note-
-  // not-at-zero still works). Never re-anchored mid-song — that's what
-  // caused section-boundary stutter: per-note anchoring drifts whenever
-  // abcjs's per-event timing doesn't perfectly match the pipeline's
-  // notes[] durations (e.g. when abcjs skips events for rests).
-  //
-  // With a single song-start anchor the strip just runs at constant
-  // tempo from beat 0 — abcjs and the strip share the same wall clock,
-  // so they stay in sync without depending on event-by-event alignment.
+  // song begins. Set ONCE per Play session when `hasFirstEvent` first
+  // flips true (= abcjs's first eventCallback fires after Play starts).
+  // Anchoring here rather than at the isFollowing edge compensates for
+  // abcjs's startup latency: by the time the first event fires, audio
+  // is at beat 0 and `Date.now()` is the right anchor. Cleared on
+  // Play stop; the next session re-anchors. Never re-anchored
+  // mid-song — per-note re-anchoring caused section-boundary stutter
+  // because abcjs's per-event timing doesn't exactly match notes[]
+  // durations (rests, jitter, chord tones).
   const songStartedAtMsRef = useRef<number | null>(null);
-  // Cleared whenever Play stops; the next first-event recomputes it.
   useEffect(() => {
-    if (!isFollowing) songStartedAtMsRef.current = null;
-  }, [isFollowing]);
-  // First (or first-after-resume) noteIndex tick establishes the anchor.
-  useEffect(() => {
-    if (!isFollowing || !tempo || tempo <= 0) return;
-    if (songStartedAtMsRef.current !== null) return;
-    if (noteIndex < 0 || noteIndex >= notes.length) return;
-    const beatStart = layout.starts[noteIndex] ?? 0;
-    songStartedAtMsRef.current = Date.now() - (beatStart * 60_000) / tempo;
-  }, [isFollowing, noteIndex, layout, tempo, notes.length]);
+    if (!isFollowing || !tempo || tempo <= 0) {
+      songStartedAtMsRef.current = null;
+      return;
+    }
+    if (hasFirstEvent && songStartedAtMsRef.current === null) {
+      songStartedAtMsRef.current = Date.now();
+    }
+  }, [isFollowing, tempo, hasFirstEvent]);
 
   // Continuous rAF-driven scroll + active-idx derivation. translateX is
   // a function of wall time since the song-start anchor; displayedActiveIdx
@@ -332,11 +329,12 @@ export function PitchTimelineView({
             {/*
               Bars / chords / lyrics are rendered via memo'd
               subcomponents below, with a stable `state` prop
-              (past/active/future). When noteIndex advances by 1, only
-              the bar transitioning out of active and the bar entering
-              active actually re-render — every other item's props are
-              referentially unchanged, so React.memo bails out. This is
-              what keeps the rAF loop from stalling at each event.
+              (past/active/future). When displayedActiveIdx advances
+              by 1, only the bar transitioning out of active and the
+              bar entering active actually re-render — every other
+              item's props are referentially unchanged, so React.memo
+              bails out. This is what keeps the rAF loop from stalling
+              at each transition.
             */}
             {notes.map((note, i) => {
               const start = layout.starts[i] ?? 0;
@@ -430,9 +428,10 @@ export function PitchTimelineView({
 type PastActiveFuture = 'past' | 'active' | 'future';
 
 // Each per-note child is wrapped in React.memo and receives only
-// primitive props. When noteIndex advances, the parent computes a new
-// `state` for every child, but for all but two children that new value
-// equals the previous one — the memo's shallow compare skips the render.
+// primitive props. When displayedActiveIdx advances, the parent
+// computes a new `state` for every child, but for all but two
+// children that new value equals the previous one — the memo's
+// shallow compare skips the render.
 
 interface BarProps {
   x: number;
