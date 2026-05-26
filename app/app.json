@@ -37,7 +37,14 @@
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Used in Live mode to follow the song you are singing and auto-scroll the lyrics. Audio never leaves the device.",
+          "speechRecognitionPermission": "Used in Live mode to match what you are singing to the right line in the lyrics. Recognition runs on-device when supported."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

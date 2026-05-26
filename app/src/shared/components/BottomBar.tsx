@@ -40,6 +40,11 @@ interface BottomBarProps {
   /** True while constant-px-per-second auto-scroll is running. */
   isPlaying: boolean;
   onTogglePlay: () => void;
+  /** True while voice-driven Live mode is running. */
+  isLive: boolean;
+  /** Disabled when the platform has no working speech recognizer. */
+  liveSupported: boolean;
+  onToggleLive: () => void;
   /** Controlled expand state — lifted so the parent can render a
    *  tap-outside-to-close backdrop. */
   expanded: boolean;
@@ -54,6 +59,9 @@ export function BottomBar({
   onToggleFollow,
   isPlaying,
   onTogglePlay,
+  isLive,
+  liveSupported,
+  onToggleLive,
   expanded,
   onExpandedChange,
   isLandscape = false,
@@ -196,6 +204,18 @@ export function BottomBar({
           accessibilityLabel={`View mode: ${viewMode}. Tap to cycle.`}
           compact={isLandscape}
         />
+        {liveSupported && (
+          <BarBtn
+            theme={theme}
+            active={isLive}
+            onPress={onToggleLive}
+            label={isLive ? '◉  Listening' : '🎙  Live'}
+            accessibilityLabel={
+              isLive ? 'Stop Live follow' : 'Start Live follow'
+            }
+            compact={isLandscape}
+          />
+        )}
       </View>
       {/* Animated panel — height tracks the pan in real time, snaps
           to OPEN_HEIGHT or 0 on release. Always rendered so the
@@ -305,7 +325,12 @@ const styles = StyleSheet.create({
   },
   alwaysRowLandscape: { paddingVertical: 2 },
   btn: {
-    width: 120,
+    // flex+minWidth lets the row scale from 2 to 3 buttons without
+    // overflowing narrow phones. minWidth keeps two-button rows from
+    // sprawling across the whole bar.
+    flex: 1,
+    minWidth: 96,
+    maxWidth: 160,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,

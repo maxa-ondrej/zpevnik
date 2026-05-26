@@ -20,6 +20,7 @@ import { KaraokeView } from '../../src/shared/components/KaraokeView';
 import { SongView } from '../../src/shared/components/SongView';
 import { parseChordPro, type ParsedSong } from '../../src/shared/chordpro/parser';
 import { songFetch } from '../../src/shared/assets/songFetch';
+import { useLiveFollow } from '../../src/shared/live/useLiveFollow';
 import { assembleAbc, type Melody } from '../../src/shared/melody/assemble';
 import { totalBeatsFromMelody } from '../../src/shared/melody/totalBeats';
 import { useFavorites } from '../../src/shared/store/favorites';
@@ -126,9 +127,80 @@ export default function SongScreen() {
     });
   }, []);
 
+
   const onLineLayout = useCallback((index: number, y: number, _height: number) => {
     lineYsRef.current.set(index, y);
   }, []);
+
+  // --- Live (voice-driven follow) ----------------------------------------
+  // Mic-driven recognizer feeds tokens into the lyric matcher; matched
+  // lines drive followLine just like the tempo/abcjs sources do. The
+  // hook owns its own followLine; we bridge it into our state while
+  // Live mode is the active source.
+  const [isLive, setIsLive] = useState(false);
+  const live = useLiveFollow({
+    song: state.kind === 'ready' ? state.song : null,
+  });
+  // The hook returns a fresh wrapper object each render, but its
+  // start/stop closures are useCallback-memoised inside (stable id).
+  // Pull them out so our effects can depend on the functions directly
+  // — depending on `live` itself would re-run every render.
+  const liveStart = live.start;
+  const liveStop = live.stop;
+  const liveFollowLine = live.followLine;
+  // Bridge: when Live is the source, mirror its line index into our
+  // followLine so the existing highlight + scroll logic keeps working.
+  useEffect(() => {
+    if (!isLive) return;
+    if (liveFollowLine >= 0) setFollowLine(liveFollowLine);
+  }, [isLive, liveFollowLine]);
+  const toggleLive = useCallback(() => {
+    if (isLive) {
+      void liveStop();
+      setIsLive(false);
+      return;
+    }
+    // Live and tempo-follow are mutually exclusive — turning on one
+    // turns off the other so they don't fight over followLine.
+    setIsFollowing(false);
+    void liveStart();
+    setIsLive(true);
+  }, [isLive, liveStart, liveStop]);
+  // The reverse direction: activating tempo-follow should kill an
+  // active Live session. toggleFollow is declared before isLive, so we
+  // express the cross-stop via an effect on isFollowing.
+  useEffect(() => {
+    if (isFollowing && isLive) {
+      void liveStop();
+      setIsLive(false);
+    }
+  }, [isFollowing, isLive, liveStop]);
+  // Stop the recognizer when navigating to a different song. The
+  // load effect can't carry isLive in its deps (it would re-fetch on
+  // every toggle), so we run this as a separate id-keyed effect that
+  // reads isLive through a ref to avoid the same dep loop.
+  const isLiveRef = useRef(isLive);
+  useEffect(() => {
+    isLiveRef.current = isLive;
+  }, [isLive]);
+  useEffect(() => {
+    if (isLiveRef.current) {
+      void liveStop();
+      setIsLive(false);
+    }
+    // Intentionally id-keyed only — `liveStop` is stable across renders
+    // (useCallback in the hook), so re-running when it "changes" would
+    // never happen anyway. isLive is read via ref to avoid re-running
+    // on every toggle.
+  }, [id]);
+  // Stop the recognizer if we navigate away mid-listen.
+  useEffect(() => {
+    return () => {
+      void liveStop();
+    };
+  }, [liveStop]);
+  // True when *any* follow source wants the line highlight + scroll.
+  const isAnyFollow = isFollowing || isLive;
 
   // --- Autoscroll machinery ----------------------------------------------
   const [isPlaying, setIsPlaying] = useState(false);
@@ -212,7 +284,10 @@ export default function SongScreen() {
     (viewMode === 'staves' || viewMode === 'karaoke');
 
   useEffect(() => {
-    if (!isFollowing || useAbcjsTiming) {
+    // Tempo interval is the line-by-line fallback for the lyrics-only
+    // view. Live mode owns the line cursor whenever it's active, so
+    // suppress this loop entirely while listening.
+    if (!isFollowing || useAbcjsTiming || isLive) {
       stopFollow();
       return;
     }
@@ -241,7 +316,7 @@ export default function SongScreen() {
     }, intervalMs);
 
     return stopFollow;
-  }, [isFollowing, useAbcjsTiming, state, stopFollow]);
+  }, [isFollowing, useAbcjsTiming, isLive, state, stopFollow]);
 
   // When abcjs is the timing source, derive the current lyric line from
   // the beat callback. Fired by AbcView via onBeat. We snap the line index
@@ -250,6 +325,10 @@ export default function SongScreen() {
   // melody.json directly.
   const onAbcBeat = useCallback(
     (beatNumber: number, totalBeats: number) => {
+      // Live mode is the authoritative source while listening — let
+      // its matcher drive followLine, don't get crossed up by abcjs's
+      // tempo-clock callbacks.
+      if (isLive) return;
       if (state.kind !== 'ready' || totalBeats <= 0) return;
       const lineCount = state.song.lines.length;
       if (lineCount === 0) return;
@@ -257,7 +336,7 @@ export default function SongScreen() {
       const idx = Math.min(lineCount - 1, Math.floor(beatNumber / beatsPerLine));
       setFollowLine(idx);
     },
-    [state],
+    [state, isLive],
   );
 
   const onAbcFollowEnd = useCallback(() => {
@@ -287,7 +366,7 @@ export default function SongScreen() {
   // overriding manual scroll on every beat while still bringing the
   // highlight back into view when it drifts off-screen.
   useEffect(() => {
-    if (!isFollowing) return;
+    if (!isAnyFollow) return;
     const localY = lineYsRef.current.get(followLine);
     if (localY === undefined) return;
     const absoluteY = songViewYRef.current + localY;
@@ -302,7 +381,7 @@ export default function SongScreen() {
     scrollRef.current?.scrollTo({ y: targetY, animated: true });
     currentYRef.current = targetY;
     expectedYRef.current = targetY;
-  }, [isFollowing, followLine]);
+  }, [isAnyFollow, followLine]);
 
   // Unmount safety
   useEffect(() => stopFollow, [stopFollow]);
@@ -321,7 +400,7 @@ export default function SongScreen() {
       setIsPlaying(false);
       currentYRef.current = y;
     } else if (
-      isFollowing &&
+      isAnyFollow &&
       Math.abs(y - expectedYRef.current) > 32
     ) {
       // Manual scroll while follow mode is running — adopt the new
@@ -333,7 +412,7 @@ export default function SongScreen() {
     } else {
       currentYRef.current = y;
     }
-  }, [isFollowing]);
+  }, [isAnyFollow]);
 
   // --- Song loading -------------------------------------------------------
   useEffect(() => {
@@ -524,7 +603,7 @@ export default function SongScreen() {
           >
             <SongView
               song={state.song}
-              highlightedLineIndex={isFollowing ? followLine : undefined}
+              highlightedLineIndex={isAnyFollow ? followLine : undefined}
               onLineLayout={onLineLayout}
             />
           </View>
@@ -532,8 +611,10 @@ export default function SongScreen() {
         {viewMode === 'karaoke' && (
           <KaraokeView
             song={state.song}
-            currentLineIndex={isFollowing ? followLine : undefined}
+            currentLineIndex={isAnyFollow ? followLine : undefined}
             abc={state.abc}
+            // abcjs playback only runs in tempo-follow mode; Live mode
+            // drives line highlight from voice alone.
             isFollowing={isFollowing}
             tempo={state.meta.tempo ?? undefined}
             onBeat={onAbcBeat}
@@ -560,6 +641,9 @@ export default function SongScreen() {
         onToggleFollow={toggleFollow}
         isPlaying={isPlaying}
         onTogglePlay={togglePlay}
+        isLive={isLive}
+        liveSupported={live.isSupported}
+        onToggleLive={toggleLive}
         expanded={controlsExpanded}
         onExpandedChange={setControlsExpanded}
         isLandscape={isLandscape}
